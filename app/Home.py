@@ -61,5 +61,13 @@ with right:
 """)
     st.caption("Draft wording generated from the numbers; the team writes the final committee memo.")
 
+sens = parquet("verdict_sensitivity.parquet")
+if sens is not None:
+    with st.expander("Does the outcome change under other assumptions? (verdict sensitivity)"):
+        st.dataframe(sens.style.format({c: "{:.2%}" for c in ("cagr", "volatility", "es99_oos",
+                                                             "worst_crisis_drawdown", "return_gap")}
+                                       | {"max_loosening": "{:+.0%}"}), width="stretch")
+        st.caption("Every case reruns the walk-forward selection; ES is the out-of-sample 99% ES for comparability.")
+
 with st.expander("All decision checks"):
     st.dataframe(pd.DataFrame([c.__dict__ for c in v.checks]), width="stretch")

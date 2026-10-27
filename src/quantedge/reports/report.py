@@ -181,9 +181,13 @@ def generated(cfg: Config) -> dict[str, str]:
                             "value": c.value if isinstance(c.value, bool) else f"{c.value:.2%}",
                             "limit": c.limit if isinstance(c.limit, bool) else f"{c.limit:.2%}",
                             "result": "pass" if c.passed else "FAIL"} for c in v.checks])
+    sens = _p("verdict_sensitivity.parquet")
     g["07_recommendation"] = (table(hist, pct=("weight", "pct_contribution"), dec={"risk_to_capital": 2})
                               + table(checks, index=False)
-                              + "".join(f"<p>{html.escape(r)}</p>" for r in v.reasons))
+                              + "".join(f"<p>{html.escape(r)}</p>" for r in v.reasons)
+                              + ("<h4>Verdict sensitivity</h4>" + table(
+                                  sens, pct=("cagr", "volatility", "es99_oos", "worst_crisis_drawdown", "return_gap"),
+                                  dec={"max_loosening": 3}) if sens is not None else ""))
 
     g["08_limitations"] = "".join(
         f"<h4>{grp}</h4>" + table(pd.DataFrame(items, columns=["Assumption", "Why it matters", "Mitigation"]), index=False)

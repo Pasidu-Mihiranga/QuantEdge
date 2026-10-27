@@ -20,25 +20,33 @@ from quantedge.portfolio.returns import build_returns
 from quantedge.portfolio.walkforward import candidate_strategies, scorecard, walk_forward
 
 
-def run_portfolio_selection(cfg: Config, macro: pd.DataFrame, variant: str | None = None) -> dict:
+def run_portfolio_selection(cfg: Config, macro: pd.DataFrame, variant: str | None = None,
+                            mrp: float = 0.05, allow_cash: bool = False, tag: str | None = None) -> dict:
     """Step 07 walk-forward selection on dev + validation only (Step 22: test locked).
 
-    `variant` names an `ips.variants` sensitivity case; its artifacts get a suffix and are never
-    used for selection."""
+    `variant` names an `ips.variants` case; `mrp` and `allow_cash` are sensitivity settings. Any
+    non-base run writes only a suffixed scorecard and is never used for selection."""
+    from quantedge.portfolio.returns import CASH, add_cash_asset
+
     part = Partition.from_config(cfg)
     end = part.val[1]
     returns = load_returns("dev+val", cfg)
     rf = pd.read_parquet(ARTIFACTS / "returns_rf.parquet")["rf"].reindex(returns.index)
+    tickers = list(cfg.universe)
+    if allow_cash:
+        returns = add_cash_asset(returns, rf)
+        tickers.append(CASH)
     limits = IPSLimits.from_config(cfg.ips, variant)
     req = required_return(macro["CPIAUCSL"], cfg.ips["spending_rate"], cfg.ips["cost_drag"],
                           cfg.ips["cpi_years"], as_of=end)
-    strategies, _ = candidate_strategies(cfg, limits, list(cfg.universe))
+    strategies, _ = candidate_strategies(cfg, limits, tickers, mrp=mrp)
     results = {name: walk_forward(returns, s, rf, window=cfg.portfolio.estimation_window_days,
                                   cost_bps=cfg.portfolio.cost_bps_per_side, name=name)
                for name, s in strategies.items()}
     card = scorecard(results, limits, req["required_return"], cfg.stress["historical"], end)
-    if variant is not None:
-        card.to_parquet(ARTIFACTS / f"portfolio_scorecard_val_{variant}.parquet")
+    tag = tag or variant
+    if tag is not None:
+        card.to_parquet(ARTIFACTS / f"portfolio_scorecard_val_{tag}.parquet")
         return {"scorecard": card, "results": results, "required_return": req}
     card.to_parquet(ARTIFACTS / "portfolio_scorecard_val.parquet")
     pd.DataFrame({k: r.perf for k, r in results.items()}).to_parquet(ARTIFACTS / "wf_performance_val.parquet")
@@ -313,6 +321,75 @@ def write_memo(cfg: Config) -> Path | None:
     return out
 
 
+SENSITIVITY_CASES = {
+    "base": {},
+    "mrp_4pct": {"mrp": 0.04},
+    "mrp_6pct": {"mrp": 0.06},
+    "cash_allowed": {"allow_cash": True},
+    "original_agg40": {"variant": "original_agg40"},
+}
+
+
+def run_verdict_sensitivity(cfg: Config, macro: pd.DataFrame) -> pd.DataFrame:
+    """Step 13 §3.4: does the outcome change under other assumptions?
+
+    Every case reruns the walk-forward selection and evaluates the IPS checks with the minimum
+    relaxation, using out-of-sample 99% ES for every case so the cases are comparable."""
+    from quantedge.decision.rules import minimum_relaxation
+
+    betas = pd.read_parquet(ARTIFACTS / "stress_betas_full.parquet")
+    shock = pd.Series(cfg.stress["hypothetical"]["shock"], dtype=float)
+    r_star = betas[shock.index] @ shock
+    rows = []
+    for name, kw in SENSITIVITY_CASES.items():
+        sel = run_portfolio_selection(cfg, macro, tag=f"sens_{name}", **kw)
+        card = sel["scorecard"]
+        limits = IPSLimits.from_config(cfg.ips, kw.get("variant"))
+        eligible = card[card["weights_within_ips"]]
+        hyp = {c: -float(sel["results"][c].weights_history.iloc[-1].reindex(r_star.index, fill_value=0.0) @ r_star)
+               for c in eligible.index}
+        cands = pd.DataFrame({"vol_oos": eligible["volatility"], "worst_hist_drawdown": eligible["worst_crisis_drawdown"],
+                              "hypothetical_loss": pd.Series(hyp), "es99_1d": eligible["es99_oos"]})
+        top = str(card.index[0])
+        relax = minimum_relaxation(cands, limits) if len(cands) else None
+        gap = sel["required_return"]["required_return"] - float(card.loc[top, "cagr"])
+        if relax is None or relax.max_relative > cfg.decision["max_limit_relaxation"]:
+            outcome = "REJECT"
+        elif relax.max_relative == 0 and gap < cfg.decision["return_gap_tolerance"]:
+            outcome = "ACCEPT"
+        else:
+            outcome = "ADJUST RISK LIMIT"
+        rows.append({"case": name, "top_candidate": top, "cagr": float(card.loc[top, "cagr"]),
+                     "volatility": float(card.loc[top, "volatility"]), "es99_oos": float(card.loc[top, "es99_oos"]),
+                     "worst_crisis_drawdown": float(card.loc[top, "worst_crisis_drawdown"]),
+                     "least_amended": relax.candidate if relax else None,
+                     "max_loosening": relax.max_relative if relax else float("nan"),
+                     "return_gap": gap, "outcome": outcome})
+    out = pd.DataFrame(rows).set_index("case")
+    out.to_parquet(ARTIFACTS / "verdict_sensitivity.parquet")
+    return out
+
+
+def write_artifacts_manifest(cfg: Config) -> Path:
+    """SHA-256 of every artifact plus the config hash and git commit (reproducibility protocol)."""
+    import subprocess
+
+    from quantedge.data.manifest import sha256_file
+    from quantedge.paths import ROOT
+
+    try:
+        sha = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True,
+                             timeout=10).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        sha = "unknown"
+    files = {f.name: sha256_file(f) for f in sorted(ARTIFACTS.glob("*")) if f.is_file()
+             and f.name != "artifacts_manifest.json"}
+    out = ARTIFACTS / "artifacts_manifest.json"
+    out.write_text(json.dumps({"config_sha256": cfg.sha256, "git_commit": sha, "files": files}, indent=2),
+                   encoding="utf-8")
+    return out
+
+
 def _cached(name: str) -> bool:
     return (ARTIFACTS / name).exists()
 
@@ -376,6 +453,9 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
 
         (memo.parent / "report.html").write_text(report.render(cfg), encoding="utf-8")
         print(f"[report]   report draft written to {memo.parent / 'report.html'} (narrative in reports/narrative/)")
+    sens = run_verdict_sensitivity(cfg, clean.macro)
+    print(f"[sensitiv] outcomes: {sens['outcome'].to_dict()}")
+    print(f"[manifest] {write_artifacts_manifest(cfg)}")
     print(f"done in {time.perf_counter() - t0:.1f}s")
     return out
 

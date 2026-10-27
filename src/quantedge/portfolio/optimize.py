@@ -121,15 +121,22 @@ def project_onto_constraints(target: np.ndarray, cons: OptimizerConstraints) -> 
 
 def erc(sigma: pd.DataFrame, cons: OptimizerConstraints) -> OptResult:
     """Equal risk contribution (Spinu): min 1/2 x' Sigma x - (1/n) sum ln x_i, w = x / sum x;
-    then projected onto the IPS bounds, reporting the deviation."""
-    s = sigma.to_numpy()
+    then projected onto the IPS bounds, reporting the deviation.
+
+    Zero-variance assets (a T-bill cash sleeve) carry no risk to equalise and would make the
+    objective unbounded, so ERC is solved on the risky assets and the projection may add cash."""
+    s_full = sigma.to_numpy()
+    risky = np.diag(s_full) > 1e-14
+    s = s_full[np.ix_(risky, risky)]
     n = len(s)
     x0 = np.ones(n) / np.sqrt(np.diag(s))
     fun = lambda x: 0.5 * x @ s @ x - np.log(x).sum() / n  # noqa: E731
     jac = lambda x: s @ x - 1.0 / (n * x)  # noqa: E731
     res = minimize(fun, x0, jac=jac, bounds=[(1e-10, None)] * n, method="L-BFGS-B",
                    options={"ftol": 1e-15, "gtol": 1e-12, "maxiter": 10_000})
-    w_erc = res.x / res.x.sum()
+    w_erc = np.zeros(len(s_full))
+    w_erc[risky] = res.x / res.x.sum()
+    s = s_full
     w = project_onto_constraints(w_erc, cons)
     rc = w_erc * (s @ w_erc)
     return _result(w, cons.tickers, "optimal" if res.success else "erc_not_converged",

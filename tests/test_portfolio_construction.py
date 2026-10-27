@@ -174,3 +174,16 @@ def test_bootstrap_weights_shape(market):
     boot = bootstrap_weights(returns.iloc[:300], strategies["Global min variance"], 0.02, rng, n=5)
     assert boot.shape == (5, 7)
     np.testing.assert_allclose(boot.sum(axis=1), 1.0, atol=1e-8)
+
+
+def test_erc_with_a_zero_variance_cash_asset():
+    s = pd.DataFrame(np.diag([0.04, 0.01, 0.0]), index=["A0", "A1", "CASH"], columns=["A0", "A1", "CASH"])
+    cons = OptimizerConstraints(("A0", "A1", "CASH"), np.zeros(3), np.array([1.0, 1.0, 0.1]),
+                                np.zeros((0, 3)), np.zeros(0), np.array([0.45, 0.45, 0.1]))
+    res = opt.erc(s, cons)
+    w = res.weights
+    assert np.isfinite(w).all() and w.sum() == pytest.approx(1.0)
+    assert w["CASH"] <= 0.1 + 1e-8
+    risky = res.diagnostics["unconstrained"][["A0", "A1"]]
+    rc = risky.to_numpy() * (s.iloc[:2, :2].to_numpy() @ risky.to_numpy())
+    assert rc[0] == pytest.approx(rc[1], rel=1e-5)          # risk parity among the risky assets

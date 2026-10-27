@@ -80,14 +80,14 @@ def walk_forward(returns: pd.DataFrame, strategy: Strategy, rf_daily: pd.Series,
     return WFResult(name, perf.rename(name or "portfolio"), wh, turnover, pd.Series(statuses))
 
 
-def candidate_strategies(cfg: Config, limits: IPSLimits, tickers: list[str]
+def candidate_strategies(cfg: Config, limits: IPSLimits, tickers: list[str], mrp: float = 0.05
                          ) -> tuple[dict[str, Strategy], OptimizerConstraints]:
-    """The seven Step 07 candidates as walk-forward strategies."""
+    """The seven Step 07 candidates as walk-forward strategies (`mrp`: CAPM market risk premium)."""
     cons = constraints_for_optimizer(limits, tickers)
     market = cfg.market_proxy
 
     def inputs(est, rf):
-        return opt.estimate_inputs(est, rf, market=market)
+        return opt.estimate_inputs(est, rf, market=market, mrp=mrp)
 
     strategies: dict[str, Strategy] = {
         "Equal weight": lambda est, rf: opt.equal_weight(tickers),
