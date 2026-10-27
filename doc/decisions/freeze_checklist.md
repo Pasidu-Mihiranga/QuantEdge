@@ -15,8 +15,8 @@ The tag `methodology-freeze-v1` may be created only when every **blocking** item
 - [ ] Champion robustness across estimation windows: W = 250 passes only Cornish-Fisher; W = 500 and 1000 both pick Conditional EVT (W = 1000: Conditional EVT and GARCH-FHS both pass, 14 exceptions each). Record whether W = 500 stays the official window
 - [ ] EVT threshold rule: justify the 85% grid floor or add mean-excess linearity to Rule A (design on dev, choose on val)
 - [ ] ML hyperparameters chosen on validation (LightGBM 4-config grid, LSTM 8-config grid) and recorded
-- [ ] ML adoption rule text hashed (Step 22 §3.8)
-- [ ] Freeze record written: tag SHA, SHA-256 of `config.yaml`, data manifest, `requirements*.txt`, model artefacts, seeds, champion and challenger list
+
+When every blocking item is ticked, run `scripts/freeze.py`. It hashes the adoption-rule text (Step 22 §3.8) and writes the freeze record (`config.yaml`, data manifest, `requirements*.txt`, artifact manifest, selected ML configurations, seeds, champion and challengers). The team then commits the record and creates the tag; the tag unlocks `python -m quantedge.backtest.final_test`, which runs once.
 
 ## Non-blocking (before submission)
 
