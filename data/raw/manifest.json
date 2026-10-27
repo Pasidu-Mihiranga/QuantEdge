@@ -1,0 +1,148 @@
+{
+  "files": [
+    {
+      "file": "fred_BAA10Y.parquet",
+      "source": "FRED (St. Louis Fed)",
+      "url_or_call": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=BAA10Y",
+      "downloaded_utc": "2026-10-27T18:05:12Z",
+      "rows": 10647,
+      "first_date": "1986-01-02",
+      "last_date": "2026-10-23",
+      "sha256": "3282c49c00132bd312ce6c921a6f3d4c75ca0a475fa9a10cc463a3bd15f90a4d",
+      "library_versions": {
+        "yfinance": "1.7.0",
+        "pandas": "3.1.0",
+        "pyarrow": "26.0.0",
+        "requests": "2.34.2"
+      }
+    },
+    {
+      "file": "fred_BAMLH0A0HYM2.parquet",
+      "source": "FRED (St. Louis Fed)",
+      "url_or_call": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=BAMLH0A0HYM2",
+      "downloaded_utc": "2026-10-27T18:04:25Z",
+      "rows": 792,
+      "first_date": "2023-10-30",
+      "last_date": "2026-10-26",
+      "sha256": "1a3ffb25fae5fb25f38860ead8eab622b04bb1223a00e459b41904909c510630",
+      "library_versions": {
+        "yfinance": "1.7.0",
+        "pandas": "3.1.0",
+        "pyarrow": "26.0.0",
+        "requests": "2.34.2"
+      }
+    },
+    {
+      "file": "fred_CPIAUCSL.parquet",
+      "source": "FRED (St. Louis Fed)",
+      "url_or_call": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=CPIAUCSL",
+      "downloaded_utc": "2026-10-27T18:04:21Z",
+      "rows": 957,
+      "first_date": "1947-01-01",
+      "last_date": "2026-09-01",
+      "sha256": "22d45878808bec43f0081181db2c578f4cbf3a46b26e2328780dc85b0fc22184",
+      "library_versions": {
+        "yfinance": "1.7.0",
+        "pandas": "3.1.0",
+        "pyarrow": "26.0.0",
+        "requests": "2.34.2"
+      }
+    },
+    {
+      "file": "fred_DCOILWTICO.parquet",
+      "source": "FRED (St. Louis Fed)",
+      "url_or_call": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILWTICO",
+      "downloaded_utc": "2026-10-27T18:04:23Z",
+      "rows": 10644,
+      "first_date": "1986-01-02",
+      "last_date": "2026-10-20",
+      "sha256": "5c313357b6a38e4c2c4ea629d906b11820f48abeee8b867ac786a399d24a9647",
+      "library_versions": {
+        "yfinance": "1.7.0",
+        "pandas": "3.1.0",
+        "pyarrow": "26.0.0",
+        "requests": "2.34.2"
+      }
+    },
+    {
+      "file": "fred_DGS10.parquet",
+      "source": "FRED (St. Louis Fed)",
+      "url_or_call": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10",
+      "downloaded_utc": "2026-10-27T18:04:20Z",
+      "rows": 16909,
+      "first_date": "1962-01-02",
+      "last_date": "2026-10-23",
+      "sha256": "cff5d952fcdab6b09ccb73b18b1d9f95d4ffe67bc46c0a7608ce33a0a1d688bc",
+      "library_versions": {
+        "yfinance": "1.7.0",
+        "pandas": "3.1.0",
+        "pyarrow": "26.0.0",
+        "requests": "2.34.2"
+      }
+    },
+    {
+      "file": "fred_DTB3.parquet",
+      "source": "FRED (St. Louis Fed)",
+      "url_or_call": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTB3",
+      "downloaded_utc": "2026-10-27T18:04:16Z",
+      "rows": 18995,
+      "first_date": "1954-01-04",
+      "last_date": "2026-10-23",
+      "sha256": "7a63c27f2e0f3a1f9ce1e7dcfedb64cadf53796eb00067b3c690fbb496aaffbb",
+      "library_versions": {
+        "yfinance": "1.7.0",
+        "pandas": "3.1.0",
+        "pyarrow": "26.0.0",
+        "requests": "2.34.2"
+      }
+    },
+    {
+      "file": "fred_DTWEXBGS.parquet",
+      "source": "FRED (St. Louis Fed)",
+      "url_or_call": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTWEXBGS",
+      "downloaded_utc": "2026-10-27T18:04:26Z",
+      "rows": 5430,
+      "first_date": "2006-01-02",
+      "last_date": "2026-10-23",
+      "sha256": "0f8abff496aea86e16cda04e05dcedf028fd877d618233a823693288bf526299",
+      "library_versions": {
+        "yfinance": "1.7.0",
+        "pandas": "3.1.0",
+        "pyarrow": "26.0.0",
+        "requests": "2.34.2"
+      }
+    },
+    {
+      "file": "fred_VIXCLS.parquet",
+      "source": "FRED (St. Louis Fed)",
+      "url_or_call": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS",
+      "downloaded_utc": "2026-10-27T18:04:21Z",
+      "rows": 9605,
+      "first_date": "1990-01-02",
+      "last_date": "2026-10-26",
+      "sha256": "49ffafabef65a37c087fed90102783681fa25289acff544c23a573d9ff7cfa9a",
+      "library_versions": {
+        "yfinance": "1.7.0",
+        "pandas": "3.1.0",
+        "pyarrow": "26.0.0",
+        "requests": "2.34.2"
+      }
+    },
+    {
+      "file": "prices.parquet",
+      "source": "Yahoo Finance (yfinance)",
+      "url_or_call": "yf.download(['SPY', 'EFA', 'EEM', 'AGG', 'GLD', 'XLE', 'XLK'], start=2004-11-18, end=None, auto_adjust=False, actions=True, threads=False)",
+      "downloaded_utc": "2026-10-27T18:04:13Z",
+      "rows": 38633,
+      "first_date": "2004-11-18",
+      "last_date": "2026-10-27",
+      "sha256": "f44bda773ab62f11bbb66ab94141755ae917819cc95c81c18ef44f731c320eb2",
+      "library_versions": {
+        "yfinance": "1.7.0",
+        "pandas": "3.1.0",
+        "pyarrow": "26.0.0",
+        "requests": "2.34.2"
+      }
+    }
+  ]
+}
