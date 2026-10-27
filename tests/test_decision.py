@@ -140,8 +140,18 @@ def test_memo_fills_numbers_and_leaves_team_judgement(dcfg):
                "worst_hist_loss": 0.18, "worst_hist_name": "GFC 2008", "worst_drawdown_held": 0.19,
                "hypothetical_loss": 0.12,
                "champion": "Conditional EVT", "champion_reason": "lowest pinball",
-               "governance": ["Re-convene if the 250-day Basel zone turns yellow."]}
+               "governance": ["Re-convene if the 250-day Basel zone turns yellow."],
+               "es99_10d": 0.04, "es99_10d_limit": 0.05}
     memo = render_memo(v, numbers, 10_000_000)
     assert "$120,000" in memo and "$150,000" in memo and "$6,000,000" in memo
     assert "ADJUST RISK LIMIT" in memo and "investment committee" in memo
     assert memo.count("[TEAM:") >= 5
+
+
+def test_risk_to_capital_ignores_residual_weights():
+    rng = np.random.default_rng(6)
+    R = pd.DataFrame(rng.normal(0, [0.02, 0.005, 0.03], (20_000, 3)), columns=["EQ", "BOND", "TECH"])
+    w = pd.Series({"EQ": 0.3, "BOND": 0.7 - 1e-9, "TECH": 1e-9})   # optimiser residual on TECH
+    t = euler_simulation_es(w, R)
+    assert np.isnan(t.loc["TECH", "risk_to_capital"])
+    assert t["risk_to_capital"].max() == pytest.approx(t.loc["EQ", "risk_to_capital"])

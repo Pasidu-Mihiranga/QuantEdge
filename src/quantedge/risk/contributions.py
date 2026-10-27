@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+MIN_HELD_WEIGHT = 1e-4  # 0.01% of NAV
+
 
 def euler_parametric(w: pd.Series, sigma: pd.DataFrame, alpha: float = 0.99, measure: str = "es") -> pd.DataFrame:
     """Normal (mu ~ 0) contributions. marginal_i = k (Sigma w)_i / sigma_p with k = z_a (VaR)
@@ -48,7 +50,10 @@ def _table(w: pd.Series, marginal: np.ndarray) -> pd.DataFrame:
     comp = w.to_numpy() * marginal
     total = comp.sum()
     pct = comp / total
+    # Risk-to-capital is only meaningful for assets actually held; optimisers leave residual
+    # weights around 1e-9, and dividing by them produces meaningless ratios.
+    held = w.to_numpy() > MIN_HELD_WEIGHT
     with np.errstate(divide="ignore", invalid="ignore"):
-        rc = np.where(w.to_numpy() > 0, pct / w.to_numpy(), np.nan)
+        rc = np.where(held, pct / w.to_numpy(), np.nan)
     return pd.DataFrame({"weight": w.to_numpy(), "marginal": marginal, "component": comp,
                          "pct_contribution": pct, "risk_to_capital": rc}, index=w.index)
