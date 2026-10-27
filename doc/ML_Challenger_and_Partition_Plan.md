@@ -1,126 +1,194 @@
-# Add chronological data partition + custom ML challenger (LightGBM quantile VaR) to the QuantEdge plan
+# Plan v2: leakage-safe validation, ML challengers (LightGBM, linear QR, LSTM), and a publishable forecasting study
 
 ## Context
 
-The user wants the plan extended with a **hybrid validation design** and a **custom predictive model**:
-- Chronological train / validation / final-test splits **on top of** (not instead of) walk-forward backtesting.
-- One carefully scoped custom ML model, **LightGBM quantile regression** for conditional VaR. It acts as a **challenger** to the established models (HS, Student-t, GARCH-FHS, EVT, Monte Carlo), and its added value must be measurable.
+This is version 2 of the ML plan; version 1 is in commit 374f982. The detailed specifications are in [Step 22](steps/22_ml_challenger_and_data_partition.md) and [Step 23](steps/23_lstm_deep_challenger.md); this document summarises the design. This revision does three things:
 
-Core principle: **don't replace walk-forward testing with ordinary splits; combine them.** The core system stays as it is: Robust Mean-ES, GARCH, EVT and the validation framework. The ML model must *earn* its place through pre-declared tests. Either outcome is defensible for a conservative $10M endowment.
+1. **Applies six review fixes** from the external review:
+   - point-in-time weights;
+   - a test set that is genuinely untouched;
+   - low tail power;
+   - correct Basel thresholds;
+   - a guarded ES estimator;
+   - a simpler adoption rule.
+2. **Adds an LSTM deep challenger.** The goal is a model that is accurate and defensible, and also worth publishing.
+3. **Turns the champion–challenger comparison into a second publishable study (Paper B).** It does not depend on MiroFish, so it is the more reliable route to a paper.
 
-The plan docs live in `C:\Users\PMIHIR\Desktop\QuantEdge\doc\` (own git repo, remote `Pasidu-Mihiranga/QuantEdge`, branch `main`). The change ends with a commit and push using the same rules as before: author Pasidu-Mihiranga, **no Claude attribution**, PDF/PPTX stay ignored.
+Priority order (per the review): **financial engine → leakage foundations → ML validation → MiroFish (optional)**.
 
-## Design decisions (expert additions beyond the pasted text)
+The next engineering milestone is `partition.py`, `features.py` and the leakage tests, built **before** any model is trained.
 
-1. **Partition, enforced in code (`partition.py`):**
+## Final methodology (to be stated identically in Step 22, master plan §4c and the README)
 
-   | Period | Dates | Use |
-   |---|---|---|
-   | Development | 2004-11-18 → 2018-12-31 | Fitting, feature engineering, design of the EVT threshold rule, IPS feasibility |
-   | Validation | 2019-01-01 → 2022-12-31 | Hyperparameters, choice of window W, champion selection, portfolio-candidate selection. Contains COVID and 2022 |
-   | Final test | 2023-01-01 → snapshot | **Locked**. Evaluated once, after the methodology freeze |
+| Period | Dates | Use |
+|---|---|---|
+| Development | 2004-11-18 → 2018-12-31 | Features, fitting, model design, cleaning/EVT/IPS rule design |
+| Validation | 2019-01-01 → 2022-12-31 | Walk-forward selection and tuning (contains COVID and 2022) |
+| Final test | 2023-01-01 → snapshot | Locked; evaluated **once** after the freeze; no retuning |
 
-   Walk-forward runs *inside* validation and test: retrain using only past data.
-2. **Methodology freeze:**
-   - Freeze record: `doc/decisions/methodology_freeze.md` plus git tag `methodology-freeze-v1`, made at gate G3 (end of Week 3), **before** the final-test script runs.
-   - The test script refuses to run without the tag. Any change after the tag is logged as a post-hoc deviation.
-3. **Retrofit to existing steps.** All selection decisions use data up to 2022 only:
-   - Step 05: IPS calibration.
-   - Step 07: portfolio scorecard.
-   - Step 10: EVT threshold rule.
-   - Step 11: champion model.
+| Role | Model |
+|---|---|
+| Primary champion | Best validated conventional model (HS / t / GARCH-FHS / conditional EVT / MC) |
+| ML challenger | LightGBM quantile VaR |
+| Deep challenger (new) | LSTM joint VaR/ES network |
+| ML baseline | Linear quantile regression |
+| Ablation (paper only) | MLP with the same head, to isolate the gain from recurrence |
+| Portfolio strategy | Robust Mean-ES candidate |
+| Innovation layer | MiroFish scenario comparison (optional, lowest priority) |
 
-   Full-history walk-forward (2008 onwards) is still shown for reporting, labelled "exploratory, includes test period". The sidebar date range stays free, with the partition bands shaded on the charts.
-4. **Honest power note.** The final test (about 950 days) contains no major crisis, so only about 9–10 exceptions are expected at 99%, and the tail tests have low power. Report this, and also show 95% results.
-5. **ML model spec:**
-   - **Target:** next-day portfolio loss ℓ_{t+1} at the recommended weights.
-   - **Models:** separate quantile models at 90/95/99%, with crossing fixed by monotone rearrangement.
-   - **Features (all known at t, lag-tested):**
-     - r_t … r_{t−4};
-     - realised volatility over 5/20/60 days;
-     - EWMA volatility (λ = 0.94);
-     - 20-day downside semivolatility;
-     - **GARCH σ_{t+1|t} as a feature** (hybrid stacking);
-     - VIX level and 5-day change;
-     - Δ10-year yield and Δ high-yield spread;
-     - 60-day average pairwise correlation and 60-day SPY–AGG correlation;
-     - distance from the 252-day high.
-   - **Robustness/explainability:** LightGBM `monotone_constraints` (+1 on the volatility features); a small hyperparameter grid; expanding window, retrained every 21 days in walk-forward; early stopping on an inner time split.
-   - **ES companion:** ES_ML = VaR_ML × (ES/VaR ratio from conditional EVT at t), stated as a hybrid assumption.
-   - **Explainability:** built-in SHAP values via `pred_contrib=True` (no extra dependency).
-   - **Naive-ML baseline:** a linear quantile regression (statsmodels `QuantReg`) on the same features, so we can tell whether the gain comes from the trees or from the features.
-6. **Champion–challenger evaluation** (model-risk-management framing):
-   - Pinball loss.
-   - **FZ0 joint VaR/ES loss** (Fissler–Ziegel; Patton, Ziegel & Chen 2019).
-   - **Diebold–Mariano** test (HAC) against the champion.
-   - **Model Confidence Set** (Hansen–Lunde–Nason, `arch.bootstrap.MCS`).
-   - Kupiec, Christoffersen, Basel and the Acerbi–Szekely Z2 test.
-   - Regime split (VIX ≤ 30 vs > 30; crisis windows).
-   - Sanity check: is ML VaR systematically below the champion's in stress?
-7. **Pre-declared adoption rule:**
-   - **ADOPT** the ML model as champion only if, **on validation**, it has lower FZ0 and pinball loss (DM p < 0.05) **and** passes Kupiec and CC **and** is green on Basel **and** Z2 is not rejected; **and** it is confirmed on the final test without any re-tuning.
-   - **CHALLENGER-ONLY** if it is good on validation but not confirmed on test.
-   - **REJECT** otherwise.
-   - Then report whether adoption changes the Step 13 verdict.
+## Review fixes (become sections of Step 22)
 
-## Files to create / edit (all under `C:\Users\PMIHIR\Desktop\QuantEdge\doc\`)
+### 1. Point-in-time weights (no weight leakage)
 
-**New:** `steps/22_ml_challenger_and_data_partition.md`, using the standard step template (target, why, how, implementation, tests, pitfalls, Q&A). Sections:
-1. The partition and freeze protocol (items 1–4 above).
-2. ML model specification (item 5): features table, target, training regime, ES companion, explainability.
-3. Evaluation and statistics (item 6).
-4. Adoption rule (item 7).
-5. Implementation table:
-   - `data/partition.py`;
-   - `ml/features.py` (with a lag-guard test);
-   - `ml/quantile_lgbm.py`, a `LGBMQuantileModel` implementing the Step 08 `RiskModel` protocol so the Step 11 engine reuses it;
-   - `ml/linear_qr.py`;
-   - `backtest/scoring.py` (pinball, FZ0, DM, MCS);
-   - `backtest/final_test.py` (tag-gated);
-   - `app` "Model Arena" tab.
-6. Acceptance tests:
-   - feature lag test (shifting the future leaves features unchanged);
-   - quantile calibration on simulated heteroskedastic data;
-   - monotonicity check;
-   - pinball/FZ0 values against hand calculations;
-   - the final-test script refuses to run without the tag.
-7. Pitfalls:
-   - random K-fold;
-   - tuning on 2020/2022 *after* seeing the test;
-   - scaling with full-sample statistics;
-   - too few tail observations at 99% (about 35 in dev);
-   - claiming "ML is better" without DM/MCS.
-8. Q&A answers.
-9. Schedule and owners:
-   - owners R (lead) and D (features);
-   - Week 2 Days 4–5: features and partition;
-   - Week 3 Days 1–3: walk-forward training and evaluation;
-   - G3: freeze;
-   - Week 4 Day 1: final-test run.
+- Add `src/quantedge/portfolio/weights_path.py`. It produces w_τ(t), the weights fixed at the most recent quarterly rebalance τ ≤ t, where each rebalance optimises on data ≤ τ only (reusing the Step 07 walk-forward).
+- **Target:** ℓ_{t+1} = −w_τ(t)ᵀ r_{t+1}.
+- **Return features:** pro-forma returns of the *current* weights. This is valid because the weights are known at t.
+- **Before the first rebalance** (lookback warm-up): use pre-declared fixed strategic weights (the 60/40 benchmark mapping), never optimised weights.
+- **Test:** perturb all data after τ, then assert that w_τ is unchanged.
 
-**Edits to existing step files:**
+### 2. A test set that is genuinely untouched
+
+- A loader guard, `load_returns(split="dev"|"val"|"test")`. Test access raises `TestLockedError` unless the git tag `methodology-freeze-v1` exists. The guard reads the tag through `git tag --list`.
+- Until the freeze, the app and notebooks show no performance or risk statistics for 2023 onwards. This **replaces** the v1 plan's "exploratory full-history" charts.
+- Mechanical cleaning may touch every date. Stationarity tests and every design look use development and validation only.
+- **Freeze record** `doc/decisions/methodology_freeze.md`. It holds:
+  - the tag SHA;
+  - SHA-256 hashes of `config.yaml`, the data manifest and the lock/requirements files;
+  - model artefact hashes and hyperparameters;
+  - seeds;
+  - the list of champions and challengers;
+  - a hash of the adoption-rule text.
+- After the freeze, a **production refit** on all data with the frozen methodology is allowed: it gives today's recommendation.
+
+### 3. Low tail power
+
+- Report exception counts with **Clopper–Pearson 95% CIs**.
+- Always show 95% VaR next to 99%.
+- Add a power function, `power_kupiec(n, p0, p1)`. At n ≈ 1,000 the power to detect a doubled 99% exception rate is only about 0.8, and much lower at n = 250.
+- Wording rule: "not rejected" ≠ "validated".
+- The paper's panel (below) adds power through pooling.
+
+### 4. Basel traffic light done correctly
+
+- The 0–4 / 5–9 / ≥10 zones apply only to **rolling 250-day windows**. Report the share of windows in each zone and the worst window.
+- For any other length n, use binomial cut-offs: green if P(X ≤ x) < 0.95, red if P(X ≤ x) ≥ 0.9999.
+- Unit test: n = 250 reproduces 4/9.
+
+### 5. A guarded ML ES and a separately calibrated alternative
+
+- **(a) Ratio hybrid** ES = VaR_ML × ES_EVT/VaR_EVT, with these guards:
+  - apply it only when VaR_EVT > ε (ε = 1e-4);
+  - clip the ratio to [1, 2.5];
+  - enforce ES ≥ VaR > 0 in loss units;
+  - log every guard hit.
+- **(b) Quantile-integral ES:** the average of LightGBM quantiles at 97.5, 98, 98.5, 99, 99.25, 99.5 and 99.75, rearranged.
+- **(c) LSTM joint ES:** trained directly with FZ0 (below).
+- All three are compared on FZ0, Acerbi–Szekely Z2 and the McNeil–Frey exceedance-residual test.
+- Sign convention: FZ0 is computed on returns (VaR, ES < 0) and documented once in `scoring.py`.
+
+### 6. Simple, pre-declared adoption rule
+
+- **Primary metric:** 99% pinball loss on validation.
+- **Secondary requirements:**
+  - FZ0 non-inferior to the champion (at most 2% worse);
+  - Kupiec and Christoffersen CC not rejected at 5%;
+  - no red rolling-250 window.
+- **Uncertainty evidence** (reported, not a gate): DM tests with Holm correction across the 3 challengers (LightGBM, LSTM, linear QR); 90% MCS membership.
+- **ADOPT:**
+  1. lowest primary loss on validation;
+  2. the secondary requirements pass;
+  3. on the final test, without retuning, the primary loss is no worse than the champion's by more than 2%.
+- **CHALLENGER-ONLY:** conditions 1 and 2 hold but condition 3 fails.
+- **REJECT:** otherwise.
+- The rule text is hashed into the freeze record.
+
+**Quantile crossing:**
+- LightGBM's monotone feature constraints do **not** prevent crossing, so Chernozhukov rearrangement post-processing is mandatory.
+- The LSTM is non-crossing by construction.
+
+## LSTM deep challenger (new Step 23)
+
+- **Input:**
+  - a sequence of the last L days (L ∈ {20, 60}) of the same feature set as LightGBM, plus pro-forma returns;
+  - standardised with statistics from the **training window only** (refit at each retrain).
+- **Architecture:**
+  - one LSTM layer (hidden ∈ {16, 32}), dropout 0.2, then a dense head;
+  - quantile outputs: q90, q95 = q90 + softplus(·), and q99 = q95 + softplus(·), so they never cross;
+  - ES99 = q99 + softplus(·), so ES ≥ VaR.
+- **Loss:** pinball at 90/95 plus **FZ0 for (VaR99, ES99) jointly**. This is the publishable angle: joint elicitable training rather than quantile-only.
+- **Training:**
+  - expanding window, retrained every 63 days;
+  - early stopping on the last 20% of each training window (time-ordered);
+  - weight decay ∈ {1e-4, 1e-3}, giving an 8-config grid tuned on validation only;
+  - a **5-seed ensemble**, averaged (averaging keeps quantiles ordered);
+  - deterministic torch flags.
+- **Stack:**
+  - PyTorch CPU in `requirements-research.txt`, **not** the app requirements;
+  - predictions are precomputed to parquet, so Streamlit Cloud never imports torch.
+- **Honesty guardrails:**
+  - about 35 tail days in development, so data hunger is real;
+  - mitigated by the panel training in Paper B;
+  - if it under-performs, that is reported, not tuned away.
+- **Time box:** Week 3, Days 1–4. If it slips, the LSTM is dropped from the competition submission and finished in post-competition Weeks 5–8 for Paper B. LightGBM and linear QR stay in the competition.
+
+## ★ Paper B: "Do machine-learning models improve tail-risk forecasts for a conservative multi-asset endowment? A pre-registered champion–challenger study"
+
+Paper B is added to Step 21 as a second track, independent of MiroFish.
+
+- **Contributions:**
+  1. A leakage-safe protocol: point-in-time weights, a hybrid partition with walk-forward, a hash-frozen test set.
+  2. Joint VaR/ES evaluation (FZ0, MCS) comparing econometric, gradient-boosting and deep sequence models, including an FZ0-trained LSTM.
+  3. A **panel of 30 portfolios** to fix the power problem:
+     - the 7 single ETFs;
+     - 60/40, GMV, ERC and Robust Mean-ES;
+     - 19 seeded Dirichlet long-only portfolios.
+
+     Models are pooled across the panel, and inference uses a date-clustered bootstrap.
+  4. Regime analysis (VIX ≤ 30 vs > 30; crisis windows) plus SHAP explainability.
+  5. Open code and a data recipe.
+- **Pre-registration:** on OSF **before** the freeze tag. A null result ("ML does not beat GARCH-FHS") is still publishable when pre-registered.
+- **Candidate venues** (check deadlines at Week 5): arXiv q-fin.RM preprint, then *Journal of Risk Model Validation*, *Risks*, *Journal of Risk and Financial Management*; *Finance Research Letters* as a stretch.
+- **Honest novelty statement:** ML-versus-GARCH VaR comparisons already exist in the literature. The novelty here is the protocol, the joint ES training and evaluation, and the pooled-power design.
+
+## Implementation milestones (written into Step 22 and the index)
+
+| M | Deliverable | Gate |
+|---|---|---|
+| M1 | `data/partition.py`, test-lock guard, `portfolio/weights_path.py`, `ml/features.py` + **leakage tests**:<br>• lag-shift invariance;<br>• partition guard;<br>• weight-path future-perturbation;<br>• `TestLockedError` | before any model training (Week 2, Days 3–5) |
+| M2 | `backtest/scoring.py`: pinball, FZ0, DM (HAC), MCS, binomial Basel, rolling-250 zones, Clopper–Pearson, `power_kupiec`; hand-calculated tests | G2 |
+| M3 | `ml/linear_qr.py` baseline | Week 3, Day 1 |
+| M4 | `ml/quantile_lgbm.py` (`RiskModel` protocol, rearrangement, ES variants a/b) | Week 3, Day 2 |
+| M5 | `ml/lstm_quantile.py` (Step 23) | Week 3, Days 1–4, time-boxed |
+| M6 | Validation report, adoption decision, freeze record + tag | G3 |
+| M7 | `backtest/final_test.py`, run once | Week 4, Day 1 |
+
+## Where the changes live (under `doc/`)
+
+**New step files:**
+- `steps/22_ml_challenger_and_data_partition.md`:
+  - standard template;
+  - partition and freeze;
+  - fixes 1–6;
+  - the LightGBM spec, linear QR and the ES variants;
+  - milestones M1–M7;
+  - tests, pitfalls and Q&A.
+- `steps/23_lstm_deep_challenger.md`: spec above, tests, pitfalls, Q&A and the fallback.
+
+**Changes to existing files:**
 
 | File | Change |
 |---|---|
-| `steps/00_INDEX.md` | Add row 22 (owner R + D) and dependencies (08, 11 → 22 → 13). Gates: G2 adds "partition + features"; G3 adds "ML challenger evaluated on validation; **methodology freeze tag**"; G4 adds "final-test run once". Cut order: protect a reduced scope (99% only, 8 features) before cutting entirely; cut it after the t-copula and Markov regime |
-| `steps/01_project_setup.md` | Add `partition:` and `ml:` blocks to the config schema; add `lightgbm` to requirements |
-| `steps/05_ips.md`, `07_portfolio_construction.md`, `10_evt.md` | One short "Partition rule" note each: selection and calibration use data up to 2022 only; 2023+ is confirmation |
-| `steps/08_var.md` | Add the ML challenger (and linear QR) to the model registry table, marked "challenger, see Step 22" |
-| `steps/11_backtesting.md` | New §3.0 "Partition × walk-forward" (how the two combine, the freeze tag); add pinball, FZ0, DM and MCS to the model-selection table; the selection rule uses validation only |
-| `steps/15_pipeline_app.md` | Backtesting page: partition bands shaded; new "Model Arena" tab (champion vs challengers, loss table, DM/MCS, SHAP summary, adoption badge) |
-| `steps/16_testing_deployment.md` | Add leakage guards: feature lag test, partition guard, tag-gated final-test test |
-| `steps/17_report_tearsheet.md` | Report §5 gains "Champion–challenger and final test" (0.5 page) |
-| `steps/18_pitch_defence.md` | Q&A items 38–41: "Why not a normal train/test split?", "Is your ML better than GARCH?", "Did COVID/2022 tuning leak into the test?", "Why so few tail observations?" |
-| `QuantEdge_Implementation_Plan.md` | New section "4c. Hybrid validation and ML challenger", summarising the items above; add the ML row to the schedule notes |
+| `steps/00_INDEX.md` | Rows 22 and 23; critical path `07 → 22(M1) → 08–11 → 22/23 → 13`; G2 = M1–M2 done; G3 = M6 + freeze tag; G4 = final test run once. Priority note: engine → ML → MiroFish. Cut order: LSTM moves to post-competition first, then MiroFish, then the existing list |
+| `steps/01_project_setup.md` | `partition:` and `ml:` config blocks (dates, quantiles, ε, ratio clip, grids, seeds, retrain cadence); `lightgbm` in requirements; torch in `requirements-research.txt` |
+| `steps/05`, `07`, `10` | "Partition rule" note: design on dev, select on val, 2023+ untouched until freeze |
+| `steps/07` | Also: the walk-forward weight path is the single source of weights for every risk target |
+| `steps/08_var.md` | Registry rows: LightGBM, LSTM, linear QR, marked "challenger, see Steps 22–23" |
+| `steps/11_backtesting.md` | §3.0 partition × walk-forward; rolling-250 Basel + binomial cut-offs; CIs + power; scoring metrics; selection on validation only |
+| `steps/15_pipeline_app.md` | Test-period hidden until tag; partition bands; "Model Arena" tab (loss table, DM/MCS, SHAP, adoption badge); app reads cached predictions only |
+| `steps/16_testing_deployment.md` | The leakage-test suite from M1; CI runs it on every push |
+| `steps/17_report_tearsheet.md` | Report §5 "Champion–challenger and final test" (0.5–1 page), including the power caveat |
+| `steps/18_pitch_defence.md` | Q&A 38–43:<br>• split vs walk-forward;<br>• is ML better than GARCH?;<br>• did 2020/2022 tuning leak?;<br>• why so few tail observations?;<br>• why an LSTM, and is it overfit?;<br>• how weights avoid look-ahead |
+| `steps/21_research_paper_track.md` | New section "★ Paper B" (above); MiroFish paper becomes Paper A |
+| `QuantEdge_Implementation_Plan.md` | New §4c summarising the methodology table, fixes, challengers, milestones and priority order |
+| `README.md` | Update the plan link description; step count 21 → 23 |
 
-## Steps
-
-1. Write `steps/22_ml_challenger_and_data_partition.md`.
-2. Apply the edits listed above (Edit tool, small targeted insertions).
-3. `git add doc/` → commit `"Add chronological partition and LightGBM quantile VaR challenger to plan"` (no Co-Authored-By, no Claude mention) → `git push origin main`.
-
-## Verification
-
-- Every `doc/steps/*.md` link in `00_INDEX.md` resolves (Glob plus Grep for the `22_` link).
-- Grep confirms that the partition dates (2018-12-31, 2019-01-01, 2022-12-31, 2023-01-01) are consistent across steps 11, 22 and the master plan.
-- `git status` before the commit shows only `doc/` changes (no PDF/PPTX). `git log -1 --format=%B` contains no "Claude" or "Co-Authored-By". `git ls-remote origin` shows the new `main` SHA.

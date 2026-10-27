@@ -59,6 +59,8 @@
 
   Pass/fail against the IPS comes first, then a ranking on 1 and 2 (capital preservation), then 3.
 - Report results for all 7 candidates in one table. The recommendation must win **on the declared criteria**, or we recommend whichever does.
+- **Partition rule (Step 22):** the scorecard ranking that *selects* the recommended portfolio uses walk-forward results up to 2022-12-31 only. The 2023+ results are produced after the methodology freeze and reported as confirmation, never used to re-rank.
+- **Single source of weights:** the walk-forward `weights_history` is the **point-in-time weight path** w_τ(t) used for every risk target downstream (Step 11 backtests, Step 22–23 ML targets). Before the first rebalance, the pre-declared warm-up weights (60/40) are used. Never apply today's optimised weights to history.
 
 ### 3.5 Weight stability
 

@@ -91,6 +91,16 @@ Design: deck charts are exported from the same artifacts (Step 17); one message 
 36. Is this free-tier and reproducible? [D]
 37. How do you know MiroFish added value, and could you have rigged the scorecard? [V]
 
+**Validation design and ML challengers (Steps 22–23)**
+38. Why not a normal train/test split? [V]
+39. Is your ML model better than GARCH? [R]
+40. Did your COVID/2022 tuning leak into the test period? [V]
+41. Only about 10 exceptions: how can you conclude anything? [V]
+42. Why an LSTM with so little tail data? Isn't it overfit? [R]
+43. How do your historical portfolio weights avoid look-ahead? [P]
+
+Answer pointers: Step 22 §7 and Step 23 §7.
+
 **Answer format:** a direct answer in one sentence, then the evidence (number or chart), then the limitation or caveat. Maximum 45 seconds.
 
 ### 3.3 Rehearsal schedule

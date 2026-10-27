@@ -25,7 +25,8 @@
 | 2 | Data: sources, snapshot, cleaning log summary, flags, stationarity, stylised facts | 1 | D |
 | 3 | Portfolio construction: candidates, inputs (Ledoit-Wolf, CAPM/BL), frontier, trade-off table, walk-forward scorecard, stability | 2 | P |
 | 4 | Risk measurement: VaR (6 models), disagreement analysis, ES rationale, EVT (threshold evidence, rule comparison, return level) | 2.5 | R |
-| 5 | Model validation: walk-forward design, Kupiec, Christoffersen, Basel, Z2; model choice | 1.5 | V |
+| 5 | Model validation: partition × walk-forward design, Kupiec, Christoffersen, rolling-250 Basel, Z2, exception-rate CIs and the power caveat; model choice | 1.5 | V |
+| 5b | **Champion–challenger and final test:** LightGBM, LSTM and linear QR vs the champion; primary metric and adoption decision; DM/MCS; the freeze record (tag, hashes); final-test result reported as-is | 0.5–1 | R |
 | 6 | Stress testing: 3 historical, hypothetical (factor model), reverse, stressed correlation | 1.5 | V |
 | 6b | Behavioural Stress Lab (MiroFish): design, compliance controls, translation layer, **with vs without scorecard (MVS and BRS out of 100)**, adoption decision | 1 | V |
 | 7 | Risk budget and recommendation: Euler contributions, decision checks, verdict, sensitivity, governance triggers | 1 | P |
@@ -53,6 +54,7 @@ Layout (generated as HTML, then PDF):
 
 Grouped list. Each item gives the assumption, its consequence and our mitigation:
 - **Data:** history may not represent the future; 20-year sample; one snapshot date; ETF tracking error; no intraday data.
+- **Validation:** only about 10 expected 99% exceptions per 4-year period, so the tests have low power; the 2023+ test period contains no major crisis; ML models were trained on about 35 tail days in development.
 - **Models:** volatility is time-varying (handled by GARCH, but parameters are uncertain); EVT is estimated from few points with wide confidence intervals; the copula is static; the Normal model is shown only as a benchmark; √t scaling is approximate.
 - **Portfolio:** μ estimates are uncertain (CAPM/MRP assumption); rebalancing costs are approximated; no liquidity or market-impact modelling in a crisis; fully invested assumption (cash only as a sensitivity).
 - **Stress:** historical paths may not repeat; factor betas are unstable across regimes; the hypothetical scenario is one of many possible.

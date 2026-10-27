@@ -1,4 +1,10 @@
-# Step 21: Research Paper Track (Publishing the MiroFish Study)
+# Step 21: Research Paper Track (Paper A: MiroFish/BeST · Paper B: ML Tail-Risk Forecasting)
+
+This step now covers **two independent papers**:
+- **Paper A** (sections ★ to 9 below) studies MiroFish multi-agent stress scenarios.
+- **Paper B** (§10 at the end) is a pre-registered champion–challenger study of econometric vs gradient-boosting vs LSTM tail-risk forecasts.
+
+Paper B does not depend on MiroFish, so it is the **more reliable route to publication**: if MiroFish is dropped at its kill switch, Paper B still stands.
 
 **Owner:** V (lead author candidate), R (methods), P (finance case study), D (reproducibility package), C (writing and figures); authorship agreed in Week 1 · **When:** hooks during competition Weeks 1–4 (about 1 day); the paper itself in post-competition Weeks 5–14 · **Depends on:** 12, 19, 20 · **Feeds:** preprint plus workshop or conference submission
 
@@ -211,3 +217,74 @@ Re-measure these after the Week 2 benchmark run (Step 19) and scale K or the epi
 - A third LLM, or a larger model through a free academic credit programme.
 - Professional risk managers as the human baseline (even 3–5 people).
 - Out-of-sample **prospective** scenarios: freeze BeST scenarios today, publish them, and evaluate them against what happens over the next 6–12 months. This is the gold standard against contamination.
+
+---
+
+## 10. ★ Paper B: ML tail-risk forecasting (Steps 22–23)
+
+**Working title:** *"Do Machine-Learning Models Improve Tail-Risk Forecasts for a Conservative Multi-Asset Endowment? A Pre-Registered Champion–Challenger Study"*
+
+### 10.1 The special point: what makes it publishable
+
+| # | Contribution | Why reviewers care |
+|---|---|---|
+| **B1** | **Leakage-safe protocol:** point-in-time portfolio weights; a chronological partition combined with walk-forward; a test set locked in code and frozen by a hashed git tag | Many ML-for-finance results are inflated by leakage; a verifiable protocol is reusable |
+| **B2** | **Joint VaR/ES forecasting and evaluation:** an LSTM trained directly on the FZ0 joint loss, compared with LightGBM quantile models (ratio-hybrid and quantile-integral ES), linear QR, GARCH-FHS and conditional EVT, all scored with FZ0, pinball, DM (Holm) and the Model Confidence Set | Most ML VaR studies ignore ES or evaluate it inconsistently |
+| **B3** | **A pooled-power panel design:** 30 long-only portfolios evaluated jointly, giving about 30× the tail observations of a single portfolio | It fixes the "only 10 exceptions" problem that weakens single-portfolio studies |
+| **B4** | **Regime and explainability analysis:** VIX ≤ 30 vs > 30, the crisis windows, SHAP attributions | It shows *when* ML helps, not just whether it does |
+
+**Honest novelty statement:** ML-versus-GARCH VaR comparisons already exist in the literature. Our novelty is the protocol, joint ES training and evaluation, and the pooled-power design. Confirm with a literature review in Week 5 before claiming anything is new.
+
+### 10.2 Design
+
+- **Panel (30 portfolios, fixed before any result is seen):**
+  - the 7 single ETFs;
+  - 60/40, GMV, ERC and Robust Mean-ES (walk-forward, point-in-time weights);
+  - 19 Dirichlet(1) long-only portfolios drawn with seed 20261027.
+- **Models:**
+  - HS, Student-t, GARCH-FHS and conditional EVT (econometric);
+  - linear QR, LightGBM, and the LSTM (+ an MLP ablation).
+  - The ML models are trained **pooled across the panel**, with portfolio descriptors (weights, ex-ante volatility) as extra features, which also eases the LSTM's data hunger.
+- **Partition:** identical to Step 22: development ≤ 2018, validation 2019–2022, test 2023 onwards.
+- **Hypotheses (pre-registered):**
+  - H1: the best ML model has lower 99% pinball loss than GARCH-FHS on the test period.
+  - H2: the FZ0-trained LSTM gives better joint VaR/ES (FZ0) than the ratio-hybrid ES.
+  - H3: ML gains concentrate in high-VIX regimes.
+  - H4: the trees and the LSTM beat linear QR on the same features (non-linearity matters).
+- **Statistics:**
+  - DM tests with Holm correction;
+  - 90% MCS;
+  - **date-clustered bootstrap** for pooled panel inference (portfolio exceptions are correlated on the same day);
+  - pooled Kupiec/CC with cluster-robust standard errors;
+  - all effect sizes with CIs.
+- **Pre-registration:** OSF, filed **before** the `methodology-freeze-v1` tag; the tag SHA is quoted in the paper. A null result ("ML does not beat GARCH-FHS") is publishable because it is pre-registered.
+
+### 10.3 Schedule (post-competition, in parallel with Paper A)
+
+| Week | Work |
+|---|---|
+| 5 | Literature review; OSF pre-registration of the panel extension |
+| 6–8 | Panel runs; LSTM finished if it was cut from the competition; MLP ablation |
+| 9–10 | Analysis, figures, robustness (window lengths, a 97.5% ES level, an alternative test start date) |
+| 11–12 | Writing; supervisor review |
+| 13 | Reproducibility package (code, data recipe with download scripts and hashes, cached predictions); Zenodo DOI |
+| 14 | arXiv q-fin.RM preprint; submit |
+
+### 10.4 Candidate venues (check deadlines at Week 5)
+
+| Tier | Options |
+|---|---|
+| Immediate | arXiv (q-fin.RM, q-fin.ST), SSRN |
+| Primary | *Journal of Risk Model Validation*, *Risks* (MDPI), *Journal of Risk and Financial Management* (MDPI) |
+| Stretch | *Finance Research Letters*; ACM ICAIF (full paper or workshop) |
+| Local / regional | Sri Lankan university research symposia; IEEE-sponsored conferences in South Asia |
+
+### 10.5 Acceptance criteria
+
+- [ ] OSF pre-registration timestamped before the freeze tag.
+- [ ] Panel list and seeds committed before any panel result is computed.
+- [ ] Every model reported on every portfolio, including losers and failed configurations.
+- [ ] One command reproduces every table and figure from cached predictions.
+- [ ] Zenodo DOI minted; the preprint is public.
+
+The same ethics, licensing and AI-use rules as §7 apply. AI tools are not authors, and the AI assistance is disclosed.

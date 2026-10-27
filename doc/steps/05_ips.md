@@ -77,6 +77,8 @@ Required nominal return ≈ spending rate + expected inflation + costs
 
 **Calibration rule (avoid circularity):** limits come from the **client's tolerance** (spending impact, committee beliefs), not from whatever our chosen portfolio happens to achieve. In Week 2 we test the limits for feasibility against the data. If none of the portfolios can meet both the return objective and the limits, that conflict is itself the key finding, and the verdict becomes "adjust".
 
+**Partition rule (Step 22):** the feasibility study and the limit calibration use data up to 2022-12-31 only (development + validation). The 2023+ test period stays locked until the methodology freeze. It is then used only to *confirm* that the limits hold, never to reset them.
+
 ### 3.6 Benchmark
 
 - **Policy benchmark:** 60/40 SPY/AGG. It is the conventional institutional reference, it is used for the Information Ratio and alpha, and it answers "what does our quant work add?"

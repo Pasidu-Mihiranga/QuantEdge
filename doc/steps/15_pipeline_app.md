@@ -25,6 +25,8 @@ load_raw → build_clean_dataset → returns/rf → IPS → candidates (static +
 → write data/artifacts/*.parquet + artifacts_manifest.json (hashes, config hash, git SHA)
 ```
 
+- **Partition-aware:** before the tag `methodology-freeze-v1` exists, every stage loads data through `load_returns(split)` (Step 22). Nothing computes statistics on 2023+.
+- **ML stages run offline:** LightGBM and linear QR run in the pipeline. The LSTM runs in `scripts/run_lstm_grid.py` under `requirements-research.txt`. The app only reads `data/artifacts/*_preds_*.parquet` and **never imports torch**.
 - Steps are cached by input hash, so re-running skips unchanged stages (a simple joblib Memory, or a hash check).
 - Expected runtime is about 10–20 minutes, dominated by GARCH/EVT refits and bootstraps. Use `joblib.Parallel` across models.
 
@@ -62,7 +64,7 @@ load_raw → build_clean_dataset → returns/rf → IPS → candidates (static +
 | 3 Portfolio | **Weights** (bar and $ amounts), **cumulative return** (vs 60/40 and equal weight), **drawdown (underwater) chart**, KPI table, efficient frontier with CML and the required-return line, trade-off table, walk-forward scorecard, weight-stability boxplots | **M2** |
 | 4 Risk Dashboard | **VaR, ES and EVT side by side at the selected α** (3 big cards plus a grouped bar chart, so the gap is obvious), loss distribution with VaR/ES/EVT lines, all-model comparison table, disagreement analysis, ES/VaR ratios, Euler contributions (capital vs risk), stressed-correlation VaR | **M3** |
 | 5 Tail Risk (EVT) | Mean-excess, stability, Hill, QQ/PP plots; threshold rule comparison; return-level card ("once-in-10-years daily loss"); copula joint-crash panel | §8.4 |
-| 6 Backtesting | VaR forecast vs realised loss chart with exceptions marked; **Kupiec and Christoffersen results table**; **traffic-light indicator** (big coloured badge) plus rolling traffic-light band; model-selection table; crisis breakdown; Z2 ES test | **M4** |
+| 6 Backtesting | VaR forecast vs realised loss chart with exceptions marked and **partition bands shaded** (dev / validation / test; test grey and "locked" until the freeze tag); **Kupiec and Christoffersen results table** with exception-rate CIs; **traffic-light indicator** (big coloured badge) plus rolling traffic-light band; model-selection table; crisis breakdown; Z2 ES test. **"Model Arena" tab:** champion vs LightGBM, LSTM and linear QR; loss table (pinball 90/95/99, FZ0); DM (Holm-corrected) and MCS membership; power curve; SHAP summary for LightGBM; ES-variant comparison; **adoption badge** (ADOPT / CHALLENGER-ONLY / REJECT). Reads cached predictions only | **M4** + innovation (Steps 22–23) |
 | 7 Stress Testing | Scenario × portfolio heatmap; per-scenario drawdown paths; asset contributions; hypothetical scenario with **sliders**; reverse stress result; regime and overlay panel | **M5** |
 | 8 **Assumptions & Limitations** | Plain-language list grouped into Data, Models, Portfolio, Stress, Decision; each item gives what is assumed, why it matters, and how we mitigate it | **M6 (graded, non-negotiable)** |
 | 9 Methodology & AI Disclosure | Formulas, conventions (returns, sign, horizon), references, AI disclosure table | §8.7 |

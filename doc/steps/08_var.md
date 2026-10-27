@@ -47,6 +47,14 @@ All models take **only** the estimation window passed in, so the same object wor
 | **Monte Carlo** | Simulate N = 100,000 portfolio returns from a multivariate Student-t (Ledoit-Wolf Σ scaled to t, joint ν by MLE), with a seed; empirical quantile of the simulated losses | The distribution is assumed; correlation is fixed (no crisis correlation) |
 | **GARCH-FHS** | GARCH(1,1) with t innovations on 100·r_p (`arch_model(..., mean="Constant", vol="GARCH", p=1, q=1, dist="t")`); standardised residuals z; VaR = −(μ + σ_{t+1|t}·q_{1−α}(z)) | Volatility clustering is captured; parameters are estimated with error |
 
+**Challenger models (Steps 22–23):** these share the same `RiskModel` protocol and registry, but they are **challengers**, not part of the default sidebar line-up, until the Step 22 adoption rule says otherwise.
+
+| Model | VaR_α | Role |
+|---|---|---|
+| **Linear quantile regression** | statsmodels `QuantReg` on the Step 22 features, rearranged | ML baseline (are the trees or the features doing the work?) |
+| **LightGBM quantile** | Separate quantile models at 90/95/99%, monotone constraints, mandatory rearrangement | ML challenger, see Step 22 |
+| **LSTM joint VaR/ES** | Small LSTM with non-crossing softplus head, trained on pinball + FZ0, 5-seed ensemble; cached predictions | Deep challenger, see Step 23 |
+
 **Monte Carlo precision:** report the Monte Carlo standard error of the VaR from 20 batches of 5,000 simulations (or the binomial interval on order statistics), and show the convergence plot (VaR against N).
 
 **10-day horizon:**
@@ -77,7 +85,7 @@ The narrative template states the observed gap and links it to the diagnostic. E
 | 2 | `risk/var.py::HistoricalModel, NormalModel, StudentTModel, CornishFisherModel` | |
 | 3 | `risk/montecarlo.py::MonteCarloModel(n_sims, dist="t", rng)` | With a batch standard error |
 | 4 | `risk/garch.py::GarchFHSModel(dist="t")` | With a warm-start option for speed in backtests |
-| 5 | `risk/registry.py::MODELS = {...}` | Sidebar method selector maps here |
+| 5 | `risk/registry.py::MODELS = {...}`, plus `CHALLENGERS = {...}` (linear QR, LightGBM, LSTM) | Sidebar method selector maps to `MODELS`; challengers appear on the Model Arena tab |
 | 6 | `risk/diagnostics.py::disagreement_table(models, returns, alphas)` | |
 | 7 | `risk/horizon.py::var_h(model, h)` | Simulation or overlapping |
 | 8 | Artifacts: `risk_snapshot.parquet` (all models × α × horizon), `rolling_var.parquet` | |

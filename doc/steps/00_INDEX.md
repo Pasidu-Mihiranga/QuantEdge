@@ -1,6 +1,6 @@
 # QuantEdge 1.0: Step-by-Step Expert Plans (Index)
 
-This folder breaks the master plan (`../QuantEdge_Implementation_Plan.md`) into 18 steps. Each step file uses the same template:
+This folder breaks the master plan (`../QuantEdge_Implementation_Plan.md`) into 23 steps. Each step file uses the same template:
 
 1. **Target**: what "done" means
 2. **Why it matters**: which brief requirement and rubric criterion it serves
@@ -46,8 +46,15 @@ Claude implements each module and the named owner **reviews, tests and signs it 
 | 18 | [Pitch & Q&A defence](18_pitch_defence.md) | C + all | 4 | 17 | final |
 | 19 | [MiroFish Behavioural Stress Lab](19_mirofish_behavioral_stress.md) | V + D + R | 2 (gate) → 3 → 4 | 03, 07, 12 | 13, 15, 17, 20 |
 | 20 | [With vs without MiroFish: A/B evaluation, scored /100](20_with_vs_without_mirofish_evaluation.md) | V + P + C | 2 (freeze) → 3 | 12, 19 | 13, 15, 17, 18 |
+| 21 | [★ Research paper track: Paper A (MiroFish/BeST) + Paper B (ML tail-risk forecasting)](21_research_paper_track.md) | V + R + all | hooks in Weeks 1–4; papers in Weeks 5–14 | 19, 20, 22, 23 | preprints and publication |
+| 22 | [Leakage-safe data partition & ML challengers (LightGBM, linear QR)](22_ml_challenger_and_data_partition.md) | R + D + V | 2 (M1–M2) → 3 → G3 freeze → 4 (final test) | 04, 07, 08, 11 | 13, 15, 17, 18, 21, 23 |
+| 23 | [LSTM deep challenger (joint VaR/ES network)](23_lstm_deep_challenger.md) | R + D | 3, Days 1–4 (time-boxed) | 22 | 22 (arena), 15, 17, 21 |
 
-| 21 | [★ Research paper track: BeST protocol + StressReplay-20](21_research_paper_track.md) | V + all | hooks in Weeks 1–4; paper in Weeks 5–14 | 19, 20 | preprint and publication |
+### Validation design in one paragraph
+
+History is split **chronologically**: development 2004-11-18 → 2018-12-31, validation 2019-01-01 → 2022-12-31, and a **locked final test** 2023-01-01 → snapshot. Walk-forward forecasting runs *inside* each period, so every forecast stays out-of-sample; the partition only decides which decisions may look at which period. Every selection (IPS calibration, portfolio scorecard, EVT threshold rule, champion model, ML hyperparameters) uses data up to 2022 only. The test period is locked in code until the git tag `methodology-freeze-v1` exists, and is then evaluated once. The best conventional model (champion) faces three challengers: LightGBM quantile VaR, an LSTM joint VaR/ES network, and a linear quantile-regression baseline. A pre-declared rule with one primary metric (99% pinball loss) decides adoption.
+
+**Priority order:** financial engine (Steps 01–13) → leakage foundations (Step 22 M1–M2) → ML validation (Steps 22–23) → MiroFish (Steps 19–20, optional).
 
 ### MiroFish in one paragraph
 
@@ -60,7 +67,11 @@ MiroFish (an open-source AI multi-agent simulator, AGPL-3.0) is added as an **ex
                 ↘ 05 ↗        ↘ 12 ────────────↗
                 ↘ 06 ↗
                                  12 → 19 (MiroFish runs) → 20 (A/B score) → 13
+          07 → 22 (M1: partition, weights path, features, leakage tests; M2: scoring)
+                → 08–11 → 22 (LightGBM, linear QR) + 23 (LSTM) → arena → freeze tag → 13
 ```
+
+**Next engineering milestone after the core data steps:** Step 22 M1 (`partition.py`, `weights_path.py`, `features.py` and the leakage tests). No model is trained until M1 passes.
 
 ## Week-by-week gates
 
@@ -69,13 +80,20 @@ The team does not move to the next week until every item in the current gate is 
 | Gate | End of | Must be true |
 |---|---|---|
 | G1 | Week 1 | Snapshot committed with manifest; cleaning log renders; KPIs and 6 baseline optimisers pass their tests; IPS v1 drafted |
-| G2 | Week 2 | All VaR/ES models share one interface and pass the closed-form tests; EVT threshold chosen with diagnostics; recommended portfolio selected walk-forward; IPS limits calibrated; **MiroFish feasibility gate passed or MiroFish dropped (Step 19 §5); Step 20 scorecard frozen and hashed** |
-| G3 | Week 3 | Backtests and stress tests precomputed; all 11 app pages work; decision engine outputs a verdict; innovation items done or explicitly cut; **MiroFish runs cached and the with/without scorecard computed, with the adoption decision recorded** |
-| G4 | Week 4 | Report, tear sheet and deck final; cold-clone reproducibility passes; deployed URL works; two full Q&A rehearsals |
+| G2 | Week 2 | All VaR/ES models share one interface and pass the closed-form tests; EVT threshold chosen with diagnostics; recommended portfolio selected walk-forward; IPS limits calibrated (all selections on data ≤ 2022); **Step 22 M1–M2 done: partition guard, point-in-time weights, features, leakage tests and scoring all pass**; **MiroFish feasibility gate passed or MiroFish dropped (Step 19 §5); Step 20 scorecard frozen and hashed** |
+| G3 | Week 3 | Backtests and stress tests precomputed; all 11 app pages work; decision engine outputs a verdict; innovation items done or explicitly cut; **MiroFish runs cached and the with/without scorecard computed, with the adoption decision recorded**; **ML arena evaluated on validation (champion vs LightGBM, LSTM, linear QR), adoption decision recorded, freeze record committed and tag `methodology-freeze-v1` created** |
+| G4 | Week 4 | **Final test run exactly once (Day 1) and reported as-is**; report, tear sheet and deck final; cold-clone reproducibility passes; deployed URL works; two full Q&A rehearsals |
 
 ## Cut order if time runs short
 
 Cut from the bottom of this list first. Never cut a mandatory layer.
+
+**Scope priority:** the financial engine and the ML validation come before MiroFish. If time runs short:
+1. The **LSTM (Step 23)** moves to post-competition first (it is finished in Weeks 5–8 for Paper B).
+2. Then **MiroFish (Steps 19–20)** is dropped, using its kill switch.
+3. Then cut from the list below.
+
+Step 22 itself is protected: reduce it to 99% only and 8 features before cutting it. The partition, the freeze tag and the leakage tests are never cut, because they protect every other result.
 
 MiroFish (Steps 19–20) has its **own kill switch**: the Week 2 feasibility gate. If it fails, MiroFish is dropped and the attempt is documented. If it passes but Week 3 slips, reduce the replicates from K = 5 to K = 3 and the replays from 4 to 2 before cutting anything else in this list.
 

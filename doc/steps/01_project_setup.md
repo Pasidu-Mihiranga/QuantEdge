@@ -28,7 +28,7 @@
 |---|---|---|
 | 1 | Create folder and repo; add the exclude rule to the outer repo | `quantedge/.git` |
 | 2 | `pyproject.toml` (name `quantedge`, `src/` layout, Python `>=3.12,<3.13`) | package metadata |
-| 3 | `requirements.txt`: pandas, numpy, scipy, statsmodels, arch, cvxpy, scikit-learn, yfinance, plotly, streamlit, pyarrow, pyyaml, pyextremes, pytest, ruff | pinned dependencies |
+| 3 | `requirements.txt`: pandas, numpy, scipy, statsmodels, arch, cvxpy, scikit-learn, lightgbm, yfinance, plotly, streamlit, pyarrow, pyyaml, pyextremes, pytest, ruff. **`requirements-research.txt`** (not installed by the app): torch (CPU wheel) for the Step 23 LSTM | pinned dependencies |
 | 4 | `config.yaml`: see the schema below | configuration |
 | 5 | `src/quantedge/config.py`: loads YAML into frozen dataclasses with validation (e.g. weights bounds within [0, 1], confidence levels within (0, 1)) | `load_config()` |
 | 6 | `Makefile` (plus `make.ps1` for Windows): `setup`, `pipeline`, `run`, `test`, `lint` | commands |
@@ -70,6 +70,30 @@ behavioral:                    # Steps 19–20 (MiroFish)
   replicates: 5
   max_rounds: 40
   scenarios_file: data/behavioral/scenarios.yaml   # scorecard frozen + hashed before first run
+partition:                     # Step 22: decisions use dev + val only; test locked until the tag
+  dev:  ["2004-11-18", "2018-12-31"]
+  val:  ["2019-01-01", "2022-12-31"]
+  test: ["2023-01-01", null]   # null = snapshot date
+  freeze_tag: methodology-freeze-v1
+  warmup_weights: {SPY: 0.60, AGG: 0.40}   # fixed weights before the first walk-forward rebalance
+ml:                            # Steps 22–23
+  quantiles: [0.90, 0.95, 0.99]
+  primary_metric: pinball_99
+  noninferiority_margin: 0.02
+  es_ratio: {eps: 1.0e-4, clip: [1.0, 2.5]}
+  es_integral_levels: [0.975, 0.98, 0.985, 0.99, 0.9925, 0.995, 0.9975]
+  lgbm:
+    retrain_every: 21
+    grid: {num_leaves: [7, 15], min_data_in_leaf: [50, 100]}
+    learning_rate: 0.03
+    n_estimators: 500
+    feature_fraction: 0.8
+  lstm:
+    retrain_every: 63
+    grid: {seq_len: [20, 60], hidden: [16, 32], weight_decay: [1.0e-4, 1.0e-3]}
+    dropout: 0.2
+    fz0_weight: 1.0
+    seeds: [11, 22, 33, 44, 55]
 ```
 
 **MiroFish lives outside this repo:** clone it to `Desktop/QuantEdge/mirofish-service/` (unmodified, pinned commit, `.env` never committed). This respects its AGPL-3.0 licence and keeps our app free of LLM dependencies.

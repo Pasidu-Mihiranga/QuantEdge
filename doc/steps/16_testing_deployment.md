@@ -27,7 +27,7 @@
 | Unit: simulation recovery | GPD, GARCH, t-copula and Markov parameter recovery; MC convergence | about 10 (marked `slow`) |
 | Unit: textbook | Kupiec and Christoffersen worked examples; Basel 250-day table | about 6 |
 | Property-based (`hypothesis`) | ES ≥ VaR; VaR monotone in α; weights sum to 1 and respect bounds; contributions sum to total | about 8 |
-| Leakage guards | Walk-forward fit window ends before t; filtered regime probabilities unchanged by truncating future data; rf lag | about 4 |
+| Leakage guards | Walk-forward fit window ends before t; filtered regime probabilities unchanged by truncating future data; rf lag; **Step 22 suite:**<br>• feature lag-shift invariance;<br>• point-in-time weight path unchanged by perturbing the future;<br>• `TestLockedError` without the freeze tag;<br>• no full-sample scaling;<br>• LSTM sequence/scaler invariance;<br>• the final-test script refuses to run without the tag;<br>• no `import torch` under `app/` | about 11 (run on **every push** in CI) |
 | Integration | Pipeline on a 2-year fixture dataset runs end-to-end in under 60 seconds | 1 |
 | App smoke | `streamlit.testing.v1.AppTest` on every page with several control sets | 10 |
 

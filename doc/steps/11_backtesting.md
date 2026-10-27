@@ -21,6 +21,19 @@
 
 ## 3. How to achieve it
 
+### 3.0 Partition × walk-forward (Step 22)
+
+The chronological partition and the walk-forward engine do different jobs and are used **together**:
+
+| Period | Dates | What the walk-forward results may be used for |
+|---|---|---|
+| Development | 2004-11-18 → 2018-12-31 (OOS from 2008) | Model design, diagnostics, the GFC crisis breakdown |
+| Validation | 2019-01-01 → 2022-12-31 | **Champion selection** (§3.6), window W, ML hyperparameters and adoption (Steps 22–23) |
+| Final test | 2023-01-01 → snapshot | **Locked** until the tag `methodology-freeze-v1`; run once by `backtest/final_test.py`; reported as-is |
+
+- Inside every period, each forecast for day t is still fitted on data ≤ t−1.
+- Before the freeze, the backtest artifacts and app charts stop at 2022-12-31. The test period is shown as a grey "locked" band.
+
 ### 3.1 Walk-forward engine
 
 ```
@@ -35,7 +48,7 @@ for t in OOS dates (default 2008-01-02 → snapshot end):
 ```
 
 - **Guarantee:** an assertion `window.index.max() < t` on every iteration, plus a unit test.
-- Weights are the recommended portfolio's **target weights**, held constant. This answers "if we had held this policy, would the risk model have been right?" State this assumption. Optionally re-run with the walk-forward weights history from Step 07.
+- **Weights are point-in-time** (Step 22 §3.2): on each day t the losses use w_τ(t), the weights from the most recent walk-forward rebalance (Step 07), which was optimised only on data ≤ τ. The 60/40 warm-up weights apply before the first rebalance. This removes weight look-ahead. The v1 "constant target weights" backtest is kept only as a labelled sensitivity.
 - Precompute into `data/artifacts/backtest_{model}_{W}.parquet`. The app slices by the sidebar date range and recomputes the tests live, which is cheap.
 
 ### 3.2 Kupiec POF test (unconditional coverage)
@@ -59,6 +72,15 @@ for t in OOS dates (default 2008-01-02 → snapshot end):
 - **Canonical (α = 99%, 250 days):** green 0–4, yellow 5–9, red ≥ 10.
 - Plus-factor table: 5 → +0.40, 6 → +0.50, 7 → +0.65, 8 → +0.75, 9 → +0.85, ≥ 10 → +1.00 (multiplier 3 + plus).
 - Show the latest 250 days, and a **rolling 250-day traffic light through time** (coloured band chart). It shows *when* each model was red, e.g. Normal in 2008 and March 2020.
+- The canonical zones are valid **only** for a 250-observation window. For a whole period (e.g. about 1,000 validation days), report the **share of rolling-250 windows** in each zone and the worst window, and use the binomial cut-offs below for the full-period count. Never apply 0–4 / 5–9 / ≥10 to a 1,000-day count.
+
+### 3.4b Exception-rate uncertainty and test power
+
+- About 1,000 validation days at 99% give only about 10 expected exceptions, so the tests have low power.
+- Every count x/T carries a **Clopper–Pearson 95% interval** for the exception rate.
+- `power_kupiec(n, p0, p1)` reports the power. At n ≈ 1,000 the power to detect a doubled 99% rate is only about 0.8; at n = 250 it is far lower.
+- Always show 95% VaR next to 99%.
+- **Wording rule:** "not rejected" ≠ "validated". Say "no evidence of miscalibration at this sample size".
 - **Other α or window lengths:** generalised zones from the binomial cumulative probability of observing ≤ x exceptions: green < 95%, yellow 95% to < 99.99%, red ≥ 99.99%. This reproduces the canonical table at 99% and 250 days (unit-tested). Label it clearly as **"Basel-style generalisation"**.
 
 ### 3.5 ES backtest (innovation): Acerbi-Szekely Z2
@@ -70,10 +92,14 @@ for t in OOS dates (default 2008-01-02 → snapshot end):
 
 ### 3.6 Model-selection table
 
-| Model | x / expected | Kupiec p | Ind. p | CC p | Basel zone | Z2 p | Verdict |
-|---|---|---|---|---|---|---|---|
+| Model | x / expected (95% CI) | Kupiec p | Ind. p | CC p | Rolling-250 zones (% G/Y/R) | Z2 p | Pinball 99 | FZ0 | Verdict |
+|---|---|---|---|---|---|---|---|---|---|
 
-Selection rule (declared in advance): pass Kupiec and CC at 5%, green over the last 250 days, and the Z2 test not rejected. Among the passing models, prefer the simplest. If none pass, report that honestly and carry it into the decision engine (Step 13) as model risk, using the most conservative passing-ish model for limits.
+Pinball and FZ0 losses come from `backtest/scoring.py` (Step 22). They rank models by forecast accuracy, while the coverage tests check calibration.
+
+Selection rule (declared in advance, **computed on the validation period 2019–2022 only**): pass Kupiec and CC at 5%, no red rolling-250 window, and the Z2 test not rejected. Among the passing models, prefer the simplest. If none pass, report that honestly and carry it into the decision engine (Step 13) as model risk, using the most conservative passing-ish model for limits.
+
+The chosen model is the **champion**. It then faces the Step 22–23 challengers (LightGBM, LSTM, linear QR) under the Step 22 adoption rule.
 
 ### 3.7 Crisis breakdown
 
@@ -97,6 +123,8 @@ Exceptions and average exceedance size (ℓ − VaR) inside the GFC, COVID and 2
 - **Basel generalisation:** at α = 0.99 and T = 250 it reproduces green 0–4, yellow 5–9, red ≥ 10 exactly.
 - **Calibration:** simulated i.i.d. Normal losses with a correct Normal model give Kupiec rejection rates of about 5% over 500 simulations (size test).
 - **No look-ahead:** a mock model records the max index of each fit window and the test asserts it is less than t for every t.
+- **Partition guard:** before the freeze tag exists, a backtest call whose range reaches into 2023 raises `TestLockedError`.
+- **Power and CI:** `power_kupiec(1000, 0.01, 0.01)` ≈ 0.05; the Clopper–Pearson interval for x = 0 has lower bound 0.
 
 ## 6. Pitfalls
 
@@ -105,6 +133,8 @@ Exceptions and average exceedance size (ℓ − VaR) inside the GFC, COVID and 2
 - Reporting only Kupiec. Clustering is exactly the failure judges want discussed.
 - Using smoothed GARCH or regime probabilities, which use future data. Use filtered estimates only.
 - Treating "passes at 95%" as validation of 99%. Report each α separately.
+- Choosing the champion on full-history results that include 2023+. Selection uses validation only (§3.0).
+- Applying the 250-day Basel table to a 1,000-day count.
 
 ## 7. Defend it in Q&A
 

@@ -284,6 +284,17 @@ Claude builds each module; one named team member reviews and signs it off.
 
 MiroFish has its own kill switch (the feasibility gate). See the next section.
 
+**Validation and ML additions to the schedule (Steps 22–23):**
+
+| Week | Work |
+|---|---|
+| 2, Days 3–5 | **M1:** partition guard, point-in-time weight path, features, leakage tests. **M2:** scoring (pinball, FZ0, DM, MCS, binomial Basel, CIs, power) |
+| 3, Days 1–4 | Linear QR → LightGBM → LSTM (time-boxed) on the validation walk-forward; arena; adoption decision |
+| G3 (end of Week 3) | Freeze record + tag `methodology-freeze-v1` |
+| 4, Day 1 | Final test run once; production refit on all data |
+
+**Priority order:** financial engine → leakage foundations → ML validation → MiroFish (optional). If time runs short, the LSTM moves to post-competition first, then MiroFish is dropped.
+
 ---
 
 ## 4b. MiroFish Behavioural Stress Lab + With vs Without evaluation
@@ -356,6 +367,49 @@ Hooks are built during the competition (about 1 day in Week 3). The paper follow
   - the free LLM path fails; or
   - fewer than 4/5 questionnaire responses are schema-valid; or
   - the runs don't fit Week 3.
+
+---
+
+## 4c. Hybrid validation and ML challengers
+
+Details: `doc/steps/22_ml_challenger_and_data_partition.md`, `doc/steps/23_lstm_deep_challenger.md`, `doc/ML_Challenger_and_Partition_Plan.md`.
+
+**Principle:** don't replace walk-forward testing with ordinary splits; combine them.
+
+| Period | Dates | Use |
+|---|---|---|
+| Development | 2004-11-18 → 2018-12-31 | Features, fitting, model design |
+| Validation | 2019-01-01 → 2022-12-31 | Walk-forward selection and tuning (COVID and 2022 inside) |
+| Final test | 2023-01-01 → snapshot | Locked; evaluated once after the freeze; no retuning |
+
+| Role | Model |
+|---|---|
+| Primary champion | Best validated conventional model (Step 11) |
+| ML challenger | LightGBM quantile VaR (Step 22) |
+| Deep challenger | LSTM joint VaR/ES network trained on FZ0 (Step 23) |
+| ML baseline | Linear quantile regression |
+| Portfolio strategy | Robust Mean-ES candidate |
+| Innovation layer | MiroFish scenario comparison (optional) |
+
+**Leakage and rigour controls**
+1. **Point-in-time weights:** every risk target uses the weights from the preceding rebalance, optimised only on earlier data, with 60/40 warm-up weights before the first rebalance.
+2. **Untouched test set:**
+   - 2023+ is locked in code (`TestLockedError`) until the tag `methodology-freeze-v1` exists.
+   - The freeze record hashes the config, data, environment, models, seeds and adoption rule.
+   - No full-history exploratory charts are allowed before the freeze.
+3. **Low tail power:** Clopper–Pearson CIs on exception rates, 95% results next to 99%, power curves, and "not rejected ≠ validated".
+4. **Basel done correctly:** rolling 250-day windows, with binomial cut-offs for any other length.
+5. **Guarded ML ES:**
+   - the ratio hybrid (ε guard, ratio clipped to [1, 2.5], ES ≥ VaR) is compared with a quantile-integral ES and the LSTM's jointly trained ES;
+   - all are scored with FZ0 and Z2.
+6. **Simple adoption rule:**
+   - primary metric: 99% pinball loss on validation;
+   - secondary: FZ0 non-inferiority (≤ 2%), Kupiec/CC pass, no red rolling window;
+   - DM (Holm) and MCS reported as uncertainty;
+   - adoption is confirmed on the test period without retuning.
+   - LightGBM quantile crossing is fixed by mandatory rearrangement; the LSTM cannot cross by construction.
+
+**Publication:** Paper B (Step 21 §10) extends this to a 30-portfolio panel with pooled inference. It is pre-registered before the freeze.
 
 ---
 

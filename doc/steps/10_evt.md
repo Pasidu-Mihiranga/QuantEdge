@@ -46,6 +46,7 @@ Candidate thresholds are the 85.0, 87.5, 90, 92.5, 95 and 97.5% quantiles of los
 - **Rule A (diagnostic rule, primary):** the lowest candidate u that lies in the region where ξ̂ is stable (its confidence interval overlaps the confidence intervals at all higher thresholds), has N_u ≥ 50 and an AD bootstrap p > 0.10. Lower u means more data and less variance; stability guards against bias. This is the **bias-variance trade-off**; say it in those words.
 - **Rule B (automated, alternative):** ForwardStop sequential testing (Bader, Yan & Zhang, 2018). Test the ordered thresholds from low to high with AD p-values and choose the first threshold after which rejections stop, controlling the false discovery rate at 10%.
 - **Rule C (naive benchmark):** a fixed 95% quantile. It is shown only to quantify how much the conclusion depends on the rule.
+- **Partition rule (Step 22):** the threshold *rule* (A, B or C) is designed on development data and chosen on validation (≤ 2022-12-31). After the freeze, the frozen rule is applied mechanically to new windows; it is never re-chosen on 2023+ results.
 - Present the **sensitivity table**: u, N_u, ξ̂ ± CI, β̂, VaR99, ES99 and VaR99.9 for each rule. If the rules agree, the conclusion is robust. If not, discuss the discrepancy openly.
 
 ### 3.4 Tail estimates
