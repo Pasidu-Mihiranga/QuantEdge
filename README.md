@@ -12,6 +12,7 @@ The application will:
 ## Planning documents
 
 - [Master implementation plan](doc/QuantEdge_Implementation_Plan.md)
+- [Hybrid validation and ML challenger plan](doc/ML_Challenger_and_Partition_Plan.md): chronological train/validation/test partition combined with walk-forward, plus a LightGBM quantile-VaR challenger
 - [Step-by-step plans (index)](doc/steps/00_INDEX.md): 21 steps, from data acquisition to the pitch, plus the MiroFish behavioural stress lab, its with/without evaluation, and the research paper track
 
 ## Status
