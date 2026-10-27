@@ -1,0 +1,55 @@
+<!doctype html><html><head><meta charset="utf-8"><title>QuantEdge Tear Sheet</title>
+<style>
+@page { size: A4; margin: 12mm; }
+body { font-family: Calibri, Arial, sans-serif; font-size: 10.5pt; color: #1d2733; margin: 0; }
+h1 { font-size: 16pt; margin: 0 0 2px; } h2 { font-size: 11.5pt; margin: 10px 0 4px; color: #23476b; }
+.sub { color: #5b6773; font-size: 9pt; }
+.badge { display:inline-block; padding: 4px 10px; border-radius: 4px; color: #fff; font-weight: 700;
+          background: #a46900; margin-top: 6px; }
+.prov { background:#fff4e5; border:1px solid #f0c27a; color:#7a4a00; padding:4px 8px; margin:6px 0; font-size:9pt; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+table { border-collapse: collapse; width: 100%; } td, th { padding: 2px 4px; border-bottom: 1px solid #e3e7ec; }
+th { text-align: left; font-size: 9pt; color: #5b6773; } .num { text-align: right; white-space: nowrap; }
+.bar { width: 45%; } .bar span { display:block; height: 9px; background:#178a85; border-radius:2px; }
+ul { margin: 2px 0 0 16px; padding: 0; } li { margin-bottom: 2px; }
+</style></head><body>
+<h1>Serendib University Endowment: Recommended Portfolio</h1>
+<div class="sub">USD 10,000,000 · 7 ETFs · data to 2026-10-26 · analysis to 2022-12-30 ·
+all losses 1-day unless stated</div>
+<div class="badge">Rule-engine outcome: ADJUST RISK LIMIT</div>
+<div class='prov'>Provisional: methodology not yet frozen; the final out-of-sample test (2023 onwards) is still locked.</div>
+<div class="cols"><div>
+<h2>Allocation (Min CVaR)</h2>
+<table><tr><td>AGG</td><td class='bar'><span style='width:65.0%'></span></td><td class='num'>65.0%</td><td class='num'>$6,500,000</td></tr>
+<tr><td>GLD</td><td class='bar'><span style='width:20.0%'></span></td><td class='num'>20.0%</td><td class='num'>$2,000,000</td></tr>
+<tr><td>SPY</td><td class='bar'><span style='width:10.4%'></span></td><td class='num'>10.4%</td><td class='num'>$1,038,503</td></tr>
+<tr><td>EFA</td><td class='bar'><span style='width:4.6%'></span></td><td class='num'>4.6%</td><td class='num'>$461,497</td></tr></table>
+<h2>Return</h2>
+<table><tr><td>Expected (walk-forward, a year)</td><td class="num">4.27%</td></tr>
+<tr><td>Required (spending + inflation + costs)</td><td class="num">6.68%</td></tr>
+<tr><td>Volatility (a year)</td><td class="num">6.31%</td></tr></table>
+</div><div>
+<h2>Risk (Conditional EVT)</h2>
+<table><tr><th>Confidence</th><th class="num">VaR</th><th class="num">ES</th></tr><tr><td>95%</td><td class='num'>$108,650</td><td class='num'>$148,979</td></tr>
+<tr><td>99%</td><td class='num'>$171,653</td><td class='num'>$220,591</td></tr>
+<tr><td>Once in 10 years</td><td class="num" colspan="2">$341,382</td></tr></table>
+<div class="sub">Backtest 2019–2022: 16 exceptions vs 10.1 expected ·
+Kupiec p = 0.08 · conditional coverage p = 0.12</div>
+<h2>Stress (today's weights)</h2>
+<table><tr><td>GFC 2008</td><td class='num'>1.2%</td><td class='num'>$-118,543</td></tr>
+<tr><td>COVID crash 2020</td><td class='num'>-6.5%</td><td class='num'>$646,417</td></tr>
+<tr><td>Rate shock 2022</td><td class='num'>-15.2%</td><td class='num'>$1,524,906</td></tr>
+<tr><td>Stagflation and correlation breakdown</td><td class='num'>-12.7%</td><td class='num'>$1,269,178</td></tr>
+<tr><td>Stagflation and correlation breakdown (stress betas)</td><td class='num'>-10.8%</td><td class='num'>$1,077,043</td></tr></table>
+</div></div>
+<h2>What you get / what could go wrong / how we will monitor</h2>
+<ul>
+<li><b>What you get:</b> a bond-led allocation that kept the worst crisis loss to 15.2% with today's weights.</li>
+<li><b>What could go wrong:</b> stocks and bonds falling together (as in 2022); a once-a-decade day of about $341,382.</li>
+<li><b>How we will monitor:</b> quarterly rebalance; re-convene if the 250-day Basel light turns yellow or drawdown exceeds 10%.</li>
+</ul>
+<h2>Decision checks not met</h2>
+<ul><li>99% 1-day ES (selected model): 2.21% vs limit 1.50%</li><li>Max risk-to-capital ratio: 261.85% vs limit 200.00%</li><li>Expected return vs required: 4.27% vs limit 6.68%</li></ul>
+<div class="sub">Minimum limit amendment: es99_1d_max → 1.63%. Amendments take effect only after explicit investment-committee approval.
+The rule engine summarises evidence; the recommendation is the team's own judgement.</div>
+</body></html>

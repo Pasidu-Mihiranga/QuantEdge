@@ -1,0 +1,19 @@
+{
+  "focus_portfolio": "Min CVaR",
+  "provisional": true,
+  "provisional_reason": "the top-ranked candidate does not meet every IPS limit",
+  "weights": {
+    "SPY": 0.10385033204781005,
+    "EFA": 0.046149667809317535,
+    "EEM": 5.402088670660462e-11,
+    "AGG": 0.6499999999935041,
+    "GLD": 0.19999999999034218,
+    "XLE": 7.919024726519765e-12,
+    "XLK": 9.708637038442602e-11
+  },
+  "weights_as_of": "2022-09-30",
+  "data_end": "2026-10-26",
+  "analysis_end": "2022-12-30",
+  "config_sha256": "69a0782eac9a04a437c6d3105f780acd2a4daf35fe6f7c1f41055621b260e164",
+  "frozen": false
+}
