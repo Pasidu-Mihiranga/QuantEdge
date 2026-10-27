@@ -74,3 +74,6 @@ watchdog==6.0.0
 websockets==17.3
 wrapt==2.5.1
 yfinance==1.7.0
+
+# the quantedge package itself (needed by Streamlit Community Cloud)
+-e .
