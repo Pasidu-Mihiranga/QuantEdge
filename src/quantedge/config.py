@@ -26,6 +26,7 @@ class DataCfg:
     start: pd.Timestamp
     end: pd.Timestamp | None
     fred_series: tuple[str, ...]
+    fx: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -157,6 +158,7 @@ def load_config(path: Path | str = CONFIG_FILE) -> Config:
             start=pd.Timestamp(raw["data"]["start"]),
             end=_ts(raw["data"].get("end")),
             fred_series=tuple(raw["data"]["fred_series"]),
+            fx=tuple(raw["data"].get("fx", ())),
         ),
         cleaning=CleaningCfg(**raw["cleaning"]),
         portfolio=PortfolioCfg(**raw["portfolio"]),

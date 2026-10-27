@@ -8,7 +8,8 @@ market_proxy: SPY
 data:
   start: "2004-11-18"          # GLD inception, the binding constraint
   end: "2026-10-26"            # last complete trading day of the snapshot (downloaded 2026-10-27 intraday)
-  fred_series: [DTB3, DGS10, VIXCLS, CPIAUCSL, DCOILWTICO, BAMLH0A0HYM2, BAA10Y, DTWEXBGS]  # BAMLH0A0HYM2: FRED keeps only 3 years; BAA10Y is the long-history credit spread
+  fred_series: [DTB3, DGS10, VIXCLS, CPIAUCSL, DCOILWTICO, BAMLH0A0HYM2, BAA10Y, DTWEXBGS]
+  fx: ["LKR=X"]                # Sri Lankan rupees per USD: memo context only (Step 14 D)  # BAMLH0A0HYM2: FRED keeps only 3 years; BAA10Y is the long-history credit spread
 
 cleaning: {stale_run: 5, jump_sigma: 6, jump_window: 60, ffill_limit_fred: 3, large_negative: -0.20, adj_break: 0.02}
 

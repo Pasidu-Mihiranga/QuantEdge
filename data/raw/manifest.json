@@ -129,6 +129,22 @@
       }
     },
     {
+      "file": "fx_LKR_X.parquet",
+      "source": "Yahoo Finance (yfinance)",
+      "url_or_call": "yf.download('LKR=X', start=2004-11-18, end=2026-10-27)",
+      "downloaded_utc": "2026-10-27T20:54:54Z",
+      "rows": 5684,
+      "first_date": "2004-11-18",
+      "last_date": "2026-10-26",
+      "sha256": "7ae9e8c6223f30a5c0130e8c8af469caa180d54056255cbc67849ccf7ea47144",
+      "library_versions": {
+        "yfinance": "1.7.0",
+        "pandas": "3.1.0",
+        "pyarrow": "26.0.0",
+        "requests": "2.34.2"
+      }
+    },
+    {
       "file": "prices.parquet",
       "source": "Yahoo Finance (yfinance)",
       "url_or_call": "yf.download(['SPY', 'EFA', 'EEM', 'AGG', 'GLD', 'XLE', 'XLK'], start=2004-11-18, end=None, auto_adjust=False, actions=True, threads=False)",

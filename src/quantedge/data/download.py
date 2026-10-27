@@ -128,8 +128,42 @@ def main(cfg: Config, refresh: bool) -> None:
         entries.append(_entry(f"fred_{sid}.parquet", "FRED (St. Louis Fed)",
                               FRED_URL.format(series=sid), frame, s.index.to_series()))
 
+    for e in fx_entries(cfg):
+        entries.append(e)
     write_manifest(entries)
     _sanity_report(prices, entries)
+
+
+def download_fx(ticker: str, start: str, end: str | None) -> pd.Series:
+    """Daily FX close from Yahoo Finance (e.g. LKR=X: Sri Lankan rupees per US dollar)."""
+    import yfinance as yf
+
+    def fetch():
+        df = yf.download(ticker, start=start, end=end, auto_adjust=False, progress=False, threads=False,
+                         multi_level_index=False)
+        if df is None or df.empty:
+            raise RuntimeError(f"yfinance returned no rows for {ticker}")
+        return df
+
+    df = _retry(fetch)
+    s = df["Close"].copy()
+    s.index = _naive_dates(s.index)
+    s.index.name = "date"
+    return s.rename(ticker)
+
+
+def fx_entries(cfg: Config) -> list[ManifestEntry]:
+    """Download the configured FX series (memo context only; never used in USD risk models)."""
+    start = cfg.data.start.strftime("%Y-%m-%d")
+    end = None if cfg.data.end is None else (cfg.data.end + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    out = []
+    for t in cfg.data.fx:
+        s = download_fx(t, start, end)
+        name = f"fx_{t.replace('=', '_')}.parquet"
+        s.to_frame().to_parquet(RAW / name)
+        out.append(_entry(name, "Yahoo Finance (yfinance)", f"yf.download({t!r}, start={start}, end={end})",
+                          s.to_frame(), s.index.to_series()))
+    return out
 
 
 def _sanity_report(prices: pd.DataFrame, entries: list[ManifestEntry]) -> None:
