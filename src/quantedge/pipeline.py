@@ -110,9 +110,10 @@ def run_backtests(cfg: Config, wf_result, label: str, window: int | None = None)
     champion, reason = choose_champion(tables["val"], cfg.backtest.champion_rule)
     crises = crisis_breakdown(results, cfg.stress["historical"])
     crises.to_parquet(ARTIFACTS / f"backtest_crises_{window}.parquet")
-    (ARTIFACTS / "champion.json").write_text(
-        json.dumps({"portfolio": label, "window": window, "champion": champion, "reason": reason}, indent=2),
-        encoding="utf-8")
+    if window == cfg.risk.default_window:   # other windows are sensitivity runs, never the official choice
+        (ARTIFACTS / "champion.json").write_text(
+            json.dumps({"portfolio": label, "window": window, "champion": champion, "reason": reason}, indent=2),
+            encoding="utf-8")
     return {"results": results, "tables": tables, "champion": champion, "reason": reason, "crises": crises}
 
 
@@ -371,6 +372,10 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
         sheet = memo.parent / "tearsheet.html"
         sheet.write_text(render(cfg, bundle), encoding="utf-8")
         print(f"[report]   tear sheet written to {sheet}")
+        from quantedge.reports import report
+
+        (memo.parent / "report.html").write_text(report.render(cfg), encoding="utf-8")
+        print(f"[report]   report draft written to {memo.parent / 'report.html'} (narrative in reports/narrative/)")
     print(f"done in {time.perf_counter() - t0:.1f}s")
     return out
 
