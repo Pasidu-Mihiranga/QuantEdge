@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import streamlit as st
 
 from components.data import BACKTEST_FILES, config, jsonfile, status
+from quantedge.paths import ARTIFACTS
 
 PAGE_STYLE = """
 <style>
@@ -39,7 +40,9 @@ def sidebar() -> Controls:
         models = list(BACKTEST_FILES)
         model = st.selectbox("VaR methodology", models, index=models.index(champion) if champion in models else 0,
                              help=f"Default: the validated champion ({champion}).")
-        window = st.selectbox("Estimation window (days)", [500], help="Precomputed: 500 days. 250/1000 to follow.")
+        windows = [w for w in (250, 500, 1000) if (ARTIFACTS / f"backtest_selection_val_{w}.parquet").exists()] or [500]
+        window = st.selectbox("Estimation window (days)", windows, index=windows.index(500) if 500 in windows else 0,
+                              help="Backtests are precomputed for each window; 500 days is the official choice.")
         dates = st.slider("Backtest date range (year)", 2008, 2022, (2008, 2022))
         nav = st.number_input("NAV (USD)", min_value=1_000_000, value=int(cfg.nav_usd), step=1_000_000)
         horizon = st.radio("Horizon", [1, 10], format_func=lambda h: f"{h} day{'s' if h > 1 else ''}",

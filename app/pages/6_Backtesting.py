@@ -17,7 +17,9 @@ st.markdown("<div class='qe-banner qe-locked'>Dev 2004–2018 · Validation 2019
 tab_bt, tab_arena = st.tabs(["Backtest", "Model Arena (champion vs challengers)"])
 
 with tab_bt:
-    df = backtest(ctl.model)
+    df = backtest(ctl.model, ctl.window)
+    if ctl.window != 500:
+        st.info(f"Sensitivity view: estimation window {ctl.window} days (the official window is 500).")
     if not require(df, f"The {ctl.model} backtest"):
         st.stop()
     a = ctl.alpha if ctl.alpha in (0.95, 0.99) else 0.95
@@ -44,7 +46,7 @@ with tab_bt:
     st.subheader("Model selection table")
     split = st.radio("Period", ["val", "dev"], format_func={"val": "Validation 2019–2022 (selection)",
                                                             "dev": "Development 2008–2018"}.get, horizontal=True)
-    sel = parquet(f"backtest_selection_{split}_500.parquet")
+    sel = parquet(f"backtest_selection_{split}_{ctl.window}.parquet")
     if sel is not None:
         cols = ["T", "exceptions", "expected", "kupiec_p", "ind_p", "cc_p", "rolling_red", "worst_250d_exceptions",
                 "z2_975", "z2_zone", "pinball", "fz0", "passes"]
