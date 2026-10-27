@@ -43,3 +43,39 @@ def before_after(w_old: pd.Series, w_new: pd.Series, scenarios: pd.DataFrame, mu
             "max_risk_to_capital": float(euler_simulation_es(wv, scenarios, alpha)["risk_to_capital"].max()),
         }
     return pd.DataFrame(rows)
+
+
+def propose_resize(w: pd.Series, scenarios: pd.DataFrame, mu: pd.Series, caps: dict[str, float],
+                   rc_max: float = 2.0, step: float = 0.005, alpha: float = 0.99, max_steps: int = 200
+                   ) -> tuple[pd.Series, list[dict], bool]:
+    """Move weight in `step` increments from the held asset with the highest risk-to-capital to the
+    held asset with spare cap room and the lowest marginal ES per unit of expected return.
+
+    Stops when every held asset's risk-to-capital is at most `rc_max` (achieved = True), when no
+    asset has room, or when a move no longer lowers the maximum ratio. Risk-to-capital equals
+    marginal ES / portfolio ES, so cutting a small volatile sleeve can *raise* its ratio: the
+    target is then reported as not achievable rather than forced. Returns (weights, log, achieved)."""
+    w = w.reindex(scenarios.columns, fill_value=0.0).astype(float).copy()
+    log: list[dict] = []
+    best_w, best_rc = w.copy(), np.inf
+    for _ in range(max_steps):
+        c = euler_simulation_es(w, scenarios, alpha)
+        rc = c["risk_to_capital"].dropna()
+        if rc.max() < best_rc - 1e-9:
+            best_w, best_rc = w.copy(), float(rc.max())
+        elif log:
+            break                                    # the last move did not help
+        if rc.max() <= rc_max:
+            return w, log, True
+        sell = str(rc.idxmax())
+        room = {t: caps.get(t, 1.0) - w[t] for t in w.index if t != sell and caps.get(t, 1.0) - w[t] > 1e-9}
+        if not room:
+            break
+        held = [t for t in room if w[t] > 1e-4] or list(room)
+        ratio = c.loc[held, "marginal"] / mu.reindex(held).clip(lower=1e-6)
+        buy = str(ratio.idxmin())
+        amt = min(step, w[sell], room[buy])
+        w[sell] -= amt
+        w[buy] += amt
+        log.append({"sell": sell, "buy": buy, "amount": amt, "max_rc_before": float(rc.max())})
+    return best_w, log, False

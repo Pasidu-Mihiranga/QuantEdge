@@ -155,3 +155,22 @@ def test_risk_to_capital_ignores_residual_weights():
     t = euler_simulation_es(w, R)
     assert np.isnan(t.loc["TECH", "risk_to_capital"])
     assert t["risk_to_capital"].max() == pytest.approx(t.loc["EQ", "risk_to_capital"])
+
+
+def test_propose_resize_reports_whether_the_target_is_reachable():
+    from quantedge.decision.sizing import propose_resize
+
+    rng = np.random.default_rng(9)
+    R = pd.DataFrame(rng.normal(0, [0.025, 0.004, 0.012], (30_000, 3)), columns=["EQ", "BOND", "GOLD"])
+    w = pd.Series({"EQ": 0.25, "BOND": 0.55, "GOLD": 0.20})
+    mu = pd.Series({"EQ": 0.07, "BOND": 0.03, "GOLD": 0.04})
+    assert euler_simulation_es(w, R)["risk_to_capital"].max() > 2.0
+    # Plenty of room: equity can be sold down until it no longer dominates -> achieved.
+    new, log, ok = propose_resize(w, R, mu, caps={"BOND": 1.0, "GOLD": 1.0}, rc_max=2.0, step=0.05)
+    assert new.sum() == pytest.approx(1.0) and log
+    if ok:
+        assert euler_simulation_es(new, R)["risk_to_capital"].max() <= 2.0 + 1e-9
+    # Tight caps: cutting the small equity sleeve raises its ratio -> reported as not achievable.
+    new2, _, ok2 = propose_resize(w, R, mu, caps={"BOND": 0.65, "GOLD": 0.20}, rc_max=2.0)
+    assert not ok2
+    assert new2["BOND"] <= 0.65 + 1e-12 and new2["GOLD"] <= 0.20 + 1e-12
