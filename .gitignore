@@ -1,0 +1,13 @@
+# Competition source material (kept local, not redistributed)
+*.pdf
+*.pptx
+
+# Python / tooling
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+
+# MiroFish service lives outside the repo (AGPL, separate clone)
+mirofish-service/
