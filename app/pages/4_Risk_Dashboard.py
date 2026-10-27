@@ -28,6 +28,16 @@ st.dataframe(at[["var", "es"]].assign(var_usd=at["var"] * ctl.nav, es_usd=at["es
              .style.format({"var": "{:.3%}", "es": "{:.3%}", "var_usd": "${:,.0f}", "es_usd": "${:,.0f}"}),
              width="stretch")
 
+if ctl.horizon == 10:
+    h10 = parquet("risk_horizon_10d.parquet")
+    if h10 is not None:
+        st.subheader("10-day horizon")
+        show = h10[h10.alpha == (a if a in (0.95, 0.99) else 0.99)].set_index("method")[["var", "es"]]
+        st.dataframe(show.assign(var_usd=show["var"] * ctl.nav, es_usd=show["es"] * ctl.nav).style.format(
+            {"var": "{:.2%}", "es": "{:.2%}", "var_usd": "${:,.0f}", "es_usd": "${:,.0f}"}), width="stretch")
+        st.caption("√10 scaling assumes i.i.d. returns, which the tests reject: shown only as a comparison. "
+                   f"IPS reported limit for 10-day 99% ES: {extras.get('es99_10d_limit', 0.05):.0%} of NAV.")
+
 st.subheader("Why the models disagree")
 dis = parquet("risk_disagreement.parquet")
 if dis is not None:

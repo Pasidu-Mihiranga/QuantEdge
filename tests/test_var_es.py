@@ -144,3 +144,18 @@ def test_usd_conversion_is_exact():
     m = NormalModel().fit(r)
     nav = 10_000_000
     assert m.var(0.99) * nav == pytest.approx(m.var(0.99) * 1e7)
+
+
+@pytest.mark.slow
+def test_fhs_ten_day_matches_sqrt_rule_for_iid_normal():
+    from quantedge.risk.horizon import fhs_paths, horizon_table
+
+    rng = np.random.default_rng(31)
+    r = pd.Series(rng.normal(0, 0.01, 3000))
+    m = GarchFHSModel().fit(r)
+    sims = fhs_paths(m, 10, 100_000, np.random.default_rng(1))
+    # i.i.d. data: GARCH is close to constant variance, so 10-day VaR ~ sqrt(10) x 1-day VaR
+    assert esf.sample_var(sims, 0.99) == pytest.approx(m.var(0.99) * np.sqrt(10), rel=0.12)
+    t = horizon_table(m, r, 10, np.random.default_rng(2), n_paths=20_000)
+    assert set(t.method) == {"GARCH-FHS paths", "historical overlapping", "sqrt(h) scaling (comparison only)"}
+    assert (t["es"] >= t["var"]).all()

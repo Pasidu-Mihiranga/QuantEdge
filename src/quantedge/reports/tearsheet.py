@@ -39,6 +39,7 @@ def render(cfg: Config, b: DecisionBundle) -> str:
     stress = pd.read_parquet(ARTIFACTS / "stress_matrix.parquet").loc[b.focus]
     val = pd.read_parquet(ARTIFACTS / "backtest_selection_val_500.parquet").loc[b.champion]
     status = json.loads((ARTIFACTS / "status.json").read_text(encoding="utf-8"))
+    extras = json.loads((ARTIFACTS / "risk_extras.json").read_text(encoding="utf-8"))
     risk_rows = "\n".join(
         f"<tr><td>{a:.0%}</td><td class='num'>{_usd(champ.loc[a, 'var'] * nav)}</td>"
         f"<td class='num'>{_usd(champ.loc[a, 'es'] * nav)}</td></tr>" for a in (0.95, 0.99))
@@ -79,7 +80,9 @@ all losses 1-day unless stated</div>
 </div><div>
 <h2>Risk ({html.escape(b.champion)})</h2>
 <table><tr><th>Confidence</th><th class="num">VaR</th><th class="num">ES</th></tr>{risk_rows}
-<tr><td>Once in 10 years</td><td class="num" colspan="2">{_usd(ev.return_level_10y * nav)}</td></tr></table>
+<tr><td>10-day 99% (simulated paths)</td><td class="num">{_usd(extras.get('var99_10d', float('nan')) * nav)}</td>
+<td class="num">{_usd(extras.get('es99_10d', float('nan')) * nav)}</td></tr>
+<tr><td>Once in 10 years (1 day)</td><td class="num" colspan="2">{_usd(ev.return_level_10y * nav)}</td></tr></table>
 <div class="sub">Backtest 2019–2022: {int(val.exceptions)} exceptions vs {val.expected:.1f} expected ·
 Kupiec p = {val.kupiec_p:.2f} · conditional coverage p = {val.cc_p:.2f}</div>
 <h2>Stress (today's weights)</h2>

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import streamlit as st
 
-from components.data import BACKTEST_FILES, config, status
+from components.data import BACKTEST_FILES, config, jsonfile, status
 
 PAGE_STYLE = """
 <style>
@@ -35,12 +35,15 @@ def sidebar() -> Controls:
         st.header("Controls")
         alpha = st.select_slider("Confidence level", options=[0.90, 0.95, 0.99], value=0.99,
                                  format_func=lambda a: f"{a:.0%}")
-        model = st.selectbox("VaR methodology", list(BACKTEST_FILES), index=list(BACKTEST_FILES).index("GARCH-FHS"))
+        champion = jsonfile("champion.json").get("champion", "Conditional EVT")
+        models = list(BACKTEST_FILES)
+        model = st.selectbox("VaR methodology", models, index=models.index(champion) if champion in models else 0,
+                             help=f"Default: the validated champion ({champion}).")
         window = st.selectbox("Estimation window (days)", [500], help="Precomputed: 500 days. 250/1000 to follow.")
         dates = st.slider("Backtest date range (year)", 2008, 2022, (2008, 2022))
         nav = st.number_input("NAV (USD)", min_value=1_000_000, value=int(cfg.nav_usd), step=1_000_000)
-        horizon = st.radio("Horizon", [1], format_func=lambda h: f"{h} day", horizontal=True,
-                           help="10-day figures are added with the horizon module.")
+        horizon = st.radio("Horizon", [1, 10], format_func=lambda h: f"{h} day{'s' if h > 1 else ''}",
+                           horizontal=True, help="10-day figures: simulated GARCH paths and overlapping history.")
         s = status()
         st.caption(f"Data to {s.get('data_end', '?')} · analysis to {s.get('analysis_end', '?')}")
         st.caption("Final-test period (2023+) locked until the methodology freeze.")

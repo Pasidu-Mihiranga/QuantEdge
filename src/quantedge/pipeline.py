@@ -259,6 +259,13 @@ def run_risk_snapshot(cfg: Config, wf_result, label: str, evt_threshold_q: float
     extra = {"return_level_10y_evt": models["EVT"].var(p10), "return_level_10y_cevt": models["Conditional EVT"].var(p10),
              "cornish_fisher_monotone": bool(models["Cornish-Fisher"].monotone),
              "student_t_nu": models["Student-t"].nu, "garch_persistence": models["GARCH-FHS"].persistence}
+    from quantedge.risk.horizon import horizon_table
+
+    h10 = horizon_table(models["GARCH-FHS"], port, 10, cfg.rng(stream=13))
+    h10.to_parquet(ARTIFACTS / "risk_horizon_10d.parquet")
+    fhs99 = h10[(h10.method == "GARCH-FHS paths") & (h10.alpha == 0.99)].iloc[0]
+    extra |= {"var99_10d": float(fhs99["var"]), "es99_10d": float(fhs99["es"]),
+              "es99_10d_limit": float(cfg.ips["limits"]["es99_10d_max"])}
     contrib = euler_simulation_es(w, window, 0.99).assign(method="historical ES 99%")
     contrib_p = euler_parametric(w, window.cov(), 0.99, "es").assign(method="parametric ES 99%")
     snapshot.to_parquet(ARTIFACTS / "risk_snapshot.parquet")
@@ -291,12 +298,14 @@ def write_memo(cfg: Config) -> Path | None:
     b = build(cfg)
     if b is None:
         return None
+    extras = json.loads((ARTIFACTS / "risk_extras.json").read_text(encoding="utf-8"))
     numbers = {"portfolio": b.focus, "weights": b.weights, "expected_return": b.evidence.expected_return,
                "required_return": b.evidence.required_return, "var99": b.var99, "es99": b.evidence.es99_1d,
                "return_level_10y": b.evidence.return_level_10y, "worst_hist_loss": b.worst_hist_loss,
                "worst_hist_name": b.worst_hist_name, "worst_drawdown_held": b.evidence.worst_hist_drawdown,
                "hypothetical_loss": b.evidence.hypothetical_loss,
-               "champion": b.champion, "champion_reason": b.champion_reason, "governance": GOVERNANCE}
+               "champion": b.champion, "champion_reason": b.champion_reason, "governance": GOVERNANCE,
+               **{k: extras.get(k, float("nan")) for k in ("es99_10d", "es99_10d_limit")}}
     out = ROOT / "reports" / "committee_memo_draft.md"
     out.parent.mkdir(exist_ok=True)
     out.write_text(render_memo(b.verdict, numbers, cfg.nav_usd), encoding="utf-8")

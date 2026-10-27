@@ -49,6 +49,7 @@ Expected return {n['expected_return']:.2%} a year against a required {n['require
 ## 4. Downside in plain English
 - On about 1 day in 100 we expect to lose more than {_usd(n['var99'] * nav)}; on such days the average loss is {_usd(n['es99'] * nav)}.
 - A once-a-decade bad day is about {_usd(n['return_level_10y'] * nav)}.
+- Over 10 trading days, the 99% ES is {_usd(n['es99_10d'] * nav)} ({n['es99_10d']:.2%} of NAV, reported limit {n['es99_10d_limit']:.0%}).
 
 ## 5. Stress results
 - Today's weights replayed through each crisis: the worst is {n['worst_hist_name']}, a loss of {n['worst_hist_loss']:.1%} ({_usd(n['worst_hist_loss'] * nav)}).
