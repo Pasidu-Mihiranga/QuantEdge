@@ -174,6 +174,23 @@ def generated(cfg: Config) -> dict[str, str]:
 
     matrix = _p("stress_matrix.parquet")
     g["06_stress"] = table(matrix, pct=tuple(matrix.columns))
+    innov_file = ARTIFACTS / "innovation_summary.json"
+    overlay = _p("overlay_compare.parquet")
+    if innov_file.exists() and overlay is not None:
+        inn = json.loads(innov_file.read_text(encoding="utf-8"))
+        rg, cp, mc = inn["regime"], inn["copula"], inn["macro"]
+        g["06_stress"] += (
+            "<h4>Innovation extensions</h4>"
+            f"<p>Regimes: 99% ES is {rg['es99_high_over_calm']:.1f}× higher in the high-volatility regime "
+            f"(expected durations {rg['duration_calm_days']:.0f} and {rg['duration_high_days']:.0f} days).</p>"
+            + table(overlay, pct=tuple(c for c in overlay.columns if c not in ("calmar", "turnover_ann")),
+                    dec={"calmar": 2, "turnover_ann": 2})
+            + f"<p>t-copula (ν = {cp['nu']:.1f}): 99% ES {cp['es_uplift_t_vs_gauss']:+.1%} versus a Gaussian copula; "
+              f"joint SPY/EFA/EEM crash probability {cp['joint_crash_t']:.2%} (Gaussian {cp['joint_crash_gauss']:.2%}, "
+              f"history {cp['joint_crash_history']:.2%}).</p>"
+            + f"<p>Macro: stock–bond correlation {mc['stock_bond_corr_2021_end']:.2f} at end-2021 and "
+              f"{mc['stock_bond_corr_2022_end']:.2f} at end-2022; +100 bp in the 10-year yield ≈ "
+              f"{mc['rates_plus_100bp']:.1%}.</p>")
 
     contrib = _p("risk_contributions.parquet")
     hist = contrib[contrib.method == "historical ES 99%"][["weight", "pct_contribution", "risk_to_capital"]]

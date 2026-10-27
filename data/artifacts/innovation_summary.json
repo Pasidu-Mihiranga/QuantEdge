@@ -1,0 +1,45 @@
+{
+  "regime": {
+    "sigma_calm": 0.0026973042822345,
+    "sigma_high": 0.007893975230487998,
+    "duration_calm_days": 83.69738752793954,
+    "duration_high_days": 14.943338463129663,
+    "p_high_latest": 0.27651145204779354,
+    "es99_high_over_calm": 4.736481876132187,
+    "fit_window_end": "2018-12-31"
+  },
+  "copula": {
+    "nu": 10.55105226067181,
+    "rho_spy_efa": 0.8494168249025054,
+    "lambda_L_spy_efa": 0.35201587787277866,
+    "var99_t": 0.01161880203302552,
+    "es99_t": 0.01430601274551479,
+    "var99_gauss": 0.011250686199391598,
+    "es99_gauss": 0.013607658009725531,
+    "joint_crash_t": 0.01917,
+    "joint_crash_gauss": 0.01721,
+    "joint_crash_history": 0.024,
+    "es_uplift_t_vs_gauss": 0.051320714798251066
+  },
+  "macro": {
+    "inflation": {
+      "beta": -0.07963910772199742,
+      "t": -0.16962884140471401,
+      "months": 205,
+      "per_0p1pct_surprise": -7.963910772199742e-05
+    },
+    "rates_plus_100bp": -0.034539673868266126,
+    "stock_bond_corr_2021_end": 0.03948700368149316,
+    "stock_bond_corr_2022_end": 0.321547459692025,
+    "lkr": {
+      "start": "2004-11-18",
+      "end": "2022-12-30",
+      "lkr_per_usd_start": 104.58000183105469,
+      "lkr_per_usd_end": 362.1998291015625,
+      "annual_depreciation": 0.07098698702058104,
+      "change_2022": 0.812462146721826,
+      "growth_usd": 1.4138241192413896,
+      "growth_lkr": 7.359979615250346
+    }
+  }
+}

@@ -321,6 +321,93 @@ def write_memo(cfg: Config) -> Path | None:
     return out
 
 
+def run_innovation(cfg: Config, wf_result, macro: pd.DataFrame) -> dict:
+    """Step 14 on the focus portfolio's point-in-time book, data up to the end of validation."""
+    from quantedge.macro.analysis import (
+        cpi_yoy,
+        inflation_beta,
+        lkr_context,
+        rates_impact,
+        rolling_stock_bond_corr,
+    )
+    from quantedge.ml.features import garch_sigma_path
+    from quantedge.paths import RAW
+    from quantedge.portfolio.overlay import compare, vol_target_backtest
+    from quantedge.portfolio.returns import CASH, add_cash_asset
+    from quantedge.portfolio.walkforward import simulate
+    from quantedge.portfolio.weights_path import pit_risk_returns, point_in_time_weights
+    from quantedge.risk.copula import CopulaMCModel, tail_dependence
+    from quantedge.risk.regime import filtered_high_prob, fit_markov, regime_risk, vix_agreement
+
+    part = Partition.from_config(cfg)
+    returns = load_returns("dev+val", cfg)
+    rf = pd.read_parquet(ARTIFACTS / "returns_rf.parquet")["rf"].reindex(returns.index)
+    wh = wf_result.weights_history
+    wpath = point_in_time_weights(wh, returns.index, cfg.partition.warmup_weights)
+    port = pit_risk_returns(returns, wpath)
+    out: dict = {}
+
+    # A. regimes: parameters on development data, filter run forward with them held fixed
+    fit = fit_markov(port.loc[: part.dev[1]], seed=cfg.seed)
+    p_high = filtered_high_prob(port, fit)
+    rr = regime_risk(port, p_high)
+    p_high.to_frame().to_parquet(ARTIFACTS / "regime_p_high.parquet")
+    rr.to_parquet(ARTIFACTS / "regime_risk.parquet")
+    vix_agreement(p_high, macro["VIXCLS"]).to_parquet(ARTIFACTS / "regime_vix.parquet")
+    es99 = rr[rr.alpha == 0.99].set_index("regime")["es"]
+    out["regime"] = {"sigma_calm": fit.sigma[0], "sigma_high": fit.sigma[1],
+                     "duration_calm_days": fit.expected_duration[0], "duration_high_days": fit.expected_duration[1],
+                     "p_high_latest": float(p_high.iloc[-1]), "es99_high_over_calm": float(es99["high-vol"] / es99["calm"]),
+                     "fit_window_end": str(part.dev[1].date())}
+
+    # B. volatility-target overlay vs static, into AGG and into T-bills
+    sigma = garch_sigma_path(port, refit_every=21)
+    target = float(cfg.ips["limits"]["vol_ann_max"])
+    static, static_to = simulate(returns, wh, cfg.portfolio.cost_bps_per_side)
+    agg = vol_target_backtest(returns, wh, sigma, target, safe="AGG", cost_bps=cfg.portfolio.cost_bps_per_side)
+    cash_returns = add_cash_asset(returns, rf)
+    wh_cash = wh.assign(**{CASH: 0.0})
+    cash = vol_target_backtest(cash_returns, wh_cash, sigma, target, safe=CASH, cost_bps=cfg.portfolio.cost_bps_per_side)
+    table = compare({"Static": static, "Overlay to AGG": agg.perf, "Overlay to T-bills": cash.perf},
+                    cfg.stress["historical"], {"Static": static_to, "Overlay to AGG": agg.turnover,
+                                               "Overlay to T-bills": cash.turnover})
+    table.to_parquet(ARTIFACTS / "overlay_compare.parquet")
+    pd.DataFrame({"Static": static, "Overlay to AGG": agg.perf, "Overlay to T-bills": cash.perf}).to_parquet(
+        ARTIFACTS / "overlay_performance.parquet")
+    out["overlay"] = table
+
+    # C. t-copula vs Gaussian copula at the latest weights, last W days
+    w = wh.iloc[-1]
+    window = returns.iloc[-cfg.risk.default_window:]
+    t_cop = CopulaMCModel(n_sims=cfg.risk.mc_sims, rng=cfg.rng(stream=14)).fit(window, w)
+    g_cop = CopulaMCModel(n_sims=cfg.risk.mc_sims, rng=cfg.rng(stream=14), gaussian=True).fit(window, w)
+    eq = ["SPY", "EFA", "EEM"]
+    rho_spy_efa = float(t_cop.R[list(window.columns).index("SPY"), list(window.columns).index("EFA")])
+    cop = {"nu": t_cop.nu, "rho_spy_efa": rho_spy_efa, "lambda_L_spy_efa": tail_dependence(rho_spy_efa, t_cop.nu),
+           "var99_t": t_cop.var(0.99), "es99_t": t_cop.es(0.99), "var99_gauss": g_cop.var(0.99), "es99_gauss": g_cop.es(0.99),
+           "joint_crash_t": t_cop.joint_crash_probability(eq, history=window),
+           "joint_crash_gauss": g_cop.joint_crash_probability(eq, history=window),
+           "joint_crash_history": float((window[eq] < window[eq].quantile(0.05)).all(axis=1).mean())}
+    cop["es_uplift_t_vs_gauss"] = cop["es99_t"] / cop["es99_gauss"] - 1
+    out["copula"] = cop
+
+    # D. macro and FX
+    corr = rolling_stock_bond_corr(returns)
+    pd.concat([corr, cpi_yoy(macro["CPIAUCSL"]).reindex(corr.index, method="ffill")], axis=1).to_parquet(
+        ARTIFACTS / "macro_stock_bond.parquet")
+    fx_file = RAW / "fx_LKR_X.parquet"
+    usd_lkr = pd.read_parquet(fx_file).iloc[:, 0].loc[: part.val[1]] if fx_file.exists() else None
+    betas = pd.read_parquet(ARTIFACTS / "stress_betas_full.parquet")
+    out["macro"] = {"inflation": inflation_beta(port, macro["CPIAUCSL"].loc[: part.val[1]]),
+                    "rates_plus_100bp": rates_impact(w, betas),
+                    "stock_bond_corr_2021_end": float(corr.loc[:"2021-12-31"].iloc[-1]),
+                    "stock_bond_corr_2022_end": float(corr.iloc[-1]),
+                    "lkr": lkr_context(usd_lkr, port) if usd_lkr is not None else None}
+    summary = {k: v for k, v in out.items() if k != "overlay"}
+    (ARTIFACTS / "innovation_summary.json").write_text(json.dumps(summary, indent=2, default=float), encoding="utf-8")
+    return out
+
+
 SENSITIVITY_CASES = {
     "base": {},
     "mrp_4pct": {"mrp": 0.04},
@@ -420,6 +507,9 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
     print("[risk]     snapshot, contributions, disagreement written")
     out["stress"] = run_stress(cfg, sel["results"], clean.macro, focus)
     print("[stress]   matrix, betas written")
+    out["innovation"] = run_innovation(cfg, wf, clean.macro)
+    print(f"[innov]    regimes, overlay, copula, macro written (ES t vs Gaussian copula: "
+          f"{out['innovation']['copula']['es_uplift_t_vs_gauss']:+.1%})")
     if force_backtests or not _cached("champion.json"):
         out["backtests"] = run_backtests(cfg, wf, f"{focus} (provisional)")
         print(f"[backtest] champion: {out['backtests']['champion']}")
