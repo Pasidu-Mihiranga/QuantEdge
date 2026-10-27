@@ -14,7 +14,7 @@ The tag `methodology-freeze-v1` may be created only when every **blocking** item
 - [ ] **Concentration check C7 (risk-to-capital ≤ 2.0) is not reachable within the IPS:** SPY is at 2.11 and EFA at 1.84; AGG and GLD are at their caps, and moving weight from SPY to EFA does not lower the maximum (`decision/sizing.py::propose_resize` reports "not achievable"). Risk-to-capital = marginal ES / portfolio ES, so small volatile sleeves in a bond-led portfolio always score high. Decide: redefine C7 (for example, a cap on any single asset's share of total ES), accept a documented exception, or change the caps
 - [ ] Champion robustness across estimation windows: W = 250 passes only Cornish-Fisher; W = 500 and 1000 both pick Conditional EVT (W = 1000: Conditional EVT and GARCH-FHS both pass, 14 exceptions each). Record whether W = 500 stays the official window
 - [ ] EVT threshold rule: justify the 85% grid floor or add mean-excess linearity to Rule A (design on dev, choose on val)
-- [ ] ML hyperparameters chosen on validation (LightGBM 4-config grid, LSTM 8-config grid) and recorded
+- [x] ML hyperparameters chosen on validation and recorded ([ml_selection.md](ml_selection.md)): Linear QR meets adoption conditions 1–2; LightGBM and LSTM fail coverage in every configuration
 
 When every blocking item is ticked, run `scripts/freeze.py`. It hashes the adoption-rule text (Step 22 §3.8) and writes the freeze record (`config.yaml`, data manifest, `requirements*.txt`, artifact manifest, selected ML configurations, seeds, champion and challengers). The team then commits the record and creates the tag; the tag unlocks `python -m quantedge.backtest.final_test`, which runs once.
 

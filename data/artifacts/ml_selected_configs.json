@@ -1,0 +1,20 @@
+{
+  "LightGBM": {
+    "config": {
+      "num_leaves": 15,
+      "min_data_in_leaf": 50,
+      "learning_rate": 0.03,
+      "n_estimators": 500,
+      "feature_fraction": 0.8
+    },
+    "passes": false
+  },
+  "LSTM": {
+    "config": {
+      "seq_len": 20,
+      "hidden": 32,
+      "weight_decay": 0.001
+    },
+    "passes": false
+  }
+}
