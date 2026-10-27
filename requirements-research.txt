@@ -1,0 +1,5 @@
+# Research-only dependencies (Step 23 LSTM, Paper B). Never installed by the Streamlit app.
+# Install with the CPU wheel index:
+#   uv pip install --python .venv\Scripts\python.exe -r requirements-research.txt --index-url https://download.pytorch.org/whl/cpu
+# Installed 2026-10-28 (CPU wheel); keep pinned for reproducibility.
+torch==2.14.1

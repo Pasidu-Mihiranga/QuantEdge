@@ -1,0 +1,109 @@
+# QuantEdge 1.0: single source of parameters. Changing a value here changes the results; no code edits needed.
+seed: 20261027
+nav_usd: 10_000_000
+universe: [SPY, EFA, EEM, AGG, GLD, XLE, XLK]
+benchmark: {SPY: 0.60, AGG: 0.40}
+market_proxy: SPY
+
+data:
+  start: "2004-11-18"          # GLD inception, the binding constraint
+  end: "2026-10-26"            # last complete trading day of the snapshot (downloaded 2026-10-27 intraday)
+  fred_series: [DTB3, DGS10, VIXCLS, CPIAUCSL, DCOILWTICO, BAMLH0A0HYM2, BAA10Y, DTWEXBGS]  # BAMLH0A0HYM2: FRED keeps only 3 years; BAA10Y is the long-history credit spread
+
+cleaning: {stale_run: 5, jump_sigma: 6, jump_window: 60, ffill_limit_fred: 3, large_negative: -0.20, adj_break: 0.02}
+
+portfolio:
+  allow_cash: false            # sidebar toggle overrides
+  rebalance: quarterly
+  cost_bps_per_side: 5
+  estimation_window_days: 756
+
+risk:
+  confidence_levels: [0.90, 0.95, 0.99]
+  windows: [250, 500, 1000]
+  default_window: 500
+  mc_sims: 100000
+
+evt: {threshold_quantiles: [0.85, 0.875, 0.90, 0.925, 0.95, 0.975], min_exceedances: 50}
+backtest:
+  oos_start: "2008-01-01"
+  refit_every: 5
+  champion_rule: lowest_pinball_passing   # decision 2026-10-28 (was: simplest_passing)
+ips:                           # Step 05: v1 limits from the client's tolerance, not from results
+  spending_rate: 0.04
+  cost_drag: 0.002
+  cpi_years: 10
+  limits:
+    vol_ann_max: 0.08          # annualised volatility
+    stress_drawdown_max: 0.20  # max drawdown in historical stress windows
+    es99_1d_max: 0.015         # 99% 1-day ES as a fraction of NAV ($150k)
+    es99_10d_max: 0.05         # reported only
+    single_asset_max: 0.40
+    asset_caps: {XLE: 0.10, XLK: 0.10, EEM: 0.10, GLD: 0.20, AGG: 0.65}   # asset caps replace the single-asset cap (decision 2026-10-28)
+    asset_floors: {AGG: 0.25}
+    equity_group: [SPY, EFA, EEM, XLE, XLK]
+    equity_max: 0.50
+    cash_max: 0.10
+  variants:                    # sensitivity cases, never used for selection
+    original_agg40:            # IPS v1 before the 2026-10-28 calibration (AGG under the 40% single-asset cap)
+      asset_caps: {AGG: 0.40}
+stress:                        # Step 12 (historical windows are also used by the Step 07 scorecard)
+  historical:
+    GFC 2008: ["2007-10-09", "2009-03-09"]
+    COVID crash 2020: ["2020-02-19", "2020-03-23"]
+    Rate shock 2022: ["2022-01-03", "2022-10-12"]
+  hypothetical:                # "Stagflation and correlation breakdown" (team-designed; factor shocks, Step 12 §3.2)
+    name: Stagflation and correlation breakdown
+    status: initial assumptions (decision 2026-10-28)
+    horizon: null              # OPEN, blocks the freeze: state the shock horizon (instantaneous / 1 month / 1 quarter)
+    credit_measure: BAA10Y     # OPEN, blocks the freeze: justify +150 bp on the BAA10Y scale (originally HY +300 bp)
+    shock:
+      d_yield10_bp: 150        # 2022 saw about +240 bp in the 10-year yield
+      dln_oil: 0.3365          # oil +40% = ln(1.40)
+      d_vix: 25                # VIX to about 45
+      dln_usd: 0.0770          # USD +8% = ln(1.08)
+      d_credit_bp: 150         # Baa-Treasury spread; about half its 2008 widening (+330 bp). Provisional, team to confirm
+  reverse:
+    loss: 0.20                 # IPS stress drawdown limit
+    horizon_days: 21
+
+decision:                      # Step 13 rule engine (every threshold displayed in the app)
+  evt_tolerance: 1.25          # C5a: EVT 99% ES may exceed the ES budget by at most 25%
+  return_level_limit: 0.05     # C5b: once-in-10-years daily loss vs the 10-day ES budget (5% NAV)
+  max_risk_to_capital: 2.0     # C7
+  rc_flag: 1.5                 # sizing flag (reported, not a verdict check)
+  return_gap_tolerance: 0.01   # C8: gaps below 1% are disclosed, not failed
+  max_limit_relaxation: 0.50   # ADJUST vs REJECT: largest acceptable loosening of a named limit
+
+behavioral:                    # Steps 19–20 (MiroFish)
+  enabled: true                # set false if the Week-2 feasibility gate fails
+  mirofish_commit: null
+  replicates: 5
+  max_rounds: 40
+  scenarios_file: data/behavioral/scenarios.yaml
+
+partition:                     # Step 22: decisions use dev + val only; test locked until the tag
+  dev: ["2004-11-18", "2018-12-31"]
+  val: ["2019-01-01", "2022-12-31"]
+  test: ["2023-01-01", null]   # null = snapshot date
+  freeze_tag: methodology-freeze-v1
+  warmup_weights: {SPY: 0.60, AGG: 0.40}
+
+ml:                            # Steps 22–23
+  quantiles: [0.90, 0.95, 0.99]
+  primary_metric: pinball_99
+  noninferiority_margin: 0.02
+  es_ratio: {eps: 1.0e-4, clip: [1.0, 2.5]}
+  es_integral_levels: [0.975, 0.98, 0.985, 0.99, 0.9925, 0.995, 0.9975]
+  lgbm:
+    retrain_every: 21
+    grid: {num_leaves: [7, 15], min_data_in_leaf: [50, 100]}
+    learning_rate: 0.03
+    n_estimators: 500
+    feature_fraction: 0.8
+  lstm:
+    retrain_every: 63
+    grid: {seq_len: [20, 60], hidden: [16, 32], weight_decay: [1.0e-4, 1.0e-3]}
+    dropout: 0.2
+    fz0_weight: 1.0
+    seeds: [11, 22, 33, 44, 55]

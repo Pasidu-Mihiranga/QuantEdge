@@ -1,0 +1,19 @@
+# Top-level dependencies (latest releases, installed one at a time). Exact pins: requirements.txt
+# pyextremes is intentionally absent: its latest release requires pandas<3 (EVT is cross-checked against scipy).
+pandas
+numpy
+scipy
+statsmodels
+arch
+cvxpy
+scikit-learn
+lightgbm
+yfinance
+plotly
+streamlit
+pyarrow
+pyyaml
+requests
+pytest
+hypothesis
+ruff
