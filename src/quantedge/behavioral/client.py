@@ -31,6 +31,9 @@ import requests
 from quantedge.behavioral.schema import QUESTIONNAIRE, SchemaError, parse_json_answer
 from quantedge.behavioral.seed import write_manifest
 
+# MiroFish picks the prompt and report language from this header (exact match, default 'zh');
+# English output is needed for the human coders and the report.
+HEADERS = {"Accept-Language": "en"}
 DONE = {"completed", "ready"}
 FAILED = {"failed", "stopped", "error"}
 
@@ -60,11 +63,11 @@ class MiroFishClient:
 
     def post(self, path: str, stage: str, **kw) -> dict:
         self._check_time(stage)
-        return self._json(requests.post(self.base + path, timeout=600, **kw), stage)
+        return self._json(requests.post(self.base + path, timeout=600, headers=HEADERS, **kw), stage)
 
     def get(self, path: str, stage: str) -> dict:
         self._check_time(stage)
-        return self._json(requests.get(self.base + path, timeout=120), stage)
+        return self._json(requests.get(self.base + path, timeout=120, headers=HEADERS), stage)
 
     def wait(self, stage: str, poll) -> dict:
         while True:

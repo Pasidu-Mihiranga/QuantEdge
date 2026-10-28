@@ -138,7 +138,8 @@ def test_client_runs_the_full_pipeline_against_a_fake_service(tmp_path, monkeypa
         def json(self):
             return self._d
 
-    def fake_post(url, timeout=None, **kw):
+    def fake_post(url, timeout=None, headers=None, **kw):
+        assert headers == {"Accept-Language": "en"}
         path = url.split("5001")[1]
         calls.append(path)
         return R({
@@ -153,7 +154,8 @@ def test_client_runs_the_full_pipeline_against_a_fake_service(tmp_path, monkeypa
             "/api/report/chat": {"response": "```json\n" + json.dumps(answer()) + "\n```"},
         }[path])
 
-    def fake_get(url, timeout=None):
+    def fake_get(url, timeout=None, headers=None):
+        assert headers == {"Accept-Language": "en"}
         path = url.split("5001")[1]
         calls.append(path)
         if path.startswith("/api/graph/task/"):
