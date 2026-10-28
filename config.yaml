@@ -79,6 +79,7 @@ decision:                      # Step 13 rule engine (every threshold displayed 
 behavioral:                    # Steps 19–20 (MiroFish)
   enabled: true                # set false if the Week-2 feasibility gate fails
   mirofish_commit: 7657031ac01184afe2cb220f5ee3545573b5e843   # 666ghj/MiroFish, cloned 2026-10-28 into mirofish-service/ (unmodified)
+  mirofish_image: ghcr.io/666ghj/mirofish@sha256:d236402eb35c5abfd68da63be9d19202d619da8803e173e8e34b97731180944a   # the version actually run (built 2026-03-07)
   llm: "gemini-2.5-flash via Vertex AI (local proxy: python -m quantedge.behavioral.vertex_proxy)"
   replicates: 5
   max_rounds: 40

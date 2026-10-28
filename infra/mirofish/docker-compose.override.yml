@@ -1,0 +1,18 @@
+# Copy into mirofish-service/ (a clone of 666ghj/MiroFish at commit 7657031) next to its docker-compose.yml.
+# QuantEdge local override (configuration only; MiroFish code itself is unmodified).
+# 1. Publish the ports on this machine only: the image runs Flask in debug mode with its
+#    interactive debugger, which must not be reachable from the local network.
+# 2. Run the pinned MiroFish commit's backend code (7657031, which supports English output via
+#    Accept-Language) on top of the image's installed environment; the March 2026 image predates it.
+services:
+  mirofish:
+    image: quantedge/mirofish:7657031   # built from infra/mirofish/Dockerfile (image digest + zep-cloud 3.25.0)
+    ports: !override
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:5001:5001"
+    volumes:
+      - ./backend/app:/app/backend/app:ro
+      - ./backend/scripts:/app/backend/scripts:ro
+      - ./backend/pyproject.toml:/app/backend/pyproject.toml:ro   # uv run syncs the environment to the pinned lock
+      - ./backend/uv.lock:/app/backend/uv.lock:ro
+      - ./locales:/app/locales:ro

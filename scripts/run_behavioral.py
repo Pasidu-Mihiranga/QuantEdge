@@ -115,7 +115,8 @@ def main() -> None:
     meta = {"scenario": args.scenario,
             "variant": "gate benchmark" if args.gate else ("A (analyst)" if args.analyst else "B (MiroFish)"),
             "scenarios_sha256": scenarios_sha256(), "mirofish_commit": cfg.behavioral.get("mirofish_commit"),
-            "llm": cfg.behavioral.get("llm"), "max_rounds": max_rounds}
+            "llm": cfg.behavioral.get("llm"), "llm_thinking_budget": 0,
+            "mirofish_image": cfg.behavioral.get("mirofish_image"), "max_rounds": max_rounds}
     (run_dir / "run_config.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
     t0 = time.monotonic()
