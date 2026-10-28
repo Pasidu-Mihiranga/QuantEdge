@@ -1,0 +1,6 @@
+# Hashed text files must keep identical bytes on every machine (pre-registration and run manifests)
+*.yaml text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.md   text eol=lf
+*.parquet binary
