@@ -61,3 +61,33 @@ scenarios:
     as_of: "2022-01-03"
     window: ["2022-01-04", "2022-10-12"]
     trigger: "Inflation in Country A reaches a multi-decade high and the central bank signals rapid rate increases and balance-sheet reduction."
+
+# ---------------------------------------------------------------------------------------------
+# Step 20 pre-registration: frozen BEFORE the first MiroFish run (hash + commit recorded in
+# doc/decisions/behavioral_preregistration.md). Variants: A analyst, B MiroFish + human coding,
+# N naive (average of the three historical crisis shock vectors, scaled).
+scorecard:
+  mvs:                                   # MiroFish Value Score, 100 points, identical for A, B, N
+    D1_historical_fidelity: {points: 20, weights: {sign_hit: 0.35, spearman: 0.35, loss_error: 0.30},
+                             replays: [R1, R2, R3, R4], sensitivity: "also reported without R4"}
+    D2_tail_informativeness: {points: 15, weights: {severity: 0.5, novelty: 0.5}, novelty_band_mahalanobis: [2, 4]}
+    D3_plausibility: {points: 15, weights: {mahalanobis_plausibility: 0.5, economic_rules: 0.5},
+                      chi2_full_credit_pct: 99.9, chi2_zero_credit_pct: 99.999}
+    D4_decision_usefulness: {points: 20, weights: {discrimination: 0.35, actionability: 0.25, human_rating: 0.40},
+                             reviewers: 3, external_reviewers_min: 1}
+    D5_reproducibility: {points: 15, weights: {replicate_cv: 0.4, kappa: 0.3, cache_rebuild: 0.3},
+                         cv_zero_credit: 0.5, kappa_map: [0.2, 0.8]}
+    D6_cost_compliance: {points: 15, items: {compliant_toolkit: 5, approved_data_only: 3, runtime_within_budget: 2,
+                                              full_provenance: 3, ai_disclosure: 2},
+                         compliant_toolkit_definition: "free tier, or a paid API with written organiser approval and a hard token budget"}
+  brs:                                   # Blind Rubric Score, official weights, 0-10 per criterion
+    weights: {decision_making: 30, technical_rigour: 25, software_interface: 15, innovation: 15, communication: 15}
+    reviewers: [3, 5]
+    agreement: kendall_w
+  adoption_rule:
+    - "REJECTED if B scores 0 on compliant_toolkit or approved_data_only"
+    - "ADOPT B if MVS_B - MVS_A >= 5 and the 95% bootstrap CI of the difference excludes 0 and BRS_B >= BRS_A"
+    - "HYBRID if the difference is in [0, 5) or the CI includes 0: A stays official, B shown as exploratory"
+    - "APPENDIX if MVS_B < MVS_A: report the negative result"
+    - "Both variants must beat N; if neither does, report it"
+  bootstrap: {replicates_k: 5, resamples: 10000, seed: 20261027}
