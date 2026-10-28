@@ -89,3 +89,25 @@ def test_lgbm_coverage_monotone_and_es(hetero):
     assert 0.0 <= monotonicity_violations(model, X.iloc[1500:1530], "sigma", 0.95) <= 1.0
     shap = model.contributions(X.iloc[1500:1510], 0.95)
     np.testing.assert_allclose(shap.sum(axis=1), model.predict(X.iloc[1500:1510])[:, 0], rtol=1e-6)
+
+
+def test_ice_curves_and_monotonicity_on_known_models():
+    from quantedge.ml.quantile_models import ice_curves
+
+    class Fake:
+        levels = (0.99,)
+
+        def __init__(self, f):
+            self.f = f
+
+        def predict(self, Z):
+            return np.column_stack([self.f(Z)])
+
+    X = pd.DataFrame({"vol": np.linspace(0.1, 0.5, 40), "other": np.linspace(-1, 1, 40)})
+    up = Fake(lambda Z: 2 * Z["vol"].to_numpy() + Z["other"].to_numpy())
+    curves = ice_curves(up, X, "vol", 0.99, n_grid=5)
+    assert curves.shape == (40, 5) and np.allclose(curves[:, -1] - curves[:, 0], curves[0, -1] - curves[0, 0])
+    assert monotonicity_violations(up, X, "vol", 0.99, n_grid=5) == 0.0
+    assert monotonicity_violations(Fake(lambda Z: -Z["vol"].to_numpy()), X, "vol", 0.99) == 1.0
+    dip = Fake(lambda Z: Z["vol"].to_numpy() - 0.5 * ((Z["vol"].to_numpy() > 0.3) & (Z["other"].to_numpy() > 0)))
+    assert monotonicity_violations(dip, X, "vol", 0.99, n_grid=9) == pytest.approx(0.5)

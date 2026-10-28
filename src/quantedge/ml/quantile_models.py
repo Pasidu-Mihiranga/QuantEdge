@@ -97,19 +97,20 @@ class LGBMQuantile:
         return pd.DataFrame(raw, index=X.index, columns=[*self.cols, "expected_value"])
 
 
-def monotonicity_violations(model, X: pd.DataFrame, feature: str, level: float, n_grid: int = 25) -> float:
-    """Share of rows whose predicted quantile falls somewhere as `feature` rises across its
-    observed 5-95% range, other features held at the row's values (individual conditional
-    expectation curves). 0 means monotone everywhere."""
+def ice_curves(model, X: pd.DataFrame, feature: str, level: float, n_grid: int = 25) -> np.ndarray:
+    """Individual conditional expectation curves: for each row, the predicted `level` quantile as
+    `feature` moves across its observed 5-95% range, other features held at the row's values.
+    Shape (rows, n_grid)."""
     grid = np.quantile(X[feature], np.linspace(0.05, 0.95, n_grid))
     j = model.levels.index(level)
-    bad = 0
-    for _, row in X.iterrows():
-        Z = pd.DataFrame([row] * n_grid)
-        Z[feature] = grid
-        if np.any(np.diff(model.predict(Z)[:, j]) < -1e-12):
-            bad += 1
-    return bad / len(X)
+    Z = X.loc[X.index.repeat(n_grid)].copy()
+    Z[feature] = np.tile(grid, len(X))
+    return model.predict(Z)[:, j].reshape(len(X), n_grid)
+
+
+def monotonicity_violations(model, X: pd.DataFrame, feature: str, level: float, n_grid: int = 25) -> float:
+    """Share of rows whose ICE curve (`ice_curves`) falls anywhere. 0 means monotone everywhere."""
+    return float((np.diff(ice_curves(model, X, feature, level, n_grid), axis=1) < -1e-12).any(axis=1).mean())
 
 
 def ratio_es(var_ml: np.ndarray, var_evt: np.ndarray, es_evt: np.ndarray, eps: float = 1e-4,
