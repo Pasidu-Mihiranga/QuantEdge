@@ -1,4 +1,4 @@
-"""Cached artifact loaders. The app reads data/artifacts only (no downloads); only cheap models are refitted live."""
+"""Cached artifact loaders. The app reads data/artifacts only (no downloads); models are refitted live only for the Risk dashboard's portfolio check."""
 
 from __future__ import annotations
 
