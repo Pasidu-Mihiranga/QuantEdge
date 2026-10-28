@@ -1,6 +1,6 @@
 PY ?= .venv/bin/python
 
-.PHONY: setup data pipeline run test test-all lint
+.PHONY: setup data pipeline run test test-all lint notebooks
 
 setup:
 	uv venv --python 3.12 .venv
@@ -24,3 +24,7 @@ test-all:
 
 lint:
 	$(PY) -m ruff check src tests app scripts
+
+notebooks:
+	$(PY) -m pip install -q -r requirements-notebooks.txt
+	$(PY) scripts/run_notebooks.py

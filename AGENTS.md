@@ -27,6 +27,7 @@ src/quantedge/              the package (no Streamlit imports here)
   stress/  decision/  ml/   stress engine, IPS + verdict, ML challengers
 app/                        Streamlit multipage app (reads data/artifacts only)
 tests/                      pytest; fixtures in tests/fixtures
+notebooks/                  challenge notebooks, one per owner (independent of the package; data <= 2022 until the freeze)
 data/raw/                   frozen download snapshot + manifest.json (committed)
 data/artifacts/             pipeline outputs (committed for reproducibility)
 scripts/                    one-off scripts (freeze record, window sensitivity)

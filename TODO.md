@@ -18,6 +18,14 @@ Plan: `My reserch/specs/01_problem_spec.md` (v2) and `02_gap_register.md` (v2); 
 - [x] G15: C7 (risk-to-capital ≤ 2.0, unreachable) removed from the verdict; the ratio is still reported. ES-share sizing rule waits for decision D8
 - [ ] Team decisions D1–D9 (incl. D7 hard freeze date), then the dated input lock
 
+### Phase 1: challenge notebooks (G16, G12)
+- [x] `notebooks/01_eda_detective.ipynb`: complete template (35 cells, independent of the package, data ≤ 2022): snapshot hashes, completeness, adjustment check, returns vs published figures, stale prices, extremes with events, AGG ETF-discount crashes (G7), stylised facts and ADF/KPSS, regime correlation table, reconciliation with the pipeline (identical). Finding that changed the plan: the stock–bond hedge fails in **rate-hiking cycles** (+0.30 daily) rather than when CPI > 3% (≈ 0); the definition is exploratory and must be fixed in the input lock (G8 updated)
+- [x] Skeletons 02–06 (portfolio and frontier, VaR/ES/EVT, backtesting, stress and regimes, decision), question by question with gap ids; owners write code, findings and decisions
+- [x] `make notebooks` / `.\make.ps1 notebooks` runs all six (`scripts/run_notebooks.py`, fails on any cell error); tooling in `requirements-notebooks.txt`, kept out of the app's requirements
+- [x] Validation ladder added: notebook 01 §7 formal tests (Jarque-Bera, Ljung-Box, ARCH-LM: p ≈ 0 for all 7 ETFs) and §8b–8f for the hedge regime (Newey-West horse race, block bootstrap, residual and rank-correlation checks, out of sample 1990–2004, evidence table → decisions). Result: H1 rate-hiking regime **moderate** evidence, H2 CPI > 3% **not supported**. Skeletons 02–06 carry a "Validation required" line per question; hypotheses H1–H6 pre-registered in the problem spec
+- [x] G11 (partial): `python -m quantedge.data.download --add` appends only missing series after verifying every existing hash (tested; existing files byte-identical). Added DGS2, DFII10, T10YIE (daily panel), Sri Lanka CPI as `ctx_` (context only) and the S&P 500 1989–2004 as `ext_` (out-of-sample validation only); neither prefix can enter the risk models. Only `clean_macro.parquet` changed; verdict unchanged; 197 tests. Still to do: drop the unused BAMLH0A0HYM2 at the next full refresh
+- [ ] Owners assigned (D6); each owner re-derives notebook 01's findings in their own words, fills their skeleton and signs off in `doc/ai_log.md`
+
 ## Week 1: Foundations
 
 ### Step 01: Project setup & reproducibility
@@ -100,6 +108,7 @@ Plan: `My reserch/specs/01_problem_spec.md` (v2) and `02_gap_register.md` (v2); 
 - [ ] Gate G4 checklist
 
 ## Deviations from the plan
+- 2026-10-28: the snapshot can be extended with `download --add` (append-only, hash-checked) instead of a full refresh, so verified results do not move; new file prefixes `ctx_` (context) and `ext_` (validation history) are never loaded by `load_raw`.
 - 2026-10-28: Steps 19–21 and 23 removed and LightGBM dropped after the independent audit (gap G13); archived at tag `archive/mirofish-ml`. `ml.lgbm.retrain_every` moved to `ml.retrain_every` (used by linear QR and the GARCH-sigma feature). `requirements-research.txt` and the `lightgbm` pin removed.
 - 2026-10-28: crisis-window path measures now start after the peak close, and drawdowns are measured from the initial $1 (gaps G14 and the first-day-loss fix). Stress and scorecard numbers change slightly.
 - Repo root is `Desktop/QuantEdge` (not a `quantedge/` subfolder as in Step 01); the package lives at the root.

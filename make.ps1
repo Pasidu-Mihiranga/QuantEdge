@@ -18,5 +18,9 @@ switch ($Target) {
     "test"     { & $py -m pytest -m "not slow and not network" }
     "test-all" { & $py -m pytest }
     "lint"     { & $py -m ruff check src tests app scripts }
-    default    { "Targets: setup, data, pipeline, run, test, test-all, lint" }
+    "notebooks" {
+        & $py -m pip install -q -r requirements-notebooks.txt
+        & $py scripts/run_notebooks.py @Rest
+    }
+    default    { "Targets: setup, data, pipeline, run, test, test-all, lint, notebooks" }
 }

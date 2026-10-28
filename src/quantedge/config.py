@@ -27,6 +27,8 @@ class DataCfg:
     end: pd.Timestamp | None
     fred_series: tuple[str, ...]
     fx: tuple[str, ...] = ()
+    context_series: tuple[str, ...] = ()          # FRED, saved as ctx_*.parquet; never in the daily panel
+    extended_history: dict[str, Any] = field(default_factory=dict)   # ext_*.parquet; validation only
 
 
 @dataclass(frozen=True)
@@ -158,6 +160,8 @@ def load_config(path: Path | str = CONFIG_FILE) -> Config:
             end=_ts(raw["data"].get("end")),
             fred_series=tuple(raw["data"]["fred_series"]),
             fx=tuple(raw["data"].get("fx", ())),
+            context_series=tuple(raw["data"].get("context_series", ())),
+            extended_history=dict(raw["data"].get("extended_history") or {}),
         ),
         cleaning=CleaningCfg(**raw["cleaning"]),
         portfolio=PortfolioCfg(**raw["portfolio"]),
