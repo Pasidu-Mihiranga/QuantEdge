@@ -1,6 +1,6 @@
 PY ?= .venv/bin/python
 
-.PHONY: setup data pipeline run test test-all lint notebooks
+.PHONY: setup data pipeline run test test-all lint notebooks defence
 
 setup:
 	uv venv --python 3.12 .venv
@@ -28,3 +28,6 @@ lint:
 notebooks:
 	$(PY) -m pip install -q -r requirements-notebooks.txt
 	$(PY) scripts/run_notebooks.py
+
+defence: notebooks
+	$(PY) scripts/build_defence_pack.py
