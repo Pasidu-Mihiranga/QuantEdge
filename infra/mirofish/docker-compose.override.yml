@@ -4,6 +4,8 @@
 #    interactive debugger, which must not be reachable from the local network.
 # 2. Run the pinned MiroFish commit's backend code (7657031, which supports English output via
 #    Accept-Language) on top of the image's installed environment; the March 2026 image predates it.
+# 3. Keep the HuggingFace cache on the host: the Twitter recommender loads Twitter/twhin-bert-base
+#    (downloaded once at a pinned revision), which would otherwise be re-fetched on every recreate.
 services:
   mirofish:
     image: quantedge/mirofish:7657031   # built from infra/mirofish/Dockerfile (image digest + zep-cloud 3.25.0)
@@ -16,3 +18,4 @@ services:
       - ./backend/pyproject.toml:/app/backend/pyproject.toml:ro   # uv run syncs the environment to the pinned lock
       - ./backend/uv.lock:/app/backend/uv.lock:ro
       - ./locales:/app/locales:ro
+      - ./hf-cache:/root/.cache/huggingface

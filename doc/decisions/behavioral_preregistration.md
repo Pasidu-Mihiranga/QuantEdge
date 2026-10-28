@@ -17,6 +17,16 @@ Every run directory's `manifest.json` records the SHA-256 of `scenarios.yaml`; a
 - **Compliant toolkit (D6, adoption gate):** "free tier" is widened to "free tier, or a paid API with written organiser approval and a hard token budget", matching the Step 19 compliance table, because the team uses an organiser-approved paid Vertex API. Recorded before any run.
 - **Credit factor:** the questionnaire's `credit_spread` maps to Moody's Baa − 10-year Treasury (`BAA10Y`), because FRED keeps only three years of the ICE high-yield spread.
 
+## Runtime settings fixed at the feasibility gate (before any scored run)
+
+The gate uses the neutral benchmark G0, which is not one of the scored scenarios. These settings were fixed while making it run; they do not change `scenarios.yaml` and apply identically to every B run.
+
+- **Runtime:** the published image `ghcr.io/666ghj/mirofish@sha256:d236402e…` (built 2026-03-07) predates the pinned commit, so the commit's backend code, locales and `uv.lock` are mounted read-only on it (`infra/mirofish/`). MiroFish code is unchanged; ports are bound to localhost only.
+- **Language:** every request sends `Accept-Language: en`, so reports and agent text are in English for the human coders.
+- **Gemini thinking off** (`thinking_budget = 0`): hidden reasoning tokens counted against MiroFish's `max_tokens` and truncated its JSON replies.
+- **Recommender model:** OASIS's Twitter recommender loads `Twitter/twhin-bert-base`. It is downloaded once at revision `82ac392ce81f94560c391311ee2ddd024c5ac1fc` into a host cache that is mounted into the container. The first gate attempt stalled on this download inside the container, at round 10.
+- **Rounds:** 40 (the pre-registered `max_rounds`). A 10-round trial produced no agent actions, because simulated time starts at 00:00 and agents become active from 09:00.
+
 ## Order of work (blinding)
 
 1. The team analyst completes the questionnaire for B1–B3 and R1–R4 **without seeing any MiroFish output** (variant A), saved under `data/behavioral/analyst/`.
