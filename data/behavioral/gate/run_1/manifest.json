@@ -1,0 +1,16 @@
+{
+  "written_utc": "2026-10-28T07:32:24Z",
+  "scenarios_sha256": "4c04b42aa41bd71946dc6467bc942b5beaa12c79e735ba3134d5fe0f4f073dc6",
+  "files": {
+    "portfolio_impact.parquet": "3fdd73b586766f2f39043076d633c1fb6519d75bca380033de6abf9331797662",
+    "prompt.txt": "e25aaa983cf7d0a637ddaf878a5ad477cab0e9c37563502f4611c9b8e5943365",
+    "raw_report.md": "22553be06168bfff5521e3f0de891087329a7ee98c2640e2d9ec89a6622912fb",
+    "report.json": "512b3266c5a0f375d309164af9584d7e96db6ab03680bdbc2f513924fc1133ce",
+    "report_agent_answers.json": "47507b0fbdf43d4b04b2032be075571faea1000e184d117c8f267f267ba91a8a",
+    "run_config.json": "6404ddbe8ffa1d63aa4cedf9069fcef27753bde90b31f50d66127fda92e3971a",
+    "seed.md": "d86f14237872f4560a07682cb3eb18ce12bcdc69697091cb1c7d59ebb801b3f6",
+    "translated_factors.parquet": "578efaac7061d063a511829b9c16b5c9adb531c1675ff8d83778ae1d6ad39f29",
+    "translated_shocks.parquet": "80ff5ccb404f19d95ff99097fddd503132e3d4500bbde90d3eae94a7298ac238",
+    "translation_summary.json": "492b7492ffb950e2573e419e324514afa3e8a62a1e7bcac3bd72e34f89ff24d1"
+  }
+}

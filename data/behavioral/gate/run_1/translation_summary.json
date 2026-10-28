@@ -1,0 +1,7 @@
+{
+  "horizon_days": 60,
+  "lambda": 0.6666666666666666,
+  "vol_mult": 2.0,
+  "consistency": 0.7142857142857143,
+  "flight_to_safety_ok": false
+}

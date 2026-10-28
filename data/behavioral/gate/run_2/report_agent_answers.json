@@ -1,0 +1,63 @@
+{
+  "factors": {
+    "rates_10y": {
+      "direction": "0",
+      "intensity": "medium",
+      "confidence": "medium"
+    },
+    "oil": {
+      "direction": "0",
+      "intensity": "low",
+      "confidence": "low"
+    },
+    "vix": {
+      "direction": "+",
+      "intensity": "high",
+      "confidence": "high"
+    },
+    "usd": {
+      "direction": "0",
+      "intensity": "low",
+      "confidence": "low"
+    },
+    "credit_spread": {
+      "direction": "+",
+      "intensity": "medium",
+      "confidence": "medium"
+    }
+  },
+  "behaviour": {
+    "panic_selling": 3,
+    "flight_to_safety": [
+      "GLD",
+      "AGG",
+      "cash"
+    ],
+    "contagion_breadth": 2,
+    "herding": 3,
+    "investor_disagreement": 2,
+    "duration": "weeks"
+  },
+  "asset_directions": {
+    "SPY": "-",
+    "EFA": "-",
+    "EEM": "-",
+    "AGG": "+",
+    "GLD": "+",
+    "XLE": "0",
+    "XLK": "-"
+  },
+  "narrative_summary": "Retail investors exhibit panic selling and herding behavior following negative news, leading to outflows from equities. Capital preservation investors and fixed-income managers shift towards safe-haven assets like gold, high-quality bonds, and cash. Hedge funds engage in tactical de-leveraging and seek arbitrage opportunities amidst increased volatility.",
+  "key_mechanisms": [
+    "Retail investor panic selling driven by news and recent losses",
+    "Flight to quality by capital preservation investors into gold, high-quality bonds, and cash",
+    "Hedge fund de-leveraging and arbitrage seeking in dislocated assets",
+    "Institutional mechanical rebalancing to maintain strategic asset allocation",
+    "Fixed-income manager shift to short-duration and high-quality government bonds"
+  ],
+  "stated_limitations": [
+    "Primarily based on existing market participant behavior patterns and historical data",
+    "Emerging market participants or non-traditional investment strategies may introduce uncaptured dynamics",
+    "Sudden shifts in macroeconomic policy or black swan geopolitical events could alter predictions"
+  ]
+}
