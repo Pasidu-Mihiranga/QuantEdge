@@ -223,16 +223,28 @@ def build() -> str:
                   "end-2022 market levels."),
          evidence("06_decision", "def breakeven_erp", "Break-even equity premium for each spending rate (25% budget).")]))
     S.append(section(
-        "d5", "D5", "Hypothetical shock: a stagflation episode over about three quarters, peak to trough",
-        "Why not a one-day shock?",
-        "Real crises unfold at different speeds. The GFC lost 81% of its damage within its worst quarter, but 2022 "
-        "was a slow grind: only about half its loss came within any one quarter. A one-day shock would understate a "
-        "2022-type stagflation. Measuring the scenario peak to trough also makes it directly comparable with the 25% "
-        "crisis budget.",
+        "d5", "D5", "Our hypothetical scenario: \u201cHormuz stagflation 2027\u201d",
+        "Why this scenario? Why not a tech crash, a 2008-style crash or a rupee crisis?",
+        "Because it is the one crisis in which this portfolio's protection fails: bonds fall with stocks, as in 2022, "
+        "and diversification saves almost nothing. Over about three quarters, oil rises 40%, the 10-year yield rises "
+        "250 bp (2022-size), the VIX rises 25 points, the dollar 8% and credit spreads 150 bp, with one panic day on "
+        "AGG. It is the most severe version that is still within history: more extreme than 2022 or the GFC, less than "
+        "COVID. The 35% portfolio loses 21.2%; including the scholarships paid during the crisis, the endowment falls to "
+        "about USD 7.65M (−23.5%), inside the 25% budget. We compared it with four alternatives; only this one meets "
+        "all six criteria.",
         "p. 8 &ldquo;one hypothetical scenario the team designs itself&rdquo;; p. 9 FRED series for stress-scenario "
-        "construction.",
-        "The worst quarter of the episode is shown separately as its speed.",
-        [evidence("06_decision", "worst = {h:", "How fast past crises hit today's 35% portfolio.")]))
+        "construction; standard: &ldquo;severe but plausible&rdquo; (BIS) and calibration to past recessions (US "
+        "Federal Reserve).",
+        "Sizes calibrated on data up to 2022 only; the story uses October 2026 news (flagged). The factor mapping "
+        "reproduces 2022 (17.8% predicted vs 18.8% actual). A version beyond anything on record would cost 25.5%.",
+        [evidence("05_stress_regimes", "alternatives = pd.DataFrame", "Why this scenario: five candidates against six "
+                  "criteria."),
+         evidence("05_stress_regimes", "hist_chg = ", "How severe each candidate is against every three-quarter "
+                  "period on record."),
+         evidence("06_decision", "worst = {h:", "Why a three-quarter episode: how fast past crises hit today's 35% "
+                  "portfolio."),
+         evidence("05_stress_regimes", "etf_ret = pd.Series", "The endowment view: value at the trough including "
+                  "spending, and which holding to sell.")]))
     S.append(section(
         "d8", "D8", "Risk budget: no ETF may carry more than 40% of the portfolio's tail risk",
         "How did you size the positions?",
@@ -289,9 +301,8 @@ def build() -> str:
         "stress", "D2 · D5", "What happens in a crisis?",
         "What would a 2008 or a 2022 do to the endowment?",
         "With today's 35% portfolio: a GFC repeat costs about USD 2.4M at the worst point (24.4%) and about 7 months "
-        "to recover; COVID about 15%; 2022 about USD 1.9M (18.8%), half of it from bonds. Our stagflation scenario, "
-        "with a liquidity day, costs 18.8%, or 21.2% at 2022-size rates; only a combined severe case breaks the 25% "
-        "budget. The most likely route to a breach is a GFC-type deflationary crash, about a 1% chance per stress "
+        "to recover; COVID about 15%; 2022 about USD 1.9M (18.8%), half of it from bonds. Our scenario, Hormuz stagflation "
+        "2027, costs 21.2% with a liquidity day; only a version beyond anything on record breaks the 25% budget. The most likely route to a breach is a GFC-type deflationary crash, about a 1% chance per stress "
         "episode.",
         "p. 8 &ldquo;historical crisis return paths &hellip; plus one hypothetical scenario&rdquo;; p. 4 "
         "&ldquo;practical stress testing&rdquo; and &ldquo;resilience during market crises&rdquo;.",
@@ -299,10 +310,12 @@ def build() -> str:
         "a rate shock.",
         [evidence("05_stress_regimes", "def replay(wx, a, b)", "Each required crisis with today's weights, and "
                   "the budget line.", [1, 0]),
-         evidence("05_stress_regimes", "SHOCK = pd.Series", "The team's stagflation scenario, its severity ladder "
+         evidence("05_stress_regimes", "SHOCK = pd.Series", "Hormuz stagflation 2027: results by equity share, the severity ladder "
                   "and where the loss comes from.", [1, 2, 0]),
          evidence("05_stress_regimes", "Sigma_f = data", "Reverse stress: the most plausible shock that would "
-                  "cost 25%.")]))
+                  "cost 25%."),
+         evidence("05_stress_regimes", "crisis_map = pd.DataFrame", "The crisis map: four kinds of crisis against "
+                  "one budget.")]))
     S.append(section(
         "diversification", "G27", "Does diversification help?",
         "Your seven-ETF mix did not beat a simple SPY/AGG mix. Why diversify?",
@@ -342,7 +355,7 @@ def build() -> str:
                         ("objective", "D1 · D10", "Why 3% spending, and will you accept the mandate?"),
                         ("d2", "D2", "Why a 25% crisis budget?"), ("d3", "D3", "Why can AGG be 65%?"),
                         ("d4", "D4", "Where does the 4.5% equity premium come from?"),
-                        ("d5", "D5", "Why a three-quarter stress episode?"), ("d8", "D8", "How did you size positions?"),
+                        ("d5", "D5", "Why this hypothetical scenario, and not another?"), ("d8", "D8", "How did you size positions?"),
                         ("d9", "D9", "Will you cut risk automatically?"), ("risk", "Risk", "What can you lose, in dollars?"),
                         ("backtest", "H4", "Does your risk model work out of sample?"),
                         ("stress", "D2 · D5", "What would a 2008 or a 2022 do to the endowment?"),
