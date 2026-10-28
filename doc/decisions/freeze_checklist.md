@@ -13,7 +13,14 @@ The tag `methodology-freeze-v1` may be created only when every **blocking** item
 - [ ] **Which ES measure governs the IPS ES limit:** the minimum-relaxation calculation uses realised out-of-sample 99% ES (Min CVaR 1.63%, i.e. +9%), while check C4 uses the champion's current conditional forecast (2.21% at end-2022, i.e. about +47%). Choose one measure for both (or state both explicitly in the IPS)
 - [ ] **Concentration check C7 (risk-to-capital ≤ 2.0) is not reachable within the IPS:** SPY is at 2.11 and EFA at 1.84; AGG and GLD are at their caps, and moving weight from SPY to EFA does not lower the maximum (`decision/sizing.py::propose_resize` reports "not achievable"). Risk-to-capital = marginal ES / portfolio ES, so small volatile sleeves in a bond-led portfolio always score high. Decide: redefine C7 (for example, a cap on any single asset's share of total ES), accept a documented exception, or change the caps
 - [ ] Champion robustness across estimation windows: W = 250 passes only Cornish-Fisher; W = 500 and 1000 both pick Conditional EVT (W = 1000: Conditional EVT and GARCH-FHS both pass, 14 exceptions each). Record whether W = 500 stays the official window
-- [ ] EVT threshold rule: justify the 85% grid floor or add mean-excess linearity to Rule A (design on dev, choose on val)
+- [ ] EVT threshold rule: justify the 85% grid floor or add mean-excess linearity to Rule A (design on dev, choose on val).
+  - **Evidence (Min CVaR, rerun 2026-10-28):** Rules A and B agree on every sample, but the threshold depends on the sample:
+    - development only: 85%, the grid floor (ξ = 0.14; AD p = 0.38 at 85%);
+    - validation only: 92.5% (ξ = 0.38; AD rejects below it);
+    - development + validation: 87.5% (ξ = 0.18; AD rejects 85% at p = 0.01).
+  - **Estimates rise with the threshold:** ξ climbs steadily with u (0.14 → 0.23 on development), so the GPD fit is threshold-sensitive.
+  - **Backtests:** the unconditional and conditional EVT models use a fixed 90% threshold. That is inside this range, and in a W = 500 window it gives exactly the 50-exceedance minimum.
+  - **Decide:** state the rule (and the grid) on development data, then either keep the fixed 90% in the backtests or apply the rule's threshold there too.
 - [x] ML hyperparameters chosen on validation and recorded ([ml_selection.md](ml_selection.md)): Linear QR meets adoption conditions 1–2; LightGBM and LSTM fail coverage in every configuration
 
 When every blocking item is ticked, run `scripts/freeze.py`. It hashes the adoption-rule text (Step 22 §3.8) and writes the freeze record (`config.yaml`, data manifest, `requirements*.txt`, artifact manifest, selected ML configurations, seeds, champion and challengers). The team then commits the record and creates the tag; the tag unlocks `python -m quantedge.backtest.final_test`, which runs once.
