@@ -142,7 +142,10 @@ def test_client_runs_the_full_pipeline_against_a_fake_service(tmp_path, monkeypa
         assert headers == {"Accept-Language": "en"}
         path = url.split("5001")[1]
         calls.append(path)
+        if path == "/api/simulation/start":
+            assert kw["json"]["enable_graph_memory_update"] is True
         return R({
+            "/api/simulation/close-env": {},
             "/api/graph/ontology/generate": {"project_id": "p1"},
             "/api/graph/build": {"task_id": "t1"},
             "/api/simulation/create": {"simulation_id": "s1"},
@@ -160,8 +163,10 @@ def test_client_runs_the_full_pipeline_against_a_fake_service(tmp_path, monkeypa
         calls.append(path)
         if path.startswith("/api/graph/task/"):
             return R({"status": "completed"})
-        if path.endswith("/run-status"):
-            return R({"runner_status": "completed"})
+        if path.endswith("/run-status"):    # stays "running" after the last round until close-env
+            closed = "/api/simulation/close-env" in calls
+            return R({"runner_status": "completed" if closed else "running",
+                      "twitter_completed": True, "reddit_completed": True})
         return R({"markdown_content": "# Report\nRates up, equities down."})
 
     monkeypatch.setattr(cl.requests, "post", fake_post)
@@ -174,6 +179,8 @@ def test_client_runs_the_full_pipeline_against_a_fake_service(tmp_path, monkeypa
     assert info["simulation_id"] == "s1" and info["questionnaire_attempts"] == [True]
     assert (run / "raw_report.md").read_text(encoding="utf-8").startswith("# Report")
     assert calls.index("/api/simulation/start") > calls.index("/api/simulation/prepare")
+    assert calls.count("/api/simulation/close-env") == 1
+    assert calls.index("/api/simulation/close-env") < calls.index("/api/report/generate")
     assert (run / "manifest.json").exists()
 
 
