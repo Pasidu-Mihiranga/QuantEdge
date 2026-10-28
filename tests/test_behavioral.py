@@ -126,6 +126,20 @@ def test_ingest_validates_and_hashes_a_run(tmp_path):
         ingest(run)
 
 
+def test_manifest_hashes_lf_text_so_it_survives_a_checkout(tmp_path):
+    import hashlib
+
+    from quantedge.behavioral.seed import write_manifest
+
+    (tmp_path / "raw_report.md").write_bytes(b"# Report\r\nline two\r\n")
+    (tmp_path / "shocks.parquet").write_bytes(b"\r\n\x00binary")
+    files = write_manifest(tmp_path)["files"]
+    assert (tmp_path / "raw_report.md").read_bytes() == b"# Report\nline two\n"
+    assert files["raw_report.md"] == hashlib.sha256(b"# Report\nline two\n").hexdigest()
+    assert (tmp_path / "shocks.parquet").read_bytes() == b"\r\n\x00binary"     # binary files untouched
+    assert b"\r\n" not in (tmp_path / "manifest.json").read_bytes()
+
+
 def test_client_runs_the_full_pipeline_against_a_fake_service(tmp_path, monkeypatch):
     from quantedge.behavioral import client as cl
 
