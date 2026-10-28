@@ -65,6 +65,7 @@ def test_forwards_with_google_token_normalised_model_and_logs_usage(server):
     assert r.status == 200
     assert seen["headers"]["Authorization"] == "Bearer tok"
     assert seen["payload"]["model"] == "google/gemini-2.5-flash"
+    assert seen["payload"]["extra_body"]["google"]["thinking_config"]["thinking_budget"] == 0
     assert seen["url"].endswith("/projects/proj/locations/global/endpoints/openapi/chat/completions")
     assert budget.used == 6 and json.loads(log.read_text().splitlines()[0])["total_tokens"] == 6
 

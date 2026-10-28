@@ -13,6 +13,9 @@ Safeguards:
 - a hard token budget per session (`--budget`): requests are refused with HTTP 429 once exceeded;
 - a usage log (one JSON line per request: time, model, tokens) for cost tracking and the
   reproducibility record. The service-account file never leaves this machine.
+- Gemini 2.5 "thinking" is disabled by default (`--thinking-budget 0`): on the OpenAI-compatible
+  endpoint hidden reasoning tokens count against `max_tokens`, which truncated MiroFish's JSON
+  replies (its budgets assume non-thinking models).
 """
 
 from __future__ import annotations
@@ -81,7 +84,15 @@ def normalise_model(name: str | None, default: str) -> str:
     return name if "/" in name else f"google/{name}"
 
 
-def make_handler(tokens: TokenSource, budget: Budget, local_key: str, region: str, default_model: str):
+def apply_thinking_budget(payload: dict, thinking_budget: int | None) -> dict:
+    """Set Gemini's thinking budget unless the caller already chose one."""
+    if thinking_budget is not None and "extra_body" not in payload:
+        payload["extra_body"] = {"google": {"thinking_config": {"thinking_budget": thinking_budget}}}
+    return payload
+
+
+def make_handler(tokens: TokenSource, budget: Budget, local_key: str, region: str, default_model: str,
+                 thinking_budget: int | None = 0):
     url = vertex_url(tokens.project, region)
 
     class Handler(BaseHTTPRequestHandler):
@@ -115,6 +126,7 @@ def make_handler(tokens: TokenSource, budget: Budget, local_key: str, region: st
                 return self._send(429, json.dumps({"error": {"message": f"token budget of {budget.max_tokens} reached"}}).encode())
             payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
             payload["model"] = normalise_model(payload.get("model"), default_model)
+            apply_thinking_budget(payload, thinking_budget)
             for attempt in range(4):
                 r = requests.post(url, json=payload, timeout=300,
                                   headers={"Authorization": f"Bearer {tokens.token()}"})
@@ -143,13 +155,16 @@ def main() -> None:
     ap.add_argument("--model", default="google/gemini-2.5-flash")
     ap.add_argument("--budget", type=int, default=5_000_000, help="max total tokens this session")
     ap.add_argument("--log", default="data/behavioral/llm_usage.jsonl")
+    ap.add_argument("--thinking-budget", type=int, default=0, help="Gemini thinking tokens per request (0 = off; -1 = model default)")
     args = ap.parse_args()
     log = Path(args.log)
     log.parent.mkdir(parents=True, exist_ok=True)
     tokens = TokenSource(args.key)
     server = ThreadingHTTPServer(("127.0.0.1", args.port),
-                                 make_handler(tokens, Budget(args.budget, log), args.local_key, args.region, args.model))
-    print(f"Vertex proxy on http://127.0.0.1:{args.port}/v1 -> {args.model} ({args.region}), budget {args.budget:,} tokens")
+                                 make_handler(tokens, Budget(args.budget, log), args.local_key, args.region, args.model,
+                                              None if args.thinking_budget < 0 else args.thinking_budget))
+    print(f"Vertex proxy on http://127.0.0.1:{args.port}/v1 -> {args.model} ({args.region}), budget {args.budget:,} tokens, "
+          f"thinking budget {args.thinking_budget}")
     server.serve_forever()
 
 
