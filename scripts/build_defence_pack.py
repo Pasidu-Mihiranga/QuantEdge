@@ -269,6 +269,41 @@ def build() -> str:
         [evidence("03_var_es_evt", "methods = {", "99% VaR in dollars by method (35% equity).", [1]),
          evidence("03_var_es_evt", "roll_hs = loss_all", "Rolling 99% VaR against daily losses, today's weights.")]))
     S.append(section(
+        "backtest", "H4", "Does the risk model work out of sample?",
+        "How do you know your VaR is right?",
+        "We tested six models on the portfolio we recommend, using 2019–2022 data they never saw. The four "
+        "volatility-adjusted models pass Kupiec, Christoffersen and the traffic light; historical VaR gets the count "
+        "right but its breaches bunch together, and the normal model fails. The pre-registered rule picks "
+        "<strong>GJR conditional EVT</strong> (14 breaches against 10 expected), statistically tied with the runner-up. "
+        "Every model fails in a COVID-speed crash, which is why we also hold a crisis budget and stress tests.",
+        "p. 7 Layer 5 &ldquo;Kupiec, Christoffersen, Basel traffic light&rdquo;; Layer 4 &ldquo;how different "
+        "modelling approaches perform under stressed market conditions&rdquo;.",
+        "Chosen on four years, where Kupiec has 79% power (24% over one year). The 2023–2026 test runs once after "
+        "the freeze.",
+        [evidence("04_backtesting", "assert basel_zone(4, 250)", "Validation 2019–2022: the six models against "
+                  "every test."),
+         evidence("04_backtesting", "exceptions ÷ expected", "Breaches in each crisis window (1 = as many as "
+                  "expected).", [1]),
+         evidence("04_backtesting", "log = d[d[", "The champion's 99% VaR and every breach on validation.")]))
+    S.append(section(
+        "stress", "D2 · D5", "What happens in a crisis?",
+        "What would a 2008 or a 2022 do to the endowment?",
+        "With today's 35% portfolio: a GFC repeat costs about USD 2.4M at the worst point (24.4%) and about 7 months "
+        "to recover; COVID about 15%; 2022 about USD 1.9M (18.8%), half of it from bonds. Our stagflation scenario, "
+        "with a liquidity day, costs 18.8%, or 21.2% at 2022-size rates; only a combined severe case breaks the 25% "
+        "budget. The most likely route to a breach is a GFC-type deflationary crash, about a 1% chance per stress "
+        "episode.",
+        "p. 8 &ldquo;historical crisis return paths &hellip; plus one hypothetical scenario&rdquo;; p. 4 "
+        "&ldquo;practical stress testing&rdquo; and &ldquo;resilience during market crises&rdquo;.",
+        "The factor mapping reproduces 2022 (17.8% predicted vs 18.8% actual). Less equity does not protect against "
+        "a rate shock.",
+        [evidence("05_stress_regimes", "def replay(wx, a, b)", "Each required crisis with today's weights, and "
+                  "the budget line.", [1, 0]),
+         evidence("05_stress_regimes", "SHOCK = pd.Series", "The team's stagflation scenario, its severity ladder "
+                  "and where the loss comes from.", [1, 2, 0]),
+         evidence("05_stress_regimes", "Sigma_f = data", "Reverse stress: the most plausible shock that would "
+                  "cost 25%.")]))
+    S.append(section(
         "diversification", "G27", "Does diversification help?",
         "Your seven-ETF mix did not beat a simple SPY/AGG mix. Why diversify?",
         "Because the benefit is in risk, not return. Diversification removes about a quarter of the worst-day risk "
@@ -309,6 +344,8 @@ def build() -> str:
                         ("d4", "D4", "Where does the 4.5% equity premium come from?"),
                         ("d5", "D5", "Why a three-quarter stress episode?"), ("d8", "D8", "How did you size positions?"),
                         ("d9", "D9", "Will you cut risk automatically?"), ("risk", "Risk", "What can you lose, in dollars?"),
+                        ("backtest", "H4", "Does your risk model work out of sample?"),
+                        ("stress", "D2 · D5", "What would a 2008 or a 2022 do to the endowment?"),
                         ("diversification", "G27", "Why diversify if it didn't add return?"),
                         ("hedge", "H1", "When does the bond hedge fail?"), ("model", "H3", "Is the risk model right?")])
     return f"""<title>Serendib Decision Defence</title>
@@ -320,7 +357,7 @@ def build() -> str:
     <p>Every decision the team made, the question a judge is likely to ask about it, our answer in plain English, and the
     chart or table that backs it. Built from the analysis notebooks on {date.today():%d %B %Y}.</p>
     <p class="status"><strong>Dry run.</strong> These figures use data up to 2022-12-31. The 2023–2026 test period stays
-    locked until the methodology freeze on 2 November 2026; after it, the notebooks and this document are regenerated
+    locked until the methodology freeze on 30 October 2026; after it, the notebooks and this document are regenerated
     with decision-date market levels, and the final verdict is computed once.</p>
   </div>
   <div class="glance">

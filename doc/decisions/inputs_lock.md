@@ -60,6 +60,7 @@ The endowment is perpetual. The **return objective is judged over a 10-year roll
 - **Booklet:** p. 8 "one hypothetical scenario the team designs itself"; p. 9 FRED macro series "used in … stress-scenario construction"
 - **Method:** speed of past crises (06 A5)
 - **Evidence:** GFC 81% of its loss in the worst quarter; COVID 15.5% in 23 days; 2022 only 52% within any quarter over 9 months. Peak-to-trough makes the scenario comparable with D_max.
+- **Shock sizes (open, for the team):** notebook 05 §4 shows the scenario as designed (+150 bp) is milder than 2022 (+248 bp). Proposed central case: 2022-size rates (+250 bp; 35% portfolio loses 21.2% with a liquidity day); severe case as sensitivity (25.5%, just above the budget). The factor mapping was validated on 2022 (predicted 17.8% vs actual 18.8%).
 - **Decided by / date:** team, 2026-10-28
 
 ## D6 · Notebook owners (open)
@@ -78,7 +79,7 @@ The endowment is perpetual. The **return objective is judged over a 10-year roll
 
 ## D7 · Hard freeze date (open)
 - **Submission:** the second week of November 2026 (9–13 November).
-- **Freeze date: Monday 2 November 2026**, five working days before the earliest possible submission day. Move it later only if the exact submission date allows. After it: tag `methodology-freeze-v1`, run `final_test` once, refit to the decision date (the freeze day), write the memo and deck, regenerate `reports/decision_defence.html`.
+- **Freeze date: Friday 30 October 2026** (fallback: Monday 2 November if the pre-freeze work is not finished). The data snapshot ends on 26 October 2026, so that is the decision date for market levels. After it: tag `methodology-freeze-v1`, run `final_test` once, refit to the decision date (the freeze day), write the memo and deck, regenerate `reports/decision_defence.html`.
 
 ## D8 · Tail-risk share cap: **no ETF above 40% of 99% ES** (range 35–50%)
 - **Kind:** preference / design
@@ -105,5 +106,6 @@ The endowment is perpetual. The **return objective is judged over a 10-year roll
 ## Also locked with these inputs
 - **Regime definition** (notebook 01 §8): rate-hiking cycle = 3-month T-bill up by more than 1 pp over 12 months, known at t−1.
 - **Pre-registered hypotheses H1–H6** (problem spec §5): wording fixed as of the lock.
-- **Champion-model rule:** lowest 99% pinball loss among models passing Kupiec, Christoffersen and Basel on validation (2019–22), with GJR-GARCH evaluated as a candidate filter **before** the lock (notebook 03 §5, notebook 04).
-- **Decision date for the final numbers:** the freeze date, 2 November 2026 (the dry run uses 2022-12-30).
+- **Champion-model rule:** lowest 99% pinball loss among models passing Kupiec, Christoffersen and Basel on validation (2019–22).
+- **Champion chosen by that rule (notebook 04, 2026-10-28): GJR conditional EVT**: GJR-GARCH(1,1) with Student-t errors on a 500-day window, refitted every 5 days, with a GPD tail on the top 10% of standardised losses. On the 35%-equity portfolio, 2019–22: 14 exceptions vs 10.1 expected (Kupiec p = 0.24, Christoffersen p = 0.53, adapted zone green, no red 250-day window). It is statistically tied with plain conditional EVT (Diebold-Mariano Holm p = 0.42); the rule decides. Limitation disclosed: clustering remains in 44% of 500-day windows, and every model fails in a COVID-speed crash.
+- **Decision date for the final numbers:** 26 October 2026, the last day of the data snapshot (the dry run uses 2022-12-30).

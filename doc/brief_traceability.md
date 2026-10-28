@@ -11,7 +11,7 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 | 1 | Construct and recommend a portfolio from the universe using quantitative techniques | `portfolio/optimize.py`, `walkforward.py`; notebook 02 (minimum-variance frontier) | 🟡 recommendation computed in notebook 06 Part B after the lock |
 | 2 | Measure and compare risk with VaR, ES and EVT | `risk/`; notebook 03; app pages 4–5 | ✅ |
 | 3 | Validate the risk models with out-of-sample backtesting | `backtest/`; app page 6; notebook 04 | 🟡 notebook 04 to finish; final test after the freeze (G10) |
-| 4 | Evaluate behaviour under historical and hypothetical stress | `stress/`; app page 7; notebook 05 | 🟡 notebook 05 to finish; hypothetical horizon set (D5) |
+| 4 | Evaluate behaviour under historical and hypothetical stress | `stress/`; app page 7; notebook 05 (replays, stagflation scenario with severity ladder, reverse stress) | ✅ (shock sizes to confirm) |
 | 5 | Clear recommendation in an investment committee memorandum | `decision/`; memo draft; D10 | ⬜ memo written by the team after Part B |
 | 6 | Justify the approach, risk metrics, lookback and construction method | `inputs_lock.md`; notebook 02 §5 (lookback); spec §3 | 🟡 report section to write |
 | — | Define a suitable portfolio, justify assumptions, communicate limitations | App page 8; `reports/limitations.py`; inputs_lock | 🟡 limitations page to update with the locked decisions |
@@ -27,7 +27,7 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 | 5 | Quantify the return-seeking vs risk-reduction trade-off | Notebook 02 §4 (per 10 pp of equity: +0.35 pp a year, −3.3 pp crisis loss); notebook 06 A2b | ✅ (dry run; refresh at the decision date) |
 | 6 | Articulate the assumptions | inputs_lock; app page 8 | 🟡 page to update |
 | 7 | Downside protection and tail-risk management | Notebook 03 (VaR, ES, EVT, GARCH); D2; D9 alert | ✅ |
-| 8 | Robustness under stress scenarios | Stress engine; notebook 05 | 🟡 notebook 05 |
+| 8 | Robustness under stress scenarios | Notebook 05: within the 25% budget in every required crisis; only a combined severe stagflation breaks it | ✅ |
 | 9 | Optional: other macro, industry or market risks | Notebook 01 §8 (rate-hiking regime, tested), macro and LKR analysis (Step 14 D), Sri Lanka CPI (World Bank via FRED) | 🟡 to summarise in the report |
 
 ## 3. What the committee requires managers to demonstrate (p. 4)
@@ -35,9 +35,9 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 | # | Requirement | Where it is met | Status |
 |---|---|---|---|
 | 1 | **Diversification benefits** | Notebook 03 §8: ES saving in dollars, diversification ratio, crisis comparison (G27) | 🟡 added 2026-10-28; to be re-derived by the owner |
-| 2 | Robust risk measurement | Notebook 03; notebook 04; H3 residual tests | 🟡 champion choice (GJR-GARCH) in notebook 04 |
+| 2 | Robust risk measurement | Notebook 03; notebook 04 (champion GJR conditional EVT; H3 partly supported) | ✅ |
 | 3 | Tail-risk awareness | Notebook 03 §3 (EVT, once-in-a-decade range) | ✅ |
-| 4 | Practical stress testing | Stress engine; D5; notebook 05 | 🟡 notebook 05 |
+| 4 | Practical stress testing | Notebook 05 (validated factor mapping, liquidity day, reverse stress) | ✅ |
 | 5 | Portfolio resilience during crises | Crisis replays; D2 budget; notebook 03 §4 | 🟡 memo statement |
 | — | Explain what can go wrong / how bad / how confident | Limitations page; notebook 03 dollar figures; EVT ranges; backtests; evidence tables | 🟡 memo and Q&A bank |
 
@@ -76,15 +76,15 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 | 1 | Markowitz mean-variance and CAPM; KPIs: Sharpe, Sortino, Treynor, Jensen's alpha, Information Ratio, max drawdown, Calmar, with interpretation | `portfolio/metrics.py`, `capm.py`; notebook 02 §1, §4 | ✅ |
 | 2 | Historical, parametric and Monte Carlo VaR at 95% and 99% on the same portfolio; discuss where and why they disagree; evaluate assumptions | `risk/var.py`, `montecarlo.py`; notebook 03 §1 | ✅ |
 | 3 | ES with a rationale for using it alongside VaR | Notebook 03 §2 (tail severity, subadditivity) | ✅ |
-| 4 | EVT; **how different approaches perform under stressed conditions**; limitations of conventional measures; justified threshold | `risk/evt.py`; notebook 03 §3 (threshold justified); notebook 04 §7 (G28) | 🟡 stressed-period model comparison added to notebook 04 (G28) |
-| 5 | Out-of-sample backtest with Kupiec, Christoffersen and Basel traffic light | `backtest/coverage.py`, `engine.py`; notebook 04 | 🟡 notebook 04; final test after the freeze |
+| 4 | EVT; **how different approaches perform under stressed conditions**; limitations of conventional measures; justified threshold | `risk/evt.py`; notebook 03 §3 (threshold justified); notebook 04 §5 (six models in the GFC, COVID and 2022 windows, G28) | ✅ |
+| 5 | Out-of-sample backtest with Kupiec, Christoffersen and Basel traffic light | `backtest/coverage.py`, `engine.py`; notebook 04 (six models on the recommended portfolio; champion GJR conditional EVT) | 🟡 validation done; final test once after the freeze |
 
 ## 8. From metrics to decisions (p. 8)
 
 | Requirement | Where it is met | Status |
 |---|---|---|
 | Risk budgeting and position sizing with each position's marginal VaR/ES contribution | `risk/contributions.py`; notebook 03 §6; D8 (40% cap) | 🟡 the sizing action itself in notebook 06 Part B |
-| Historical crisis paths (2008, March 2020, 2022) plus one team-designed hypothetical | `stress/historical.py` (window start fixed, G14), `hypothetical.py`; D5 | 🟡 notebook 05 |
+| Historical crisis paths (2008, March 2020, 2022) plus one team-designed hypothetical | `stress/historical.py` (window start fixed, G14), `hypothetical.py`; notebook 05 | ✅ (shock sizes to confirm) |
 | One-page plain-English memo: accept / adjust the risk limit / reject | `decision/memo.py`; D10 | ⬜ team-written memo |
 
 ## 9. Use of AI (pp. 8–9)

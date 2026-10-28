@@ -62,9 +62,9 @@ stress:                        # Step 12 (historical windows are also used by th
     Rate shock 2022: ["2022-01-03", "2022-10-12"]
   hypothetical:                # "Stagflation and correlation breakdown" (team-designed; factor shocks, Step 12 §3.2)
     name: Stagflation and correlation breakdown
-    status: initial assumptions (decision 2026-10-28)
-    horizon: null              # OPEN, blocks the freeze: state the shock horizon (instantaneous / 1 month / 1 quarter)
-    credit_measure: BAA10Y     # OPEN, blocks the freeze: justify +150 bp on the BAA10Y scale (originally HY +300 bp)
+    status: initial assumptions (decision 2026-10-28); shock sizes to be confirmed by the team (notebook 05 §4 proposes +250 bp)
+    horizon: episode_3q        # D5: cumulative peak-to-trough episode of about three quarters (agreed 2026-10-28)
+    credit_measure: BAA10Y     # long history (since 1986); +150 bp lies between 2022 (+43 bp) and the GFC (about +330 bp)
     shock:
       d_yield10_bp: 150        # 2022 saw about +240 bp in the 10-year yield
       dln_oil: 0.3365          # oil +40% = ln(1.40)
@@ -72,7 +72,7 @@ stress:                        # Step 12 (historical windows are also used by th
       dln_usd: 0.0770          # USD +8% = ln(1.08)
       d_credit_bp: 150         # Baa-Treasury spread; about half its 2008 widening (+330 bp). Provisional, team to confirm
   reverse:
-    loss: 0.20                 # IPS stress drawdown limit
+    loss: 0.25                 # D2 crisis budget (agreed 2026-10-28)
     horizon_days: 21
 
 decision:                      # Step 13 rule engine (every threshold displayed in the app)
