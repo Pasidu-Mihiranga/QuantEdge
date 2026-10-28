@@ -44,7 +44,7 @@ Legend: `[x]` done and tested · `[~]` partial (see note) · `[ ]` not started
 - [x] `decision/ips.py`: `required_return` (10-year average YoY CPI, `as_of` for no look-ahead), `IPSLimits.check`, `constraints_for_optimizer` (LP feasibility)
 - [x] `ips:` block in `config.yaml`
 - [x] Tests: boundary = pass, caps/floors/equity group, feasible set, infeasible limits raise — 5 tests
-- [ ] Week 2: feasibility study across the frontier → `doc/decisions/ips_calibration.md` (needs the snapshot; data ≤ 2022)
+- [x] Week 2: feasibility study across the frontier → `doc/decisions/ips_calibration.md`: `decision/feasibility.py` + pipeline stage `run_ips_feasibility` + IPS page chart (data ≤ 2022). Adopted IPS: only the minimum-ES portfolio meets every risk limit (ES 1.498% vs 1.5%), best expected return 5.27% vs 6.68% required (conflict, gap 1.41 pts); AGG ≤ 40%: infeasible even in-sample — 3 tests
 
 ### Step 06: KPIs & CAPM
 - [x] `portfolio/metrics.py` (Sharpe + Lo SE, Sortino, Treynor n/m guard, IR, TE, MDD with dates, Calmar, Omega, Ulcer, `interpret`) and `portfolio/capm.py` (HAC regression, rolling beta, CAPM μ)
