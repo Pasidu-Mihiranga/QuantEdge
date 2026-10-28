@@ -21,7 +21,7 @@ def test_tearsheet_and_memo_agree_with_the_evidence():
     assert f"${b.evidence.return_level_10y * cfg.nav_usd:,.0f}" in sheet
     assert "investment-committee approval" in sheet
     # the once-in-10-years loss must not be smaller than the 99% ES it is reported next to
-    assert b.evidence.return_level_10y >= b.evidence.es99_1d
+    assert b.evidence.return_level_10y >= b.evidence.es99_conditional
 
 
 def test_report_keeps_team_narrative_and_includes_generated_tables(tmp_path, monkeypatch):

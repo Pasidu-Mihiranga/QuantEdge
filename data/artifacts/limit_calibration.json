@@ -1,0 +1,9 @@
+{
+  "crisis_budget": 0.25,
+  "equity_share": 0.36347045201692313,
+  "vol_ann_max": 0.08403699174578089,
+  "es99_1d_max": 0.02231700646972486,
+  "as_of": "2022-12-31",
+  "config_vol_ann_max": 0.084,
+  "config_es99_1d_max": 0.0223
+}

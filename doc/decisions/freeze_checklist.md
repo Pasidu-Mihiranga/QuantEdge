@@ -7,6 +7,7 @@ The tag `methodology-freeze-v1` may be created only when every **blocking** item
 - [ ] **Input lock signed** ([inputs_lock.md](inputs_lock.md)): D1–D10 agreed 2026-10-28; signatures and reviewer names outstanding
 - [x] **Hypothetical shock sizes (D5) confirmed by the team** (2026-10-28): "Hormuz stagflation 2027" at 2022-size rates (+250 bp), recorded in `inputs_lock.md` and `config.yaml`; the severe case is shown only as "what would break the budget"
 - [x] **The final test runs the locked champion on the recommended portfolio** (option C, 2026-10-28): the pipeline carries the 35%-equity frontier portfolio and GJR conditional EVT (`config.yaml → portfolio.focus`, `backtest.champion`) and reproduces notebook 04 exactly on 2019–22 (`tests/test_reconciliation.py`; notebook 04 §8 asserts the same). Fallback B not needed
+- [x] **The pipeline uses the agreed IPS v2** (2026-10-29): D1, D2 and D4 in `config.yaml → ips`; limits and objective measured as notebooks 03 §4 and 06 A2, reproduced within 0.01 bp (`tests/test_objective.py`, notebook 06 A9). The app, the memo and Part B cannot disagree on the verdict
 - [x] IPS calibration decided ([ips_calibration.md](ips_calibration.md)): AGG cap 65%, original 40% case kept for sensitivity
 - [x] Champion rule decided ([champion_rule.md](champion_rule.md)): lowest-loss adequately validated model on validation
 - [x] Verdict logic decided ([decision_engine.md](decision_engine.md)): minimum relaxation + client-approval condition

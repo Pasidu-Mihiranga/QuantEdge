@@ -10,15 +10,20 @@ from quantedge.decision.rules import Evidence, evaluate
 from quantedge.risk.contributions import euler_parametric, euler_simulation_es, euler_simulation_var
 
 CFG = load_config()
-LIM = IPSLimits.from_config(CFG.ips)
-GOOD = Evidence(vol_oos=0.07, worst_hist_drawdown=0.15, hypothetical_loss=0.12, es99_1d=0.012,
+# The engine is tested against fixed limits (IPS v1 numbers), so these tests do not move with the config.
+LIM = IPSLimits.from_config(CFG.ips, variant="v1_limits")
+GOOD = Evidence(vol_ann=0.07, worst_hist_drawdown=0.15, hypothetical_loss=0.12, es99_1d=0.012,
                 evt_es99=0.014, return_level_10y=0.035, champion_valid=True, any_model_valid=True,
                 max_risk_to_capital=1.4, expected_return=0.068, required_return=0.067)
 
 
 @pytest.fixture(scope="module")
 def dcfg():
-    return CFG.decision
+    return {**CFG.decision, "return_gap_tolerance": 0.01}
+
+
+def test_config_return_gap_tolerance_is_zero_per_d10():
+    assert CFG.decision["return_gap_tolerance"] == 0.0   # D10: ACCEPT only if the objective is met
 
 
 @pytest.mark.parametrize(
@@ -27,15 +32,15 @@ def dcfg():
         ({}, "ACCEPT"),
         ({"expected_return": 0.060}, "ACCEPT"),                                   # gap 0.7% < 1%: disclosed
         ({"expected_return": 0.050}, "ADJUST RISK LIMIT"),                        # C8 gap >= 1%
-        ({"vol_oos": 0.09}, "ADJUST RISK LIMIT"),                                 # loosen vol to 9%
-        ({"vol_oos": 0.09, "resized_passes": True, "resized_weights": {"AGG": 0.5}}, "ADJUST RISK LIMIT"),
+        ({"vol_ann": 0.09}, "ADJUST RISK LIMIT"),                                 # loosen vol to 9%
+        ({"vol_ann": 0.09, "resized_passes": True, "resized_weights": {"AGG": 0.5}}, "ADJUST RISK LIMIT"),
         ({"es99_1d": 0.020}, "ADJUST RISK LIMIT"),                                # 1.33x budget: loosen ES
         ({"es99_1d": 0.024}, "REJECT"),                                           # 1.6x budget > 50% loosening
         ({"worst_hist_drawdown": 0.35}, "REJECT"),                                # needs > 50% loosening
         ({"any_model_valid": False, "champion_valid": False}, "REJECT"),
         ({"champion_valid": False}, "ADJUST RISK LIMIT"),
         ({"max_risk_to_capital": 2.5}, "ACCEPT"),                                 # reported, not a check (G15)
-        ({"vol_oos": 0.08}, "ACCEPT"),                                            # boundary passes
+        ({"vol_ann": 0.08}, "ACCEPT"),                                            # boundary passes
         ({"evt_es99": 0.015 * 1.25 + 1e-6, "resized_passes": True}, "ADJUST RISK LIMIT"),
     ],
 )
@@ -46,12 +51,12 @@ def test_verdict_branches(changes, status, dcfg):
 
 
 def test_adjust_names_the_limit_and_new_value(dcfg):
-    v = evaluate(replace(GOOD, vol_oos=0.091), LIM, dcfg)
+    v = evaluate(replace(GOOD, vol_ann=0.091), LIM, dcfg)
     assert v.adjustments["loosen_limits_to"]["vol_ann_max"] == pytest.approx(0.091)
 
 
 def test_changing_a_limit_flips_the_verdict(dcfg):
-    ev = replace(GOOD, vol_oos=0.085)
+    ev = replace(GOOD, vol_ann=0.085)
     assert evaluate(ev, LIM, dcfg).status == "ADJUST RISK LIMIT"
     assert evaluate(ev, replace(LIM, vol_ann_max=0.09), dcfg).status == "ACCEPT"
 
@@ -100,7 +105,7 @@ def test_minimum_relaxation_chooses_the_least_amended_candidate():
     from quantedge.decision.rules import minimum_relaxation
 
     cands = pd.DataFrame({
-        "vol_oos": [0.095, 0.085, 0.07],
+        "vol_ann": [0.095, 0.085, 0.07],
         "worst_hist_drawdown": [0.22, 0.24, 0.29],
         "es99_1d": [0.016, 0.017, 0.014],
     }, index=["A", "B", "C"])
@@ -114,8 +119,8 @@ def test_minimum_relaxation_chooses_the_least_amended_candidate():
 def test_adjust_requires_client_approval_and_reports_the_minimum_relaxation(dcfg):
     from quantedge.decision.rules import minimum_relaxation
 
-    cands = pd.DataFrame({"vol_oos": [0.09, 0.10], "es99_1d": [0.016, 0.014]}, index=["low", "high"])
-    ev = replace(GOOD, vol_oos=0.10, relaxation=minimum_relaxation(cands, LIM))
+    cands = pd.DataFrame({"vol_ann": [0.09, 0.10], "es99_1d": [0.016, 0.014]}, index=["low", "high"])
+    ev = replace(GOOD, vol_ann=0.10, relaxation=minimum_relaxation(cands, LIM))
     v = evaluate(ev, LIM, dcfg)
     assert v.status == "ADJUST RISK LIMIT"
     assert v.adjustments["client_approval_required"] is True
@@ -134,7 +139,7 @@ def test_reject_when_even_the_best_candidate_needs_too_much(dcfg):
 def test_memo_fills_numbers_and_leaves_team_judgement(dcfg):
     from quantedge.decision.memo import render_memo
 
-    v = evaluate(replace(GOOD, vol_oos=0.09), LIM, dcfg)
+    v = evaluate(replace(GOOD, vol_ann=0.09), LIM, dcfg)
     numbers = {"portfolio": "Test", "weights": {"AGG": 0.6, "SPY": 0.4}, "expected_return": 0.06,
                "required_return": 0.067, "var99": 0.012, "es99": 0.015, "return_level_10y": 0.03,
                "worst_hist_loss": 0.18, "worst_hist_name": "GFC 2008", "worst_drawdown_held": 0.19,

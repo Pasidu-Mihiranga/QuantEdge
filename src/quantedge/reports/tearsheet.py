@@ -74,9 +74,9 @@ all losses 1-day unless stated</div>
 <h2>Allocation ({html.escape(b.focus)})</h2>
 <table>{_bars(b.weights, nav)}</table>
 <h2>Return</h2>
-<table><tr><td>Expected (walk-forward, a year)</td><td class="num">{ev.expected_return:.2%}</td></tr>
-<tr><td>Required (spending + inflation + costs)</td><td class="num">{ev.required_return:.2%}</td></tr>
-<tr><td>Volatility (a year)</td><td class="num">{ev.vol_oos:.2%}</td></tr></table>
+<table><tr><td>Expected (forward, net of costs, a year)</td><td class="num">{ev.expected_return:.2%}</td></tr>
+<tr><td>Required (inflation + spending + real growth)</td><td class="num">{ev.required_return:.2%}</td></tr>
+<tr><td>Volatility (through the cycle, a year)</td><td class="num">{ev.vol_ann:.2%}</td></tr></table>
 </div><div>
 <h2>Risk ({html.escape(b.champion)})</h2>
 <table><tr><th>Confidence</th><th class="num">VaR</th><th class="num">ES</th></tr>{risk_rows}

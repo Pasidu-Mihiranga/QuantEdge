@@ -198,6 +198,30 @@ def build() -> str:
          evidence("03_var_es_evt", "dev = R.loc[:\"2018-12-31\"]", "Limits calibrated from the crisis budget "
                   "(development data including the GFC).")]))
     S.append(section(
+        "ips", "IPS v1 → v2", "Why the risk limits changed, and what that does to the verdict",
+        "Your limits changed after you looked at the data. Isn't that moving the goalposts until your portfolio passes?",
+        "No. The old limits contradicted each other: on the same frontier, the 8% volatility limit allowed about 34% "
+        "equity, the 20% crisis limit 24% and the 1.5% ES limit only 21%. Three limits, three answers. The reason is "
+        "simple: a bad-day loss (99% ES) is about four times daily volatility, so 8% volatility already implies about "
+        "2.1% ES. The new limits come from <em>one</em> client preference, the 25% crisis budget, so they all agree "
+        "(36% equity, volatility 8.4%, ES 2.23%). The causality runs one way: the committee's preference sets the "
+        "limit, and the limit sets the portfolio. Under the new limits the 35% portfolio passes every risk check. "
+        "What now decides the verdict is <strong>return</strong>: at end-2022 yields the portfolio is about 1 pp short of "
+        "CPI + 3.5%, so the end-2022 dry run says ADJUST. The real verdict uses the decision-date yields and is computed "
+        "once, after the freeze.",
+        "p. 4 responsibility 3 &ldquo;define and justify the risk constraints&rdquo;; p. 3 &ldquo;avoiding large losses "
+        "is more important than maximizing gains&rdquo;; p. 8 &ldquo;adjust the risk limit&rdquo; memo option.",
+        "Agreed and locked on 2026-10-28, before the 2023–2026 test, using data up to 2022 only. The app's production "
+        "code was written separately and reproduces every calibration number and forward return in the notebook "
+        "within 0.01 bp (<code>tests/test_objective.py</code>). The old limits stay in the app as a sensitivity "
+        "case, so the change log is visible.",
+        [evidence("06_decision", "V1 = {\"vol\"", "Where each limit cuts the frontier: the old limits give three "
+                  "different answers, the new ones one.", [1, 0]),
+         evidence("06_decision", "p35 = fr.loc[0.35]", "The recommended 35% portfolio under the old and the new "
+                  "limits, and the return gap at end-2022 levels.", [2, 0, 1]),
+         evidence("06_decision", "Production check", "Two separately written codes, one answer: the notebook against "
+                  "the app's pipeline.")]))
+    S.append(section(
         "d3", "D3", "Caps: AGG at most 65%, each sector or EM fund at most 10%, gold at most 15%, equity at most 50%",
         "Why let one bond fund hold 65% of the endowment?",
         "AGG holds thousands of bonds, so the cap guards against interest-rate concentration, not issuer risk. Moving it "
@@ -357,7 +381,9 @@ def build() -> str:
     index = "".join(f'<li><a href="#{sid}"><span class="code-i">{code}</span> {q}</a></li>'
                     for sid, code, q in [
                         ("objective", "D1 · D10", "Why 3% spending, and will you accept the mandate?"),
-                        ("d2", "D2", "Why a 25% crisis budget?"), ("d3", "D3", "Why can AGG be 65%?"),
+                        ("d2", "D2", "Why a 25% crisis budget?"),
+                        ("ips", "IPS v1 → v2", "Why did your risk limits change? Isn't that moving the goalposts?"),
+                        ("d3", "D3", "Why can AGG be 65%?"),
                         ("d4", "D4", "Where does the 4.5% equity premium come from?"),
                         ("d5", "D5", "Why this hypothetical scenario, and not another?"), ("d8", "D8", "How did you size positions?"),
                         ("d9", "D9", "Will you cut risk automatically?"), ("risk", "Risk", "What can you lose, in dollars?"),
@@ -381,6 +407,7 @@ def build() -> str:
     <div class="tile"><span class="v">CPI + 3.5%</span><span class="k">return objective (3% spending + 0.5% growth)</span></div>
     <div class="tile"><span class="v">25%</span><span class="k">largest crisis loss accepted</span></div>
     <div class="tile"><span class="v">≈ 35%</span><span class="k">equity at the 25% budget</span></div>
+    <div class="tile"><span class="v">8.4% · 2.23%</span><span class="k">volatility and 99% ES limits, both set by the budget</span></div>
     <div class="tile"><span class="v">$125–135k</span><span class="k">1-in-100-day loss (35% equity)</span></div>
     <div class="tile"><span class="v">$430–520k</span><span class="k">once-in-a-decade day</span></div>
   </div>

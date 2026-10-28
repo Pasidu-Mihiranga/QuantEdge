@@ -40,14 +40,22 @@ backtest:
   refit_every: 5
   champion_rule: lowest_pinball_passing   # decision 2026-10-28 (was: simplest_passing)
   champion: GJR conditional EVT          # locked champion (notebook 04, inputs_lock); final_test runs it
-ips:                           # Step 05: v1 limits from the client's tolerance, not from results
-  spending_rate: 0.04
-  cost_drag: 0.002
-  cpi_years: 10
+ips:                           # IPS v2 = the team's input lock (doc/decisions/inputs_lock.md, agreed 2026-10-28)
+  spending_rate: 0.03          # D1: 3.0% of the 12-quarter average value (range 2.5-3.5%)
+  real_growth: 0.005           # D1: objective = CPI + 3.5% = (1 + 3%)(1 + 0.5%)(1 + breakeven inflation) - 1
+  cpi_years: 10                # context only: 10-year average CPI is reported next to the breakeven
+  crisis_budget: 0.25          # D2: worst peak-to-trough loss, max(historical replays, hypothetical)
+  forward:                     # D4 (disclosed assumptions) and spec §3.1 costs; notebook 06 A2
+    erp: 0.045                 # arithmetic equity risk premium (range 3.5-5.5%)
+    agg_spread: 0.005          # AGG over the 10-year Treasury (range 0.3-0.9%)
+    trading_cost: 0.0001       # a year
+    beta_window: 756           # trading days for the betas to SPY
+    expense_ratios: {SPY: 0.000945, EFA: 0.0033, EEM: 0.0070, AGG: 0.0003, GLD: 0.0040, XLE: 0.0009, XLK: 0.0009}
+    withholding: {SPY: 0.15, EFA: 0.15, EEM: 0.15, XLE: 0.15, XLK: 0.15}   # on dividends; AGG assumed exempt
   limits:
-    vol_ann_max: 0.08          # annualised volatility
-    stress_drawdown_max: 0.20  # max drawdown in historical stress windows
-    es99_1d_max: 0.015         # 99% 1-day ES as a fraction of NAV ($150k)
+    vol_ann_max: 0.084         # D2-derived: through-the-cycle volatility of the frontier point at the 25% budget (notebook 03 §4)
+    stress_drawdown_max: 0.25  # D2 crisis budget: worst historical replay and the hypothetical, today's weights
+    es99_1d_max: 0.0223        # D2-derived: 99% 1-day ES on development data incl. the GFC ($223k)
     es99_10d_max: 0.05         # reported only
     single_asset_max: 0.40
     asset_caps: {XLE: 0.10, XLK: 0.10, EEM: 0.10, GLD: 0.15, AGG: 0.65}   # D3 (agreed 2026-10-28); SPY and EFA keep the 40% single-asset cap
@@ -58,6 +66,10 @@ ips:                           # Step 05: v1 limits from the client's tolerance,
   variants:                    # sensitivity cases, never used for selection
     original_agg40:            # IPS v1 before the 2026-10-28 calibration (AGG under the 40% single-asset cap)
       asset_caps: {AGG: 0.40}
+    v1_limits:                 # IPS v1 risk limits (8% / 20% / 1.5%), kept to show the change log (G26)
+      vol_ann_max: 0.08
+      stress_drawdown_max: 0.20
+      es99_1d_max: 0.015
 stress:                        # Step 12 (historical windows are also used by the Step 07 scorecard)
   historical:
     GFC 2008: ["2007-10-09", "2009-03-09"]
@@ -83,7 +95,7 @@ decision:                      # Step 13 rule engine (every threshold displayed 
   return_level_limit: 0.05     # C5b: once-in-10-years daily loss vs the 10-day ES budget (5% NAV)
   max_risk_to_capital: 2.0     # reported only; C7 removed (unreachable, audit G15). ES-share sizing rule pending decision D8
   rc_flag: 1.5                 # sizing flag (reported, not a verdict check)
-  return_gap_tolerance: 0.01   # C8: gaps below 1% are disclosed, not failed
+  return_gap_tolerance: 0.0    # C8 (D10): ACCEPT only if the objective is met; any gap is ADJUST, with its cost
   max_limit_relaxation: 0.50   # ADJUST vs REJECT: largest acceptable loosening of a named limit
 
 partition:                     # Step 22: decisions use dev + val only; test locked until the tag

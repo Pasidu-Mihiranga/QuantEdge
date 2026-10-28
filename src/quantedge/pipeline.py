@@ -37,8 +37,8 @@ def run_portfolio_selection(cfg: Config, macro: pd.DataFrame, variant: str | Non
         returns = add_cash_asset(returns, rf)
         tickers.append(CASH)
     limits = IPSLimits.from_config(cfg.ips, variant)
-    req = required_return(macro["CPIAUCSL"], cfg.ips["spending_rate"], cfg.ips["cost_drag"],
-                          cfg.ips["cpi_years"], as_of=end)
+    req = required_return(macro["CPIAUCSL"], cfg.ips["spending_rate"], cfg.ips["real_growth"],
+                          macro["T10YIE"], cfg.ips["cpi_years"], as_of=end)
     strategies, _ = candidate_strategies(cfg, limits, tickers, mrp=mrp)
     results = {name: walk_forward(returns, s, rf, window=cfg.portfolio.estimation_window_days,
                                   cost_bps=cfg.portfolio.cost_bps_per_side, name=name)
@@ -167,6 +167,80 @@ def run_stress(cfg: Config, results: dict, macro: pd.DataFrame, focus: str) -> d
     betas["stress"].betas.to_parquet(ARTIFACTS / "stress_betas_stress.parquet")
     return {"matrix": matrix, "betas": betas, "shocks": shocks, "reverse": rev, "stressed_var": pvar,
             "replays": focus_replays, "agg_duration_check": duration_check(hyp["shock"]["d_yield10_bp"])}
+
+
+FRONTIER_LEVELS = [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]
+
+
+def decision_measures(cfg: Config, weights: dict[str, pd.Series], hypothetical: dict[str, float],
+                      macro: pd.DataFrame, as_of: pd.Timestamp, raw=None) -> pd.DataFrame:
+    """D2 risk evidence and the D4 forward return for each portfolio, today's weights held fixed
+    (notebooks 03 §4 and 06 A2): one row per portfolio, columns named as `rules.MEASURE_LIMIT`."""
+    from quantedge.data.load import load_raw
+    from quantedge.decision.objective import (
+        crisis_loss,
+        forward_asset_returns,
+        forward_inputs,
+        forward_portfolio_return,
+        through_the_cycle,
+    )
+
+    raw = raw if raw is not None else load_raw()
+    part = Partition.from_config(cfg)
+    returns = load_returns("dev+val", cfg).loc[:as_of]
+    fwd = cfg.ips["forward"]
+    mkt = forward_inputs(returns, raw.close, raw.dividends, macro, as_of, fwd["beta_window"])
+    net = forward_asset_returns(mkt["y10"], mkt["inflation"], mkt["beta"], mkt["div_yield"], fwd)
+    rows = {}
+    for name, w in weights.items():
+        w = w.reindex(returns.columns, fill_value=0.0)
+        ttc = through_the_cycle(w, returns.loc[: part.dev[1]])
+        crises = crisis_loss(w, returns, cfg.stress["historical"])
+        rows[name] = {"vol_ann": ttc["vol_ann"], "worst_hist_drawdown": float(crises.max()),
+                      "worst_hist_name": str(crises.idxmax()), "hypothetical_loss": hypothetical.get(name, float("nan")),
+                      "es99_1d": ttc["es99_1d"], "forward_return": forward_portfolio_return(w, net, mkt["cov_long"]),
+                      "equity_share": float(w.reindex(cfg.ips["limits"]["equity_group"]).sum())}
+    return pd.DataFrame(rows).T.astype({k: float for k in ("vol_ann", "worst_hist_drawdown", "hypothetical_loss",
+                                                           "es99_1d", "forward_return", "equity_share")})
+
+
+def run_decision_evidence(cfg: Config, results: dict, stress_out: dict, macro: pd.DataFrame) -> dict:
+    """Write the D1/D2 decision evidence (`decision_measures.parquet`) and the D2 limit calibration
+    along the 20-50% equity frontier (`limit_calibration.parquet`, `.json`)."""
+    from sklearn.covariance import LedoitWolf
+
+    from quantedge.data.load import load_raw
+    from quantedge.decision.ips import constraints_for_optimizer
+    from quantedge.decision.objective import calibrate_limits
+    from quantedge.portfolio import optimize as opt
+
+    part = Partition.from_config(cfg)
+    as_of = part.val[1]
+    raw = load_raw()
+    hyp_name = cfg.stress["hypothetical"]["name"]
+    hyp = {n: -float(stress_out["matrix"].loc[n, hyp_name]) for n in stress_out["matrix"].index}
+    weights = {n: r.weights_history.iloc[-1] for n, r in results.items()}
+    measures = decision_measures(cfg, weights, hyp, macro, as_of, raw)
+    measures.to_parquet(ARTIFACTS / "decision_measures.parquet")
+
+    returns = load_returns("dev+val", cfg).loc[:as_of]
+    limits = IPSLimits.from_config(cfg.ips)
+    tickers = list(cfg.universe)
+    est = returns.iloc[-cfg.ips["forward"]["beta_window"]:]
+    sigma = pd.DataFrame(LedoitWolf().fit(est.to_numpy()).covariance_ * 252, index=tickers, columns=tickers)
+    cons = constraints_for_optimizer(limits, tickers)
+    equity = list(cfg.ips["limits"]["equity_group"])
+    frontier = {x: opt.min_var_at_equity(sigma, cons, equity, x).weights for x in FRONTIER_LEVELS}
+    table, derived = calibrate_limits(frontier, returns.loc[: part.dev[1]], returns, cfg.stress["historical"],
+                                      cfg.ips["crisis_budget"])
+    fm = decision_measures(cfg, {f"{x:.0%}": w for x, w in frontier.items()},
+                           {}, macro, as_of, raw)
+    table["forward_return"] = fm["forward_return"].to_numpy()
+    table.to_parquet(ARTIFACTS / "limit_calibration.parquet")
+    derived |= {"as_of": str(as_of.date()), "config_vol_ann_max": limits.vol_ann_max,
+                "config_es99_1d_max": limits.es99_1d_max}
+    (ARTIFACTS / "limit_calibration.json").write_text(json.dumps(derived, indent=2), encoding="utf-8")
+    return {"measures": measures, "calibration": table, "derived": derived}
 
 
 def ml_inputs(cfg: Config, wf_result, macro: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
@@ -313,9 +387,10 @@ def write_memo(cfg: Config) -> Path | None:
         return None
     extras = json.loads((ARTIFACTS / "risk_extras.json").read_text(encoding="utf-8"))
     numbers = {"portfolio": b.focus, "weights": b.weights, "expected_return": b.evidence.expected_return,
-               "required_return": b.evidence.required_return, "var99": b.var99, "es99": b.evidence.es99_1d,
+               "required_return": b.evidence.required_return, "var99": b.var99, "es99": b.evidence.es99_conditional,
                "return_level_10y": b.evidence.return_level_10y, "worst_hist_loss": b.worst_hist_loss,
-               "worst_hist_name": b.worst_hist_name, "worst_drawdown_held": b.evidence.worst_hist_drawdown,
+               "worst_hist_name": b.worst_hist_name, "worst_drawdown_held": float(pd.read_parquet(
+                   ARTIFACTS / "portfolio_scorecard_val.parquet").loc[b.focus, "worst_crisis_drawdown"]),
                "hypothetical_loss": b.evidence.hypothetical_loss,
                "champion": b.champion, "champion_reason": b.champion_reason, "governance": GOVERNANCE,
                **{k: extras.get(k, float("nan")) for k in ("es99_10d", "es99_10d_limit")}}
@@ -414,6 +489,7 @@ def run_innovation(cfg: Config, wf_result, macro: pd.DataFrame) -> dict:
 
 SENSITIVITY_CASES = {
     "base": {},
+    "ips_v1_limits": {"variant": "v1_limits"},
     "mrp_4pct": {"mrp": 0.04},
     "mrp_6pct": {"mrp": 0.06},
     "cash_allowed": {"allow_cash": True},
@@ -424,35 +500,39 @@ SENSITIVITY_CASES = {
 def run_verdict_sensitivity(cfg: Config, macro: pd.DataFrame) -> pd.DataFrame:
     """Step 13 §3.4: does the outcome change under other assumptions?
 
-    Every case reruns the walk-forward selection and evaluates the IPS checks with the minimum
-    relaxation, using out-of-sample 99% ES for every case so the cases are comparable."""
-    from quantedge.decision.rules import minimum_relaxation
+    Every case reruns the walk-forward selection and evaluates the focus portfolio with the same
+    D1/D2 evidence as the verdict (`decision_measures`): risk limits by minimum relaxation across
+    IPS-compliant candidates, the return objective against the forward expected return."""
+    from quantedge.data.load import load_raw
+    from quantedge.decision.rules import MEASURE_LIMIT, minimum_relaxation
 
     betas = pd.read_parquet(ARTIFACTS / "stress_betas_full.parquet")
     shock = pd.Series(cfg.stress["hypothetical"]["shock"], dtype=float)
     r_star = betas[shock.index] @ shock
+    as_of = Partition.from_config(cfg).val[1]
+    raw = load_raw()
     rows = []
     for name, kw in SENSITIVITY_CASES.items():
         sel = run_portfolio_selection(cfg, macro, tag=f"sens_{name}", **kw)
         card = sel["scorecard"]
         limits = IPSLimits.from_config(cfg.ips, kw.get("variant"))
-        eligible = card[card["weights_within_ips"]]
-        hyp = {c: -float(sel["results"][c].weights_history.iloc[-1].reindex(r_star.index, fill_value=0.0) @ r_star)
-               for c in eligible.index}
-        cands = pd.DataFrame({"vol_oos": eligible["volatility"], "worst_hist_drawdown": eligible["worst_crisis_drawdown"],
-                              "hypothetical_loss": pd.Series(hyp), "es99_1d": eligible["es99_oos"]})
-        top = str(card.index[0])
+        weights = {c: sel["results"][c].weights_history.iloc[-1] for c in card.index}
+        hyp = {c: -float(w.reindex(r_star.index, fill_value=0.0) @ r_star) for c, w in weights.items()}
+        meas = decision_measures(cfg, {c: w.drop("CASH", errors="ignore") for c, w in weights.items()},
+                                 hyp, macro, as_of, raw)
+        cands = meas.loc[card.index[card["weights_within_ips"]], list(MEASURE_LIMIT)]
+        top = cfg.portfolio.focus if cfg.portfolio.focus in card.index else str(card.index[0])
         relax = minimum_relaxation(cands, limits) if len(cands) else None
-        gap = sel["required_return"]["required_return"] - float(card.loc[top, "cagr"])
+        gap = sel["required_return"]["required_return"] - float(meas.loc[top, "forward_return"])
         if relax is None or relax.max_relative > cfg.decision["max_limit_relaxation"]:
             outcome = "REJECT"
-        elif relax.max_relative == 0 and gap < cfg.decision["return_gap_tolerance"]:
+        elif relax.max_relative == 0 and gap <= cfg.decision["return_gap_tolerance"]:
             outcome = "ACCEPT"
         else:
             outcome = "ADJUST RISK LIMIT"
-        rows.append({"case": name, "top_candidate": top, "cagr": float(card.loc[top, "cagr"]),
-                     "volatility": float(card.loc[top, "volatility"]), "es99_oos": float(card.loc[top, "es99_oos"]),
-                     "worst_crisis_drawdown": float(card.loc[top, "worst_crisis_drawdown"]),
+        rows.append({"case": name, "top_candidate": top, "forward_return": float(meas.loc[top, "forward_return"]),
+                     "volatility": float(meas.loc[top, "vol_ann"]), "es99_ttc": float(meas.loc[top, "es99_1d"]),
+                     "worst_crisis_loss": float(meas.loc[top, "worst_hist_drawdown"]),
                      "least_amended": relax.candidate if relax else None,
                      "max_loosening": relax.max_relative if relax else float("nan"),
                      "return_gap": gap, "outcome": outcome})
@@ -511,6 +591,11 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
     print("[risk]     snapshot, contributions, disagreement written")
     out["stress"] = run_stress(cfg, sel["results"], clean.macro, focus)
     print("[stress]   matrix, betas written")
+    out["decision"] = run_decision_evidence(cfg, sel["results"], out["stress"], clean.macro)
+    d = out["decision"]["derived"]
+    print(f"[decision] D2 calibration: {d['crisis_budget']:.0%} budget -> {d['equity_share']:.1%} equity, "
+          f"vol <= {d['vol_ann_max']:.2%}, ES <= {d['es99_1d_max']:.2%} (config {d['config_vol_ann_max']:.2%} / "
+          f"{d['config_es99_1d_max']:.2%})")
     out["innovation"] = run_innovation(cfg, wf, clean.macro)
     print(f"[innov]    regimes, overlay, copula, macro written (ES t vs Gaussian copula: "
           f"{out['innovation']['copula']['es_uplift_t_vs_gauss']:+.1%})")
@@ -528,7 +613,10 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
         out["ml"] = run_ml_arena(cfg, wf, backtests, champion, clean.macro)
         print("[ml]       linear QR arena written (ml_arena_val.parquet)")
 
-    passes = bool(sel["scorecard"].loc[focus, "ips_pass"])
+    m = out["decision"]["measures"].loc[focus]
+    passes = all(c.passed for c in IPSLimits.from_config(cfg.ips).check(
+        {"vol_ann": m.vol_ann, "stress_drawdown": max(m.worst_hist_drawdown, m.hypothetical_loss),
+         "es99_1d": m.es99_1d, "weights": wf.weights_history.iloc[-1]}))
     status = {"focus_portfolio": focus, "provisional": True,
               "provisional_reason": ("methodology not yet frozen; the champion and the ML adoption are "
                                      "confirmed only after the final test" if passes else

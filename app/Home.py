@@ -32,8 +32,8 @@ for r in v.reasons:
 ev = info["evidence"]
 scale = ctl.nav
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Expected return (OOS, a year)", pct(ev.expected_return), f"{ev.expected_return - ev.required_return:+.2%} vs required")
-c2.metric(f"99% 1-day ES ({info['champion']})", usd(ev.es99_1d * scale), pct(ev.es99_1d), delta_color="off")
+c1.metric("Expected return (forward, a year)", pct(ev.expected_return), f"{ev.expected_return - ev.required_return:+.2%} vs required")
+c2.metric(f"99% 1-day ES ({info['champion']})", usd(ev.es99_conditional * scale), pct(ev.es99_conditional), delta_color="off")
 c3.metric("Worst historical stress", usd(-info["worst_hist_loss"] * scale), pct(-info["worst_hist_loss"], 1), delta_color="off")
 val = parquet("backtest_selection_val_500.parquet")
 zone = "green" if val is not None and val.loc[info["champion"], "rolling_red"] == 0 else "check"
@@ -52,7 +52,7 @@ with right:
     var99 = float(snap[(snap.model == info["champion"]) & (snap.alpha == 0.99)]["var"].iloc[0])
     st.markdown(f"""
 1. **How much could we lose on a bad day?** On about 1 day in 100 the model expects a loss above
-   {usd(var99 * scale)} (99% VaR); on those days the average loss is {usd(ev.es99_1d * scale)} (99% ES).
+   {usd(var99 * scale)} (99% VaR); on those days the average loss is {usd(ev.es99_conditional * scale)} (99% ES).
 2. **What about a once-in-a-decade day?** EVT puts the 1-in-10-years daily loss at about
    {usd(extras.get('return_level_10y_evt', float('nan')) * scale)}.
 3. **What happens in a crisis like 2008, 2020 or 2022?** The worst replayed crisis loses {pct(-info['worst_hist_loss'], 1)}.
@@ -64,10 +64,10 @@ with right:
 sens = parquet("verdict_sensitivity.parquet")
 if sens is not None:
     with st.expander("Does the outcome change under other assumptions? (verdict sensitivity)"):
-        st.dataframe(sens.style.format({c: "{:.2%}" for c in ("cagr", "volatility", "es99_oos",
-                                                             "worst_crisis_drawdown", "return_gap")}
+        st.dataframe(sens.style.format({c: "{:.2%}" for c in ("forward_return", "volatility", "es99_ttc",
+                                                             "worst_crisis_loss", "return_gap")}
                                        | {"max_loosening": "{:+.0%}"}), width="stretch")
-        st.caption("Every case reruns the walk-forward selection; ES is the out-of-sample 99% ES for comparability.")
+        st.caption("Every case reruns the walk-forward selection and measures the focus portfolio as the verdict does: through-the-cycle volatility and ES, worst crisis loss with today's weights, forward expected return.")
 
 with st.expander("All decision checks"):
     st.dataframe(pd.DataFrame([c.__dict__ for c in v.checks]), width="stretch")

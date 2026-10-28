@@ -1,7 +1,7 @@
 {
   "focus_portfolio": "Frontier 35% equity",
   "provisional": true,
-  "provisional_reason": "the focus portfolio does not meet every IPS limit",
+  "provisional_reason": "methodology not yet frozen; the champion and the ML adoption are confirmed only after the final test",
   "weights": {
     "SPY": 0.08500408896601996,
     "EFA": 0.2088530960806494,
@@ -14,6 +14,6 @@
   "weights_as_of": "2022-09-30",
   "data_end": "2026-10-26",
   "analysis_end": "2022-12-30",
-  "config_sha256": "0c90ef4190df65649f93074901212ffca3e8953464632998a040b2282e450a18",
+  "config_sha256": "0b2e3c526a5d82d2ad165e2cc94190ef03a44725e40d877d03c5ebb88524dfed",
   "frozen": false
 }

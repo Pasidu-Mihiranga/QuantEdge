@@ -102,7 +102,7 @@ def generated(cfg: Config) -> dict[str, str]:
         + table(pd.DataFrame({"weight": b.weights}).query("weight > 1e-4"), pct=("weight",))
         + table(pd.DataFrame({"value": {
             "Expected return (a year)": f"{ev.expected_return:.2%}", "Required return": f"{ev.required_return:.2%}",
-            f"99% 1-day VaR ({b.champion})": f"${b.var99 * nav:,.0f}", "99% 1-day ES": f"${ev.es99_1d * nav:,.0f}",
+            f"99% 1-day VaR ({b.champion})": f"${b.var99 * nav:,.0f}", "99% 1-day ES": f"${ev.es99_conditional * nav:,.0f}",
             "Once-in-10-years daily loss": f"${ev.return_level_10y * nav:,.0f}",
             "Worst crisis (today's weights)": f"{b.worst_hist_loss:.1%} ({b.worst_hist_name})"}}))
     )
@@ -111,8 +111,9 @@ def generated(cfg: Config) -> dict[str, str]:
     rows = {k: v for k, v in lim.items() if not isinstance(v, (dict, list))}
     rows |= {f"cap {t}": x for t, x in lim["asset_caps"].items()} | {f"floor {t}": x for t, x in lim["asset_floors"].items()}
     g["01_mandate_ips"] = (
-        f"<p>Required return {req['required_return']:.2%} = spending {req['spending_rate']:.1%} + inflation "
-        f"{req['inflation']:.2%} (10-year average CPI to {req['cpi_window_end']}) + costs {req['cost_drag']:.1%}.</p>"
+        f"<p>Required return {req['required_return']:.2%} = (1 + spending {req['spending_rate']:.1%}) × (1 + real growth "
+        f"{req['real_growth']:.1%}) × (1 + inflation {req['inflation']:.2%}, {req['inflation_source']}) − 1. "
+        f"For context, 10-year average CPI to {req['cpi_window_end']}: {req['cpi_avg_10y']:.2%}.</p>"
         + table(pd.DataFrame({"limit": rows}), pct=("limit",)))
     alt = _p("portfolio_scorecard_val_original_agg40.parquet")
     if alt is not None:
@@ -203,7 +204,7 @@ def generated(cfg: Config) -> dict[str, str]:
                               + table(checks, index=False)
                               + "".join(f"<p>{html.escape(r)}</p>" for r in v.reasons)
                               + ("<h4>Verdict sensitivity</h4>" + table(
-                                  sens, pct=("cagr", "volatility", "es99_oos", "worst_crisis_drawdown", "return_gap"),
+                                  sens, pct=("forward_return", "volatility", "es99_ttc", "worst_crisis_loss", "return_gap"),
                                   dec={"max_loosening": 3}) if sens is not None else ""))
 
     g["08_limitations"] = "".join(

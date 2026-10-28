@@ -2,17 +2,7 @@
 
 ## 1. Recommendation
 Rule-engine outcome: **ADJUST RISK LIMIT**.
-- No portfolio meets the current risk limits. Minimum relaxation: Global min variance complies if es99_1d_max is loosened to 1.64% (+10%).
-- Amended limits require explicit approval by the investment committee (client) before implementation.
-- Expected return is 1.77% below the required return: lower the return objective, review the spending rate, or loosen a named risk limit.
-
-**Proposed limit amendments (minimum relaxation)**
-
-| Limit | Amended value |
-|---|---|
-| es99_1d_max | 1.64% |
-
-These amendments take effect only after explicit approval by the investment committee.
+- Expected return is 1.03% below the required return: lower the return objective, review the spending rate, or loosen a named risk limit.
 
 [TEAM: the team's recommendation in two or three sentences, in its own words.]
 
@@ -26,12 +16,12 @@ These amendments take effect only after explicit approval by the investment comm
 | GLD | 3.3% | $326,849 |
 
 ## 3. Expected outcome
-Expected return 4.91% a year against a required 6.68%.
+Expected return 4.87% a year against a required 5.90%.
 [TEAM: what this means for spending and real growth.]
 
 ## 4. Downside in plain English
 - On about 1 day in 100 we expect to lose more than $156,140; on such days the average loss is $190,237.
-- A once-a-decade bad day is about $237,682.
+- A once-a-decade bad day is about $353,748.
 - Over 10 trading days, the 99% ES is $675,885 (6.76% of NAV, reported limit 5%).
 
 ## 5. Stress results
@@ -47,14 +37,14 @@ Risk model: **GJR conditional EVT** (lowest 99% pinball loss among adequately va
 ## 7. Checks
 | Check | Measure | Value | Limit | Result |
 |---|---|---|---|---|
-| C1 | Volatility (OOS, annualised) | 7.60% | 8.00% | pass |
-| C2 | Worst historical stress drawdown | 21.13% | 20.00% | FAIL |
-| C3 | Hypothetical scenario loss | 17.62% | 20.00% | pass |
-| C4 | 99% 1-day ES (selected model) | 1.90% | 1.50% | FAIL |
-| C5a | EVT 99% ES | 1.67% | 1.88% | pass |
-| C5b | Once-in-10-years daily loss (EVT) | 2.38% | 5.00% | pass |
+| C1 | Volatility (through the cycle) | 8.09% | 8.40% | pass |
+| C2 | Worst historical crisis loss | 24.17% | 25.00% | pass |
+| C3 | Hypothetical scenario loss | 17.62% | 25.00% | pass |
+| C4 | 99% 1-day ES (through the cycle) | 2.13% | 2.23% | pass |
+| C5a | EVT 99% ES | 1.67% | 2.79% | pass |
+| C5b | Once-in-10-years daily loss (EVT) | 3.54% | 5.00% | pass |
 | C6 | Backtest validity of the selected model | True | True | pass |
-| C8 | Expected return vs required | 4.91% | 6.68% | FAIL |
+| C8 | Expected return vs required | 4.87% | 5.90% | FAIL |
 
 ## 8. Key risks and limitations
 [TEAM: the three most important items from the Assumptions & Limitations page.]
