@@ -173,3 +173,32 @@ def test_client_runs_the_full_pipeline_against_a_fake_service(tmp_path, monkeypa
     assert (run / "raw_report.md").read_text(encoding="utf-8").startswith("# Report")
     assert calls.index("/api/simulation/start") > calls.index("/api/simulation/prepare")
     assert (run / "manifest.json").exists()
+
+
+def test_blinding_guard_requires_committed_valid_analyst_answers(tmp_path, monkeypatch):
+    from quantedge.behavioral import blinding
+
+    monkeypatch.setattr(blinding, "ANALYST", tmp_path)
+    assert blinding.status("B2")[0] == "missing"
+    (tmp_path / "B2.json").write_text("{}", encoding="utf-8")
+    assert blinding.status("B2")[0] == "invalid"
+    a = answer()
+    a["_analyst"] = {"name": "Analyst", "declaration": "x"}
+    (tmp_path / "B2.json").write_text(json.dumps(a), encoding="utf-8")
+    monkeypatch.setattr(blinding, "committed", lambda p: False)
+    assert blinding.status("B2")[0] == "uncommitted"
+    with pytest.raises(SystemExit, match="Refused"):
+        blinding.require_analyst_first("B2")
+    monkeypatch.setattr(blinding, "committed", lambda p: True)
+    assert blinding.status("B2")[0] == "ready"
+    blinding.require_analyst_first("B2")
+
+
+def test_analyst_form_loads():
+    from streamlit.testing.v1 import AppTest
+
+    from quantedge.paths import ROOT
+
+    at = AppTest.from_file(str(ROOT / "tools" / "analyst_form.py"), default_timeout=60)
+    at.run()
+    assert not at.exception

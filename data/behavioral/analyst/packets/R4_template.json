@@ -1,0 +1,54 @@
+{
+  "factors": {
+    "rates_10y": {
+      "direction": "",
+      "intensity": "",
+      "confidence": ""
+    },
+    "oil": {
+      "direction": "",
+      "intensity": "",
+      "confidence": ""
+    },
+    "vix": {
+      "direction": "",
+      "intensity": "",
+      "confidence": ""
+    },
+    "usd": {
+      "direction": "",
+      "intensity": "",
+      "confidence": ""
+    },
+    "credit_spread": {
+      "direction": "",
+      "intensity": "",
+      "confidence": ""
+    }
+  },
+  "behaviour": {
+    "panic_selling": null,
+    "flight_to_safety": [],
+    "contagion_breadth": null,
+    "herding": null,
+    "investor_disagreement": null,
+    "duration": ""
+  },
+  "asset_directions": {
+    "SPY": "",
+    "EFA": "",
+    "EEM": "",
+    "AGG": "",
+    "GLD": "",
+    "XLE": "",
+    "XLK": ""
+  },
+  "narrative_summary": "",
+  "key_mechanisms": [],
+  "stated_limitations": [],
+  "_analyst": {
+    "name": "",
+    "completed_utc": "",
+    "declaration": "I wrote these answers without seeing any MiroFish output."
+  }
+}
