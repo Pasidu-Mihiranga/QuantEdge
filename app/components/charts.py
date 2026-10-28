@@ -107,3 +107,12 @@ def feasibility_frontier(tab: pd.DataFrame, required: float, es_limit: float, ti
     fig.update_xaxes(title="99% 1-day ES (2004–2022)", tickformat=".1%", rangemode="tozero")
     fig.update_yaxes(title="Expected return (CAPM prior)", tickformat=".1%")
     return fig.update_layout(title=title, **LAYOUT)
+
+
+def importance_bars(imp: pd.Series, title: str, top: int = 10) -> go.Figure:
+    """Horizontal bars of mean |SHAP| (one series; largest at the top)."""
+    s = imp.sort_values(ascending=False).head(top)[::-1]
+    fig = go.Figure(go.Bar(x=s.to_numpy() * 1e4, y=s.index, orientation="h", marker_color=COLORS["portfolio"],
+                           hovertemplate="%{y}: %{x:.2f} bp<extra></extra>"))
+    fig.update_xaxes(title="Mean |SHAP| on the 99% VaR forecast (bp of NAV)")
+    return fig.update_layout(title=title, showlegend=False, **LAYOUT)

@@ -1,0 +1,25 @@
+{
+  "model": "LightGBM",
+  "config": {
+    "num_leaves": 15,
+    "min_data_in_leaf": 50,
+    "learning_rate": 0.03,
+    "n_estimators": 500,
+    "feature_fraction": 0.8
+  },
+  "level": 0.99,
+  "portfolio": "Min CVaR",
+  "trained_on": [
+    "2006-11-14",
+    "2018-12-28"
+  ],
+  "explained": [
+    "2019-01-02",
+    "2022-12-29"
+  ],
+  "crisis_day_origin": "2020-03-11",
+  "crisis_day_var99": 0.03644877958509155,
+  "crisis_day_expected_value": 0.007480382125336628,
+  "monotonicity_rows": 250,
+  "seconds": 7.1
+}

@@ -1,4 +1,3 @@
-import pandas as pd
 import streamlit as st
 
 from components import charts
@@ -81,6 +80,26 @@ with tab_arena:
                             width="stretch")
         st.caption("Challengers: linear quantile regression (baseline) and LightGBM quantile models; the LSTM (Step 23) "
                    "joins when trained. Point-in-time weights and lagged features only; see Step 22.")
-        st.dataframe(pd.DataFrame({"LightGBM monotone constraints": ["not available with the quantile objective in "
-                                                                      "LightGBM 4.x; monotonicity is reported instead"]}),
-                     hide_index=True)
+        explain, imp = jsonfile("ml_explain.json"), parquet("ml_shap_importance.parquet")
+        with st.expander("Explainability (LightGBM, 99% VaR)", expanded=False):
+            if explain and imp is not None:
+                st.caption(f"One fit with the selected configuration, trained on {explain['trained_on'][0]} to "
+                           f"{explain['trained_on'][1]} (development only) and explaining validation forecasts. The arena "
+                           "retrains every 21 days, so this is a representative fit (`scripts/run_ml_explain.py`).")
+                st.plotly_chart(charts.importance_bars(imp["mean_abs_shap"], "What drives the forecast"), width="stretch")
+                crisis = parquet("ml_shap_crisis_day.parquet")
+                if crisis is not None:
+                    st.markdown(f"**Highest forecast in validation:** origin {explain['crisis_day_origin']}, 99% VaR "
+                                f"{explain['crisis_day_var99']:.2%} (model average {explain['crisis_day_expected_value']:.2%}). "
+                                "Largest contributions:")
+                    st.dataframe(crisis.head(8).style.format({"value": "{:.4f}", "shap": "{:+.4%}"}), width="stretch")
+                mono = parquet("ml_monotonicity.parquet")
+                if mono is not None:
+                    st.markdown("**Monotonicity in volatility.** LightGBM 4.x cannot impose monotone constraints with the "
+                                "quantile objective, so it is measured: the share of days whose forecast falls anywhere "
+                                "as one volatility feature rises (5–95% range), and how large the largest dip is.")
+                    st.dataframe(mono.style.format({"violation_share": "{:.0%}", "median_largest_dip_bp": "{:.1f}",
+                                                    "median_total_rise_bp": "{:.1f}", "share_rising_overall": "{:.0%}"}),
+                                 width="stretch")
+            else:
+                st.info("Run `scripts/run_ml_explain.py` to compute SHAP and the monotonicity diagnostic.")
