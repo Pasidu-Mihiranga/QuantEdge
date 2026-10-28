@@ -4,6 +4,7 @@ The tag `methodology-freeze-v1` may be created only when every **blocking** item
 
 ## Blocking
 
+- [ ] **Input lock signed** ([inputs_lock.md](inputs_lock.md)): D1–D10, regime definition, H1–H6, champion rule (with GJR-GARCH evaluated as a candidate on validation)
 - [x] IPS calibration decided ([ips_calibration.md](ips_calibration.md)): AGG cap 65%, original 40% case kept for sensitivity
 - [x] Champion rule decided ([champion_rule.md](champion_rule.md)): lowest-loss adequately validated model on validation
 - [x] Verdict logic decided ([decision_engine.md](decision_engine.md)): minimum relaxation + client-approval condition
