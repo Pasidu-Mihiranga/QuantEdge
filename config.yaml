@@ -62,7 +62,7 @@ stress:                        # Step 12 (historical windows are also used by th
     Rate shock 2022: ["2022-01-03", "2022-10-12"]
   hypothetical:                # "Stagflation and correlation breakdown" (team-designed; factor shocks, Step 12 §3.2)
     name: Hormuz stagflation 2027
-    status: agreed 2026-10-28 (D5): central case at 2022-size rates, the most severe candidate within history (notebook 05 §4b)
+    status: "agreed 2026-10-28 (D5), central case at 2022-size rates, the most severe candidate within history (notebook 05 §4b)"
     horizon: episode_3q        # D5: cumulative peak-to-trough episode of about three quarters (agreed 2026-10-28)
     credit_measure: BAA10Y     # long history (since 1986); +150 bp lies between 2022 (+43 bp) and the GFC (about +330 bp)
     shock:

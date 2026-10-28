@@ -36,7 +36,7 @@ Expected return 4.27% a year against a required 6.68%.
 ## 5. Stress results
 - Today's weights replayed through each crisis: the worst is Rate shock 2022, a loss of 14.7% ($1,465,031).
 - With the weights the strategy actually held at the time (walk-forward), the deepest crisis drawdown was 17.8%.
-- Hypothetical "stagflation and correlation breakdown": 12.7%.
+- Hypothetical "stagflation and correlation breakdown": 16.1%.
 [TEAM: the 2022 lesson (stocks and bonds falling together) and why the allocation is resilient.]
 
 ## 6. Model confidence
@@ -48,7 +48,7 @@ Risk model: **Conditional EVT** (lowest 99% pinball loss among adequately valida
 |---|---|---|---|---|
 | C1 | Volatility (OOS, annualised) | 6.31% | 8.00% | pass |
 | C2 | Worst historical stress drawdown | 17.76% | 20.00% | pass |
-| C3 | Hypothetical scenario loss | 12.69% | 20.00% | pass |
+| C3 | Hypothetical scenario loss | 16.15% | 20.00% | pass |
 | C4 | 99% 1-day ES (selected model) | 2.21% | 1.50% | FAIL |
 | C5a | EVT 99% ES | 1.42% | 1.88% | pass |
 | C5b | Once-in-10-years daily loss (EVT) | 3.41% | 5.00% | pass |
