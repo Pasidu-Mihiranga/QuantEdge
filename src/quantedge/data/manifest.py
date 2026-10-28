@@ -31,7 +31,15 @@ class ManifestEntry:
     library_versions: dict[str, str]
 
 
+TEXT_SUFFIXES = {".csv", ".html", ".json", ".jsonl", ".md", ".txt", ".yaml", ".yml"}
+
+
 def sha256_file(path: Path) -> str:
+    """SHA-256 of the file. Text files are hashed with CRLF normalised to LF: git stores LF while a
+    Windows working copy may hold CRLF, so the hash must not depend on the checkout."""
+    path = Path(path)
+    if path.suffix.lower() in TEXT_SUFFIXES:
+        return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     h = hashlib.sha256()
     with open(path, "rb") as fh:
         for chunk in iter(lambda: fh.read(1 << 20), b""):

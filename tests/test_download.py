@@ -73,3 +73,14 @@ def test_load_raw_works_offline(tmp_path, monkeypatch):
     assert list(data.adj_close.columns) == ["AGG", "SPY"]
     assert data.adj_close.shape == (5, 2)
     assert data.fred["DTB3"].iloc[1] == pytest.approx(1.1)
+
+
+def test_sha256_file_ignores_line_endings_for_text_only(tmp_path):
+    lf, crlf = tmp_path / "a.json", tmp_path / "b.json"
+    lf.write_bytes(b'{\n  "x": 1\n}\n')
+    crlf.write_bytes(b'{\r\n  "x": 1\r\n}\r\n')
+    assert sha256_file(lf) == sha256_file(crlf)
+    bin_lf, bin_crlf = tmp_path / "a.parquet", tmp_path / "b.parquet"
+    bin_lf.write_bytes(b"\x00\n")
+    bin_crlf.write_bytes(b"\x00\r\n")
+    assert sha256_file(bin_lf) != sha256_file(bin_crlf)

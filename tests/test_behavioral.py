@@ -134,9 +134,8 @@ def test_manifest_hashes_lf_text_so_it_survives_a_checkout(tmp_path):
     (tmp_path / "raw_report.md").write_bytes(b"# Report\r\nline two\r\n")
     (tmp_path / "shocks.parquet").write_bytes(b"\r\n\x00binary")
     files = write_manifest(tmp_path)["files"]
-    assert (tmp_path / "raw_report.md").read_bytes() == b"# Report\nline two\n"
     assert files["raw_report.md"] == hashlib.sha256(b"# Report\nline two\n").hexdigest()
-    assert (tmp_path / "shocks.parquet").read_bytes() == b"\r\n\x00binary"     # binary files untouched
+    assert files["shocks.parquet"] == hashlib.sha256(b"\r\n\x00binary").hexdigest()   # binary hashed as is
     assert b"\r\n" not in (tmp_path / "manifest.json").read_bytes()
 
 

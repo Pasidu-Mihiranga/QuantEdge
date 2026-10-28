@@ -8,7 +8,6 @@ the manual fallback, when files are exported from the MiroFish UI by hand).
 
 from __future__ import annotations
 
-import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -17,6 +16,7 @@ import pandas as pd
 import yaml
 
 from quantedge.behavioral.schema import QUESTIONNAIRE, parse_json_answer
+from quantedge.data.manifest import sha256_file
 from quantedge.paths import DATA
 
 BEHAVIORAL = DATA / "behavioral"
@@ -40,7 +40,7 @@ def load_scenarios(path: Path = SCENARIOS_FILE) -> dict:
 
 
 def scenarios_sha256(path: Path = SCENARIOS_FILE) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return sha256_file(path)
 
 
 def build_seed(scenario_id: str, scen: dict, returns: pd.DataFrame, macro: pd.DataFrame) -> str:
@@ -86,21 +86,9 @@ def new_run_dir(scenario_id: str, k: int) -> Path:
     return d
 
 
-TEXT_SUFFIXES = {".md", ".json", ".jsonl", ".txt", ".yaml"}
-
-
 def write_manifest(run_dir: Path) -> dict:
-    """SHA-256 of every run file. Text files are first normalised to LF line endings (Windows
-    `write_text` adds CR), matching .gitattributes, so the hashes hold on any fresh checkout."""
-    files = {}
-    for p in sorted(run_dir.iterdir()):
-        if not p.is_file() or p.name == "manifest.json":
-            continue
-        data = p.read_bytes()
-        if p.suffix in TEXT_SUFFIXES and b"\r\n" in data:
-            data = data.replace(b"\r\n", b"\n")
-            p.write_bytes(data)
-        files[p.name] = hashlib.sha256(data).hexdigest()
+    """SHA-256 of every run file (text hashed with LF line endings, so it holds on any checkout)."""
+    files = {p.name: sha256_file(p) for p in sorted(run_dir.iterdir()) if p.is_file() and p.name != "manifest.json"}
     out = {"written_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"), "scenarios_sha256": scenarios_sha256(),
            "files": files}
     (run_dir / "manifest.json").write_text(json.dumps(out, indent=2), encoding="utf-8", newline="\n")
