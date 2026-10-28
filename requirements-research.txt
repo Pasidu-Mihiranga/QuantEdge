@@ -3,3 +3,6 @@
 #   uv pip install --python .venv\Scripts\python.exe -r requirements-research.txt --index-url https://download.pytorch.org/whl/cpu
 # Installed 2026-10-28 (CPU wheel); keep pinned for reproducibility.
 torch==2.14.1
+
+# Behavioural Stress Lab (Step 19): Vertex proxy authentication
+google-auth==2.62.0

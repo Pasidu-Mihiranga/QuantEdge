@@ -16,3 +16,10 @@ build/
 .ruff_cache/
 .hypothesis/
 .coverage
+
+# Credentials: never committed (keys live outside the repo, in ~/.secrets/quantedge/)
+*service-account*.json
+*.pem
+*.key
+secrets/
+.secrets/

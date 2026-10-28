@@ -1,0 +1,63 @@
+# Behavioural Stress Lab scenarios (Step 19 §3.3). Fixed in advance; the SHA-256 of this file is
+# recorded in every run's manifest and in the Step 20 pre-registration. Do not edit after the first run.
+version: 1
+scale:
+  max_rounds: 40
+  replicates: 5
+  agents_target: 50-150
+archetypes:
+  - id: institutional
+    profile: "Pension funds and endowments: long horizon, benchmark-aware, rebalance mechanically, sell risk only when limits bind."
+  - id: retail
+    profile: "Individual investors: trend-following, sensitive to headlines and recent losses, prone to panic selling and fund outflows."
+  - id: bond
+    profile: "Fixed-income managers: duration-focused, react to policy-rate guidance and inflation prints, flee to short maturities in rate shocks."
+  - id: speculative
+    profile: "Hedge funds and leveraged traders: momentum and macro bets, forced to de-lever when volatility and margins rise."
+  - id: conservative
+    profile: "Capital-preservation investors: seek gold, high-quality bonds and cash in stress; slow to re-enter risk."
+scenarios:
+  B1:
+    kind: forward
+    title: "Unexpected Fed hike with hawkish guidance"
+    trigger: "The central bank raises its policy rate by 75 bp, well above expectations, and signals further hikes because core inflation is re-accelerating. Equity futures fall sharply overnight."
+    as_of: "2022-12-30"
+  B2:
+    kind: forward
+    title: "Stagflation and correlation breakdown"
+    trigger: "Inflation re-accelerates after an oil supply shock (oil +40%). Long-term yields rise as the central bank resumes hiking; growth forecasts are cut; credit spreads widen; the US dollar strengthens."
+    as_of: "2022-12-30"
+    baseline: "Same trigger as the team's Step 12 hypothetical scenario (direct A/B comparison in Step 20)"
+  B3:
+    kind: forward
+    title: "Emerging-market contagion with a strong dollar"
+    trigger: "A sharp US-dollar rally and capital flight from emerging markets follow a sovereign-debt crisis in a large emerging economy; EM currencies and equities fall; commodity exporters are hit."
+    as_of: "2022-12-30"
+  R1:
+    kind: replay
+    title: "Blind replay 1"
+    event: "2013 taper tantrum"
+    as_of: "2013-05-21"
+    window: ["2013-05-22", "2013-06-24"]
+    trigger: "The central bank of Country A signals it may soon slow its asset purchases. Long-term yields begin to rise."
+  R2:
+    kind: replay
+    title: "Blind replay 2"
+    event: "August 2015 China devaluation"
+    as_of: "2015-08-10"
+    window: ["2015-08-11", "2015-08-25"]
+    trigger: "Country B, a large emerging economy, unexpectedly devalues its currency and its equity market falls; growth worries spread."
+  R3:
+    kind: replay
+    title: "Blind replay 3"
+    event: "Q4 2018 sell-off"
+    as_of: "2018-10-02"
+    window: ["2018-10-03", "2018-12-24"]
+    trigger: "The central bank of Country A signals rates are still far from neutral while trade tensions escalate; growth expectations weaken."
+  R4:
+    kind: replay
+    title: "Blind replay 4"
+    event: "2022 rate shock"
+    as_of: "2022-01-03"
+    window: ["2022-01-04", "2022-10-12"]
+    trigger: "Inflation in Country A reaches a multi-decade high and the central bank signals rapid rate increases and balance-sheet reduction."
