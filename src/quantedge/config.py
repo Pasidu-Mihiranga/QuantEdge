@@ -93,7 +93,6 @@ class Config:
     partition: PartitionCfg
     ips: dict[str, Any] = field(default_factory=dict)
     stress: dict[str, Any] = field(default_factory=dict)
-    behavioral: dict[str, Any] = field(default_factory=dict)
     ml: dict[str, Any] = field(default_factory=dict)
     decision: dict[str, Any] = field(default_factory=dict)
     sha256: str = ""
@@ -186,7 +185,6 @@ def load_config(path: Path | str = CONFIG_FILE) -> Config:
         ),
         ips=raw.get("ips") or {},
         stress=raw.get("stress") or {},
-        behavioral=raw.get("behavioral") or {},
         ml=raw.get("ml") or {},
         decision=raw.get("decision") or {},
         sha256=hashlib.sha256(raw_bytes).hexdigest(),

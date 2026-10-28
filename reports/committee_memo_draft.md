@@ -4,7 +4,6 @@
 Rule-engine outcome: **ADJUST RISK LIMIT**.
 - No portfolio meets the current risk limits. Minimum relaxation: Min CVaR complies if es99_1d_max is loosened to 1.63% (+9%).
 - Amended limits require explicit approval by the investment committee (client) before implementation.
-- Re-sizing needed for: Max risk-to-capital ratio.
 - Expected return is 2.41% below the required return: lower the return objective, review the spending rate, or loosen a named risk limit.
 
 **Proposed limit amendments (minimum relaxation)**
@@ -30,12 +29,12 @@ Expected return 4.27% a year against a required 6.68%.
 [TEAM: what this means for spending and real growth.]
 
 ## 4. Downside in plain English
-- On about 1 day in 100 we expect to lose more than $171,653; on such days the average loss is $220,591.
-- A once-a-decade bad day is about $341,382.
-- Over 10 trading days, the 99% ES is $617,491 (6.17% of NAV, reported limit 5%).
+- On about 1 day in 100 we expect to lose more than $171,658; on such days the average loss is $220,606.
+- A once-a-decade bad day is about $341,429.
+- Over 10 trading days, the 99% ES is $617,508 (6.18% of NAV, reported limit 5%).
 
 ## 5. Stress results
-- Today's weights replayed through each crisis: the worst is Rate shock 2022, a loss of 15.2% ($1,524,906).
+- Today's weights replayed through each crisis: the worst is Rate shock 2022, a loss of 14.7% ($1,465,031).
 - With the weights the strategy actually held at the time (walk-forward), the deepest crisis drawdown was 17.8%.
 - Hypothetical "stagflation and correlation breakdown": 12.7%.
 [TEAM: the 2022 lesson (stocks and bonds falling together) and why the allocation is resilient.]
@@ -54,7 +53,6 @@ Risk model: **Conditional EVT** (lowest 99% pinball loss among adequately valida
 | C5a | EVT 99% ES | 1.42% | 1.88% | pass |
 | C5b | Once-in-10-years daily loss (EVT) | 3.41% | 5.00% | pass |
 | C6 | Backtest validity of the selected model | True | True | pass |
-| C7 | Max risk-to-capital ratio | 210.95% | 200.00% | FAIL |
 | C8 | Expected return vs required | 4.27% | 6.68% | FAIL |
 
 ## 8. Key risks and limitations

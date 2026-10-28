@@ -29,7 +29,7 @@ app/                        Streamlit multipage app (reads data/artifacts only)
 tests/                      pytest; fixtures in tests/fixtures
 data/raw/                   frozen download snapshot + manifest.json (committed)
 data/artifacts/             pipeline outputs (committed for reproducibility)
-scripts/                    one-off and research scripts (LSTM grid, etc.)
+scripts/                    one-off scripts (freeze record, window sensitivity)
 doc/                        plans, decision records
 ```
 
@@ -63,6 +63,6 @@ uv venv --python 3.12 .venv                 # Python 3.12 only (not the system 3
 ## Repository rules
 
 - Never commit the competition source files (`*.pdf`, `*.pptx`), `.env`, API keys, or `.venv/`.
-- MiroFish lives outside the repo (`mirofish-service/`, AGPL, unmodified).
+- MiroFish, LightGBM and the LSTM were removed on 2026-10-28 (paid LLM conflicted with the free-tier rule; deep models failed coverage). They are archived at the git tag `archive/mirofish-ml`; do not reintroduce them without a team decision.
 - Commits and PRs carry **no AI co-author trailers or AI attribution lines**. AI assistance is disclosed in `AI_DISCLOSURE.md` / `doc/ai_log.md` instead.
 - Never commit into the outer home-directory repository; run git with `-C` on this repo or from inside it.

@@ -50,7 +50,7 @@ def run(cfg: Config, deviation: str | None = None) -> dict:
     from quantedge.backtest.engine import run_models
     from quantedge.backtest.report import selection_table
     from quantedge.data.partition import load_returns
-    from quantedge.ml.quantile_models import LGBMQuantile, LinearQR, walk_forward_ml
+    from quantedge.ml.quantile_models import LinearQR, walk_forward_ml
     from quantedge.portfolio.walkforward import candidate_strategies, walk_forward
     from quantedge.portfolio.weights_path import point_in_time_weights
 
@@ -58,7 +58,6 @@ def run(cfg: Config, deviation: str | None = None) -> dict:
     part = Partition.from_config(cfg)
     champion_info = json.loads((ARTIFACTS / "champion.json").read_text(encoding="utf-8"))
     status = json.loads((ARTIFACTS / "status.json").read_text(encoding="utf-8"))
-    chosen = json.loads((ARTIFACTS / "ml_selected_configs.json").read_text(encoding="utf-8"))
     champion, focus = champion_info["champion"], status["focus_portfolio"]
 
     returns = load_returns("all", cfg)
@@ -78,24 +77,13 @@ def run(cfg: Config, deviation: str | None = None) -> dict:
     from quantedge.ml.features import build_features, garch_sigma_path
     from quantedge.portfolio.weights_path import pit_loss_target, pit_risk_returns
 
-    sigma = garch_sigma_path(pit_risk_returns(returns, wpath), refit_every=cfg.ml["lgbm"]["retrain_every"])
+    sigma = garch_sigma_path(pit_risk_returns(returns, wpath), refit_every=cfg.ml["retrain_every"])
     X = build_features(returns, macro, wpath, sigma)
     y = pit_loss_target(returns, wpath)
     levels = (0.95, 0.975, 0.99)
     es_levels = {0.975: tuple(cfg.ml["es_integral_levels"]), 0.99: (0.99, 0.9925, 0.995, 0.9975)}
-    kw = dict(retrain_every=cfg.ml["lgbm"]["retrain_every"], start=start, end=end, es_levels=es_levels)
+    kw = dict(retrain_every=cfg.ml["retrain_every"], start=start, end=end, es_levels=es_levels)
     results["Linear QR"] = walk_forward_ml(lambda lv: LinearQR(lv), X, y, levels, **kw)
-    lg = chosen["LightGBM"]["config"]
-    results["LightGBM"] = walk_forward_ml(lambda lv: LGBMQuantile(lv, lg, seed=cfg.seed), X, y, levels, **kw)
-    if "LSTM" in chosen:
-        from quantedge.ml.lstm_quantile import LSTMConfig, walk_forward_lstm
-
-        lc, sel_cfg = cfg.ml["lstm"], chosen["LSTM"]["config"]
-        lcfg = LSTMConfig(seq_len=sel_cfg["seq_len"], hidden=sel_cfg["hidden"], dropout=lc["dropout"],
-                          weight_decay=sel_cfg["weight_decay"], fz0_weight=lc["fz0_weight"])
-        results["LSTM"] = walk_forward_lstm(X, y, lcfg, seeds=tuple(lc["seeds"]), retrain_every=lc["retrain_every"],
-                                            start=start, end=end)
-
     common = sorted(set.intersection(*(set(d.index) for d in results.values())))
     scores = selection_table({k: v.loc[common] for k, v in results.items()}, 0.99)
     verdict = adoption_condition_3(scores, champion, cfg.ml["noninferiority_margin"])

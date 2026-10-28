@@ -52,13 +52,10 @@ def main() -> int:
         "config.yaml": cfg.sha256,
         "data/raw/manifest.json": sha256_file(MANIFEST),
         "requirements.txt": sha256_file(ROOT / "requirements.txt"),
-        "requirements-research.txt": sha256_file(ROOT / "requirements-research.txt"),
         "data/artifacts/artifacts_manifest.json": sha256_file(ARTIFACTS / "artifacts_manifest.json"),
-        "data/artifacts/ml_selected_configs.json": sha256_file(ARTIFACTS / "ml_selected_configs.json"),
         "adoption rule text (Step 22 §3.8)": hashlib.sha256(rule.encode("utf-8")).hexdigest(),
     }
     champion = json.loads((ARTIFACTS / "champion.json").read_text(encoding="utf-8"))
-    chosen = json.loads((ARTIFACTS / "ml_selected_configs.json").read_text(encoding="utf-8"))
     lines = [
         "# Methodology freeze record",
         "",
@@ -67,9 +64,8 @@ def main() -> int:
         "",
         f"**Champion:** {champion['champion']} ({champion['reason']}); window {champion['window']} days; "
         f"portfolio {champion['portfolio']}",
-        f"**Challengers:** Linear QR; LightGBM {chosen.get('LightGBM', {}).get('config')}; "
-        f"LSTM {chosen.get('LSTM', {}).get('config')}",
-        f"**Seeds:** global {cfg.seed}; LSTM {cfg.ml['lstm']['seeds']}",
+        "**Challenger:** Linear QR (LightGBM and LSTM rejected; archived at tag archive/mirofish-ml)",
+        f"**Seed:** global {cfg.seed}",
         "",
         "| Item | SHA-256 |",
         "|---|---|",

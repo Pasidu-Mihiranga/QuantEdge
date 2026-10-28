@@ -1,4 +1,4 @@
-"""Macro factor betas for the hypothetical scenario (Step 12 §3.2). Reused by the MiroFish translation.
+"""Macro factor betas for the hypothetical scenario (Step 12 §3.2). Also drive the scenario sliders on the Stress Testing page.
 
 Weekly data reduce asynchronous noise. Factors: change in the 10-year yield (bp), log change in oil,
 change in VIX (points), log change in the broad USD index, change in the Baa credit spread (bp).

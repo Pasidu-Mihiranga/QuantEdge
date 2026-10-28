@@ -71,18 +71,10 @@ stress:                        # Step 12 (historical windows are also used by th
 decision:                      # Step 13 rule engine (every threshold displayed in the app)
   evt_tolerance: 1.25          # C5a: EVT 99% ES may exceed the ES budget by at most 25%
   return_level_limit: 0.05     # C5b: once-in-10-years daily loss vs the 10-day ES budget (5% NAV)
-  max_risk_to_capital: 2.0     # C7
+  max_risk_to_capital: 2.0     # reported only; C7 removed (unreachable, audit G15). ES-share sizing rule pending decision D8
   rc_flag: 1.5                 # sizing flag (reported, not a verdict check)
   return_gap_tolerance: 0.01   # C8: gaps below 1% are disclosed, not failed
   max_limit_relaxation: 0.50   # ADJUST vs REJECT: largest acceptable loosening of a named limit
-
-behavioral:                    # Steps 19–20 (MiroFish)
-  enabled: true                # set false if the Week-2 feasibility gate fails
-  mirofish_commit: 7657031ac01184afe2cb220f5ee3545573b5e843   # 666ghj/MiroFish, cloned 2026-10-28 into mirofish-service/ (unmodified)
-  llm: "gemini-2.5-flash via Vertex AI (local proxy: python -m quantedge.behavioral.vertex_proxy)"
-  replicates: 5
-  max_rounds: 40
-  scenarios_file: data/behavioral/scenarios.yaml
 
 partition:                     # Step 22: decisions use dev + val only; test locked until the tag
   dev: ["2004-11-18", "2018-12-31"]
@@ -91,21 +83,10 @@ partition:                     # Step 22: decisions use dev + val only; test loc
   freeze_tag: methodology-freeze-v1
   warmup_weights: {SPY: 0.60, AGG: 0.40}
 
-ml:                            # Steps 22–23
+ml:                            # Step 22: linear QR challenger (LightGBM and LSTM archived at tag archive/mirofish-ml)
   quantiles: [0.90, 0.95, 0.99]
   primary_metric: pinball_99
   noninferiority_margin: 0.02
+  retrain_every: 21            # linear QR refit and GARCH-sigma feature refit cadence (trading days)
   es_ratio: {eps: 1.0e-4, clip: [1.0, 2.5]}
   es_integral_levels: [0.975, 0.98, 0.985, 0.99, 0.9925, 0.995, 0.9975]
-  lgbm:
-    retrain_every: 21
-    grid: {num_leaves: [7, 15], min_data_in_leaf: [50, 100]}
-    learning_rate: 0.03
-    n_estimators: 500
-    feature_fraction: 0.8
-  lstm:
-    retrain_every: 63
-    grid: {seq_len: [20, 60], hidden: [16, 32], weight_decay: [1.0e-4, 1.0e-3]}
-    dropout: 0.2
-    fz0_weight: 1.0
-    seeds: [11, 22, 33, 44, 55]

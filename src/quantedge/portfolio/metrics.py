@@ -115,8 +115,15 @@ def max_drawdown_info(values: pd.Series) -> dict:
     }
 
 
+def underwater(r: pd.Series) -> pd.Series:
+    """dd_t = V_t / max(1, max_{s<=t} V_s) - 1, measured from the initial $1 so that a loss on the
+    first day counts as drawdown (a peak built only from V_1 onwards would miss it)."""
+    v = wealth(r)
+    return v / np.maximum(v.cummax(), 1.0) - 1
+
+
 def max_drawdown(r: pd.Series) -> float:
-    return max_drawdown_info(wealth(r))["max_drawdown"]
+    return float(min(underwater(r).min(), 0.0))
 
 
 def calmar(r: pd.Series) -> float:
@@ -134,7 +141,7 @@ def omega(r: pd.Series, threshold: float = 0.0) -> float:
 
 def ulcer_index(r: pd.Series) -> float:
     """sqrt(mean(dd_t^2)): captures both the depth and the duration of drawdowns."""
-    dd = drawdown_series(wealth(r))["drawdown"]
+    dd = underwater(r)
     return float(np.sqrt((dd**2).mean()))
 
 

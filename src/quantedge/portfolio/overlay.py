@@ -80,7 +80,8 @@ def compare(results: dict[str, pd.Series], windows: dict[str, tuple[str, str]], 
     rows = []
     for name, r in results.items():
         r = r.dropna()
-        crisis = {f"dd {k}": -metrics.max_drawdown(r.loc[a:b]) for k, (a, b) in windows.items() if len(r.loc[a:b]) > 5}
+        after_peak = {k: r.loc[(r.index > pd.Timestamp(a)) & (r.index <= pd.Timestamp(b))] for k, (a, b) in windows.items()}
+        crisis = {f"dd {k}": -metrics.max_drawdown(seg) for k, seg in after_peak.items() if len(seg) > 5}
         rows.append({"strategy": name, "cagr": metrics.cagr(r), "volatility": metrics.volatility(r),
                      "max_drawdown": -metrics.max_drawdown(r), "es99": historical_es(r),
                      "calmar": metrics.calmar(r), "worst_crisis_dd": worst_window_drawdown(r, windows)[0],

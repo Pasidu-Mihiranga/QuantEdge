@@ -9,8 +9,6 @@ __pycache__/
 .pytest_cache/
 .env
 
-# MiroFish service lives outside the repo (AGPL, separate clone)
-mirofish-service/
 *.egg-info/
 build/
 .ruff_cache/

@@ -15,9 +15,7 @@ BACKTEST_FILES = {
     "Cornish-Fisher": "cornish_fisher", "EVT": "evt", "Monte Carlo": "monte_carlo",
     "GARCH-FHS": "garch_fhs", "Conditional EVT": "conditional_evt",
 }
-ML_FILES = {"Linear QR": "ml_linear_qr", "LightGBM": "ml_lightgbm",
-            "Linear QR (ratio ES)": "ml_linear_qr_ratio_es", "LightGBM (ratio ES)": "ml_lightgbm_ratio_es",
-            "LSTM": "ml_lstm"}
+ML_FILES = {"Linear QR": "ml_linear_qr", "Linear QR (ratio ES)": "ml_linear_qr_ratio_es"}
 
 
 @st.cache_resource

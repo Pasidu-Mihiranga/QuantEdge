@@ -1,4 +1,3 @@
-import pandas as pd
 import streamlit as st
 
 from components import charts
@@ -79,8 +78,6 @@ with tab_arena:
         if f is not None:
             st.plotly_chart(charts.exceptions_chart(f.loc[ctl.start:ctl.end], 0.99, f"{name}: 99% VaR vs loss"),
                             width="stretch")
-        st.caption("Challengers: linear quantile regression (baseline) and LightGBM quantile models; the LSTM (Step 23) "
-                   "joins when trained. Point-in-time weights and lagged features only; see Step 22.")
-        st.dataframe(pd.DataFrame({"LightGBM monotone constraints": ["not available with the quantile objective in "
-                                                                      "LightGBM 4.x; monotonicity is reported instead"]}),
-                     hide_index=True)
+        st.caption("Challenger: linear quantile regression, with point-in-time weights and lagged features only "
+                   "(Step 22). LightGBM and an LSTM were also evaluated and rejected: both failed coverage in every "
+                   "configuration (doc/decisions/ml_selection.md). Their rows remain in the arena table as evidence.")

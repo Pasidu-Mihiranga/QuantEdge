@@ -1,6 +1,7 @@
-"""Quantile challengers: linear quantile regression (baseline) and LightGBM (Step 22 §3.6–3.7).
+"""Quantile challenger: linear quantile regression (Step 22 §3.6). LightGBM was evaluated and rejected
+(it failed coverage in every configuration) and is archived at the git tag archive/mirofish-ml.
 
-Both predict the conditional quantiles of next-day loss l_{t+1} from features known at t.
+The model predicts the conditional quantiles of next-day loss l_{t+1} from features known at t.
 Quantile predictions are rearranged row-wise (Chernozhukov, Fernandez-Val & Galichon, 2010) because
 separately fitted quantile models can cross; monotone feature constraints do not prevent this.
 Features are standardised with statistics of the training window only.
@@ -55,46 +56,6 @@ class LinearQR:
 
         Xs = sm.add_constant(self.scaler.transform(X), has_constant="add")[self.cols].to_numpy()
         return np.column_stack([Xs @ self.params[a] for a in self.levels])
-
-
-class LGBMQuantile:
-    """One LightGBM quantile model per level; early stopping on the last 20% of the training
-    window (time-ordered, never shuffled).
-
-    LightGBM (4.x) rejects monotone_constraints with the quantile objective, because its quantile
-    leaf renewal would break them. Monotonicity in volatility is therefore measured with
-    `monotonicity_violations` and reported, not imposed (documented deviation from Step 22 §3.6)."""
-
-    name = "LightGBM"
-
-    def __init__(self, levels, params: dict | None = None, seed: int = 0):
-        self.levels = tuple(levels)
-        self.params = {"num_leaves": 7, "min_data_in_leaf": 50, "learning_rate": 0.03,
-                       "n_estimators": 500, "feature_fraction": 0.8, **(params or {})}
-        self.seed = seed
-
-    def fit(self, X: pd.DataFrame, y: pd.Series):
-        import lightgbm as lgb
-
-        self.cols = list(X.columns)
-        cut = int(len(X) * 0.8)
-        self.models = {}
-        for a in self.levels:
-            m = lgb.LGBMRegressor(objective="quantile", alpha=a, random_state=self.seed,
-                                  deterministic=True, verbose=-1, bagging_seed=self.seed,
-                                  feature_fraction_seed=self.seed, **self.params)
-            m.fit(X.iloc[:cut], y.iloc[:cut], eval_X=(X.iloc[cut:],), eval_y=(y.iloc[cut:],),
-                  eval_metric="quantile", callbacks=[lgb.early_stopping(50, verbose=False)])
-            self.models[a] = m
-        return self
-
-    def predict(self, X: pd.DataFrame) -> np.ndarray:
-        return np.column_stack([self.models[a].predict(X[self.cols]) for a in self.levels])
-
-    def contributions(self, X: pd.DataFrame, level: float) -> pd.DataFrame:
-        """SHAP values from LightGBM's built-in pred_contrib (last column is the expected value)."""
-        raw = self.models[level].predict(X[self.cols], pred_contrib=True)
-        return pd.DataFrame(raw, index=X.index, columns=[*self.cols, "expected_value"])
 
 
 def monotonicity_violations(model, X: pd.DataFrame, feature: str, level: float, n_grid: int = 25) -> float:

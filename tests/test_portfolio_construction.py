@@ -4,6 +4,7 @@ import pytest
 
 from quantedge.config import load_config
 from quantedge.decision.ips import IPSLimits, OptimizerConstraints, constraints_for_optimizer
+from quantedge.portfolio import metrics
 from quantedge.portfolio import optimize as opt
 from quantedge.portfolio.walkforward import (
     bootstrap_weights,
@@ -133,9 +134,13 @@ def test_scorecard_ranks_and_flags_ips(market):
     strategies, _ = candidate_strategies(CFG, LIMITS, TICKERS)
     picked = {k: strategies[k] for k in ("Equal weight", "60/40 benchmark", "Global min variance")}
     results = {k: walk_forward(returns, s, rf, name=k) for k, s in picked.items()}
-    card = scorecard(results, LIMITS, 0.065, CFG.stress["historical"], pd.Timestamp("2012-12-31"))
+    card = scorecard(results, LIMITS, 0.065, CFG.stress["historical"], pd.Timestamp("2012-12-31"), rf)
     assert not card.loc["Equal weight", "weights_within_ips"]  # EEM/XLE/XLK above 10%
     assert list(card["rank"]) == [1, 2, 3]
+    # Sharpe is on excess returns over the risk-free rate (audit gap G6), not on raw returns
+    r = results["Global min variance"].perf.loc[:"2012-12-31"]
+    assert card.loc["Global min variance", "sharpe"] == pytest.approx(metrics.sharpe(r, rf))
+    assert card.loc["Global min variance", "sharpe"] != pytest.approx(metrics.sharpe(r))
 
 
 def test_weight_path_ignores_the_future_and_uses_warmup(market):

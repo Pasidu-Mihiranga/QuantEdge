@@ -43,7 +43,7 @@ def run_portfolio_selection(cfg: Config, macro: pd.DataFrame, variant: str | Non
     results = {name: walk_forward(returns, s, rf, window=cfg.portfolio.estimation_window_days,
                                   cost_bps=cfg.portfolio.cost_bps_per_side, name=name)
                for name, s in strategies.items()}
-    card = scorecard(results, limits, req["required_return"], cfg.stress["historical"], end)
+    card = scorecard(results, limits, req["required_return"], cfg.stress["historical"], end, rf)
     tag = tag or variant
     if tag is not None:
         card.to_parquet(ARTIFACTS / f"portfolio_scorecard_val_{tag}.parquet")
@@ -173,30 +173,25 @@ def ml_inputs(cfg: Config, wf_result, macro: pd.DataFrame) -> tuple[pd.DataFrame
     part = Partition.from_config(cfg)
     returns = load_returns("dev+val", cfg)
     wpath = point_in_time_weights(wf_result.weights_history, returns.index, cfg.partition.warmup_weights)
-    sigma = garch_sigma_path(pit_risk_returns(returns, wpath), refit_every=cfg.ml["lgbm"]["retrain_every"])
+    sigma = garch_sigma_path(pit_risk_returns(returns, wpath), refit_every=cfg.ml["retrain_every"])
     X = build_features(returns, macro.loc[: part.val[1]], wpath, sigma)
     return X, pit_loss_target(returns, wpath)
 
 
-def run_ml_arena(cfg: Config, wf_result, backtests: dict, champion: str, macro: pd.DataFrame,
-                 fast: bool = False) -> dict:
-    """Step 22 M3–M4: linear QR and LightGBM challengers vs the champion, scored on validation."""
-    from quantedge.ml.quantile_models import LGBMQuantile, LinearQR, ratio_es, walk_forward_ml
+def run_ml_arena(cfg: Config, wf_result, backtests: dict, champion: str, macro: pd.DataFrame) -> dict:
+    """Step 22 M3–M4: the linear QR challenger vs the champion, scored on validation.
+
+    LightGBM and the LSTM were evaluated and rejected (both failed coverage in every configuration;
+    doc/decisions/ml_selection.md) and are archived at the git tag archive/mirofish-ml."""
+    from quantedge.ml.quantile_models import LinearQR, ratio_es, walk_forward_ml
 
     part = Partition.from_config(cfg)
     X, y = ml_inputs(cfg, wf_result, macro)
     levels = (0.95, 0.975, 0.99)
     es_levels = {0.975: tuple(cfg.ml["es_integral_levels"]), 0.99: (0.99, 0.9925, 0.995, 0.9975)}
-    lg = cfg.ml["lgbm"]
-    lgbm_params = {"num_leaves": lg["grid"]["num_leaves"][0], "min_data_in_leaf": lg["grid"]["min_data_in_leaf"][0],
-                   "learning_rate": lg["learning_rate"], "n_estimators": 100 if fast else lg["n_estimators"],
-                   "feature_fraction": lg["feature_fraction"]}
-    kw = dict(retrain_every=lg["retrain_every"], start=cfg.backtest.oos_start, end=part.val[1],
+    kw = dict(retrain_every=cfg.ml["retrain_every"], start=cfg.backtest.oos_start, end=part.val[1],
               es_levels=es_levels, min_train=750)
-    out = {
-        "Linear QR": walk_forward_ml(lambda lv: LinearQR(lv), X, y, levels, **kw),
-        "LightGBM": walk_forward_ml(lambda lv: LGBMQuantile(lv, lgbm_params, seed=cfg.seed), X, y, levels, **kw),
-    }
+    out = {"Linear QR": walk_forward_ml(lambda lv: LinearQR(lv), X, y, levels, **kw)}
     # ES variant (a): ratio hybrid with the conditional-EVT ES/VaR ratio of the same day.
     cevt = backtests["Conditional EVT"]
     for name in list(out):
@@ -516,7 +511,13 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
     else:
         print("[backtest] cached artifacts reused (pass --force-backtests to recompute)")
     if with_ml:
-        print("[ml]       use scripts/run_ml_arena.py (slow)")
+        champion = json.loads((ARTIFACTS / "champion.json").read_text(encoding="utf-8"))["champion"]
+        backtests = (out.get("backtests") or {}).get("results") or {
+            name: pd.read_parquet(ARTIFACTS / f"backtest_{name.lower().replace(' ', '_').replace('-', '_')}_"
+                                              f"{cfg.risk.default_window}.parquet")
+            for name in {champion, "Conditional EVT"}}
+        out["ml"] = run_ml_arena(cfg, wf, backtests, champion, clean.macro)
+        print("[ml]       linear QR arena written (ml_arena_val.parquet)")
 
     passes = bool(sel["scorecard"].loc[focus, "ips_pass"])
     status = {"focus_portfolio": focus, "provisional": True,
@@ -555,5 +556,6 @@ if __name__ == "__main__":
 
     ap = argparse.ArgumentParser(description="QuantEdge precompute pipeline")
     ap.add_argument("--force-backtests", action="store_true")
+    ap.add_argument("--with-ml", action="store_true", help="rerun the linear QR challenger arena (slow)")
     args = ap.parse_args()
-    run(load_config(), force_backtests=args.force_backtests)
+    run(load_config(), force_backtests=args.force_backtests, with_ml=args.with_ml)

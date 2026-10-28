@@ -26,8 +26,15 @@ def test_replay_contributions_sum_to_total(market):
 def test_single_asset_replay_equals_its_own_return(market):
     w = pd.Series({"A": 1.0, "B": 0.0, "C": 0.0})
     res = replay(market, w, "2019-06-03", "2019-12-31", 1e7)
-    expected = (1 + market.loc["2019-06-03":"2019-12-31", "A"]).prod() - 1
+    expected = (1 + market.loc["2019-06-04":"2019-12-31", "A"]).prod() - 1   # starts after the peak close
     assert res.total_return == pytest.approx(expected, abs=1e-12)
+
+
+def test_replay_excludes_the_return_dated_on_the_window_start():
+    idx = pd.bdate_range("2020-01-01", periods=4)
+    r = pd.DataFrame({"A": [-0.50, -0.10, 0.0, 0.0]}, index=idx)   # the -50% day is before the peak close
+    res = replay(r, pd.Series({"A": 1.0}), idx[0], idx[2], 1.0)
+    assert res.total_return == pytest.approx(-0.10)
 
 
 def test_recovery_days():

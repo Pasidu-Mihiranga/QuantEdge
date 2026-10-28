@@ -114,7 +114,7 @@ def worst_window_drawdown(r: pd.Series, windows: dict[str, tuple[str, str]]) -> 
     """Deepest max drawdown (positive) inside any crisis window covered by `r`."""
     worst, which = 0.0, "none covered"
     for name, (start, end) in windows.items():
-        seg = r.loc[start:end]
+        seg = r.loc[(r.index > pd.Timestamp(start)) & (r.index <= pd.Timestamp(end))]  # path after the peak close
         if len(seg) < 5:
             continue
         dd = -metrics.max_drawdown(seg)
@@ -124,7 +124,8 @@ def worst_window_drawdown(r: pd.Series, windows: dict[str, tuple[str, str]]) -> 
 
 
 def scorecard(results: dict[str, WFResult], limits: IPSLimits, required_return: float,
-              crisis_windows: dict[str, tuple[str, str]], end: pd.Timestamp) -> pd.DataFrame:
+              crisis_windows: dict[str, tuple[str, str]], end: pd.Timestamp,
+              rf: pd.Series | float) -> pd.DataFrame:
     """Pre-declared selection scorecard on out-of-sample results up to `end`.
 
     Order: IPS pass/fail first, then the average rank of OOS 99% ES and max drawdown (capital
@@ -149,7 +150,7 @@ def scorecard(results: dict[str, WFResult], limits: IPSLimits, required_return: 
             "worst_crisis_drawdown": crisis_dd, "worst_crisis": crisis_name,
             "turnover_ann": float(res.turnover.loc[:end].iloc[1:].sum() / years),
             "cagr": metrics.cagr(r), "vs_required": metrics.cagr(r) - required_return,
-            "volatility": vol, "sharpe": metrics.sharpe(r), "weights_within_ips": weights_ok,
+            "volatility": vol, "sharpe": metrics.sharpe(r, rf), "weights_within_ips": weights_ok,
             "ips_pass": ips_pass,
         })
     card = pd.DataFrame(rows).set_index("candidate")

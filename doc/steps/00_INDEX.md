@@ -1,5 +1,7 @@
 # QuantEdge 1.0: Step-by-Step Expert Plans (Index)
 
+> **Scope change, 2026-10-28:** after an independent audit, Steps 19–21 (MiroFish, its A/B evaluation, the research-paper track) and Step 23 (LSTM) were removed, and LightGBM was dropped from Step 22 (linear QR remains). The work is archived at the git tag `archive/mirofish-ml`. Rows and paragraphs below that mention them are historical.
+
 This folder breaks the master plan (`../QuantEdge_Implementation_Plan.md`) into 23 steps. Each step file uses the same template:
 
 1. **Target**: what "done" means

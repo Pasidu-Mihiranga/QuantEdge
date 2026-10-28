@@ -6,7 +6,7 @@ The application:
 - builds and selects the portfolio with quantitative methods;
 - measures its risk with Value-at-Risk, Expected Shortfall and Extreme Value Theory;
 - checks those risk estimates out-of-sample with Kupiec, Christoffersen and the Basel traffic light;
-- compares the best conventional model with machine-learning challengers (linear quantile regression, LightGBM, LSTM);
+- compares the best conventional model with a machine-learning challenger (linear quantile regression; LightGBM and an LSTM were evaluated and rejected);
 - stress-tests the portfolio against historical and hypothetical crises;
 - gives an accept / adjust the risk limit / reject outcome, with the final recommendation written by the team.
 
@@ -22,7 +22,7 @@ Requires Python 3.12 and [uv](https://docs.astral.sh/uv/). On Windows use `.\mak
 .\make.ps1 test        # fast tests; .\make.ps1 test-all includes the slow ones
 ```
 
-The raw data snapshot in `data/raw/` is frozen and SHA-256 hashed (`data/raw/manifest.json`). Refreshing it is an explicit step: `.\make.ps1 data`. The research-only LSTM needs `requirements-research.txt` (PyTorch CPU); the app never imports it.
+The raw data snapshot in `data/raw/` is frozen and SHA-256 hashed (`data/raw/manifest.json`). Refreshing it is an explicit step: `.\make.ps1 data`.
 
 ## Where things are
 
@@ -39,8 +39,8 @@ The raw data snapshot in `data/raw/` is frozen and SHA-256 hashed (`data/raw/man
 ## Planning documents
 
 - [Master implementation plan](doc/QuantEdge_Implementation_Plan.md)
-- [Hybrid validation and ML challenger plan](doc/ML_Challenger_and_Partition_Plan.md): a leakage-safe chronological partition combined with walk-forward, with LightGBM, LSTM and linear quantile-regression challengers against the best conventional VaR model
-- [Step-by-step plans (index)](doc/steps/00_INDEX.md): 23 steps, from data acquisition to the pitch. They also cover the MiroFish behavioural stress lab and its with/without evaluation, the ML challengers (Steps 22–23), and two research papers
+- [Hybrid validation and ML challenger plan](doc/ML_Challenger_and_Partition_Plan.md): a leakage-safe chronological partition combined with walk-forward, with a linear quantile-regression challenger against the best conventional VaR model (LightGBM and LSTM rejected, archived at the git tag `archive/mirofish-ml`)
+- [Step-by-step plans (index)](doc/steps/00_INDEX.md): 23 steps, from data acquisition to the pitch. Steps 19–21 (MiroFish behavioural stress lab, its evaluation, research papers) and 23 (LSTM) were removed on 2026-10-28 after an independent audit; they are archived at the git tag `archive/mirofish-ml`
 
 ## Status
 

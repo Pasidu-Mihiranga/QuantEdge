@@ -34,7 +34,7 @@ def dcfg():
         ({"worst_hist_drawdown": 0.35}, "REJECT"),                                # needs > 50% loosening
         ({"any_model_valid": False, "champion_valid": False}, "REJECT"),
         ({"champion_valid": False}, "ADJUST RISK LIMIT"),
-        ({"max_risk_to_capital": 2.5, "resized_passes": True}, "ADJUST RISK LIMIT"),
+        ({"max_risk_to_capital": 2.5}, "ACCEPT"),                                 # reported, not a check (G15)
         ({"vol_oos": 0.08}, "ACCEPT"),                                            # boundary passes
         ({"evt_es99": 0.015 * 1.25 + 1e-6, "resized_passes": True}, "ADJUST RISK LIMIT"),
     ],
@@ -42,7 +42,7 @@ def dcfg():
 def test_verdict_branches(changes, status, dcfg):
     v = evaluate(replace(GOOD, **changes), LIM, dcfg)
     assert v.status == status, v.reasons
-    assert len(v.checks) == 9
+    assert len(v.checks) == 8
 
 
 def test_adjust_names_the_limit_and_new_value(dcfg):

@@ -68,10 +68,10 @@ class Evidence:
     return_level_10y: float         # C5 once-in-10-years daily loss
     champion_valid: bool            # C6 selected model passes Kupiec, CC and Basel
     any_model_valid: bool           # C6 for REJECT: at least one model is valid
-    max_risk_to_capital: float      # C7 concentration
+    max_risk_to_capital: float      # reported for sizing, not a verdict check (C7 removed, audit G15)
     expected_return: float          # C8
     required_return: float          # C8
-    resized_passes: bool = False    # a re-sized portfolio exists that passes C1–C5 and C7
+    resized_passes: bool = False    # a re-sized portfolio exists that passes C1–C5
     resized_weights: dict | None = None
     relaxation: Relaxation | None = None   # minimum relaxation across candidates (preferred when given)
 
@@ -108,7 +108,6 @@ def run_checks(ev: Evidence, lim: IPSLimits, dcfg: dict) -> list[Check]:
         _max_check("C5a", "EVT 99% ES", ev.evt_es99, lim.es99_1d_max * tol),
         _max_check("C5b", "Once-in-10-years daily loss (EVT)", ev.return_level_10y, dcfg["return_level_limit"]),
         Check("C6", "Backtest validity of the selected model", ev.champion_valid, True, ev.champion_valid),
-        _max_check("C7", "Max risk-to-capital ratio", ev.max_risk_to_capital, dcfg["max_risk_to_capital"]),
         Check("C8", "Expected return vs required", ev.expected_return, ev.required_return,
               ev.expected_return >= ev.required_return, ev.expected_return - ev.required_return),
     ]
@@ -123,7 +122,7 @@ def evaluate(ev: Evidence, lim: IPSLimits, dcfg: dict) -> Verdict:
     if not ev.any_model_valid:
         return Verdict("REJECT", checks, ["No risk model passes the backtests: risk cannot be measured reliably."])
 
-    risk_fail = [c for c in checks if c.code in ("C1", "C2", "C3", "C4", "C5a", "C5b", "C7") and not c.passed]
+    risk_fail = [c for c in checks if c.code in ("C1", "C2", "C3", "C4", "C5a", "C5b") and not c.passed]
     gap = ev.required_return - ev.expected_return
     reasons, adjustments = [], {}
 
