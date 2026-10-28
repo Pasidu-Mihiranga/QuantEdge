@@ -1,17 +1,74 @@
+import pandas as pd
 import streamlit as st
 
 from components import charts
-from components.data import jsonfile, parquet, require
+from components.data import analysis_returns, config, jsonfile, parquet, require
 from components.sidebar import pct, provisional_banner, sidebar, usd
+from quantedge.decision.ips import IPSLimits
+from quantedge.portfolio.custom import custom_check
 
 st.set_page_config(page_title="Risk Dashboard", layout="wide")
 ctl = sidebar()
 st.title("Risk dashboard: VaR, ES and EVT")
 provisional_banner()
 
+
+
+@st.cache_data(show_spinner=False)
+def live_check(weights: dict, window: int, heavy: bool, evt_q: float) -> dict:
+    cfg = config()
+    return custom_check(weights, analysis_returns(), IPSLimits.from_config(cfg.ips), cfg.stress["historical"],
+                        window=window, alphas=(0.90, 0.95, 0.99), heavy=heavy, evt_threshold_q=evt_q)
+
+
 snap = parquet("risk_snapshot.parquet")
 if not require(snap, "The risk snapshot"):
     st.stop()
+
+if not ctl.is_recommended and ctl.weights and analysis_returns() is not None:
+    st.subheader(f"Selected portfolio: {ctl.portfolio} (live check)")
+    evt_tab = parquet("evt_sensitivity.parquet")
+    evt_q = float(evt_tab["quantile"].iloc[0]) if evt_tab is not None else 0.90
+    key = f"heavy_{sorted(ctl.weights.items())}_{ctl.window}"
+    heavy = st.session_state.get(key, False)
+    try:
+        with st.spinner("Fitting GARCH-FHS and EVT…" if heavy else "Computing…"):
+            chk = live_check(ctl.weights, ctl.window, heavy, evt_q)
+    except ValueError as e:
+        st.error(f"These weights cannot be checked: {e}.")
+        st.stop()
+    w = chk["weights"]
+    c1, c2 = st.columns([1, 2])
+    c1.dataframe(w[w > 1e-6].rename("weight").to_frame().style.format("{:.1%}"), width="stretch")
+    breaches = chk["weight_checks"][~chk["weight_checks"]["passed"]]
+    if chk["weights_ok"]:
+        c2.success("Weights meet every IPS weight limit.")
+    else:
+        c2.error("IPS weight limits breached: " + "; ".join(
+            f"{r['name']} {r['value']:.1%} vs {r['limit']:.0%}" for _, r in breaches.iterrows()))
+    rc = chk["risk_checks"].set_index("name")
+    labels = {"vol_ann": "Volatility (annualised)", "es99_1d": "99% 1-day ES (historical)",
+              "stress_drawdown": "Worst stress-window drawdown"}
+    c2.dataframe(pd.DataFrame({"value": rc["value"], "limit": rc["limit"], "passes": rc["passed"]})
+                 .rename(index=labels).style.format({"value": "{:.2%}", "limit": "{:.1%}"}), width="stretch")
+    c2.caption(f"Fixed weights over {chk['sample'][0]} to {chk['sample'][1]} (development + validation).")
+    live = chk["risk"][chk["risk"]["alpha"] == ctl.alpha].set_index("model")
+    rec = snap[snap.alpha == ctl.alpha].set_index("model")
+    table = pd.DataFrame({"VaR": live["var"], "ES": live["es"], "ES (USD)": live["es"] * ctl.nav,
+                          "ES, recommended": rec["es"].reindex(live.index)})
+    st.dataframe(table.style.format({"VaR": "{:.3%}", "ES": "{:.3%}", "ES (USD)": "${:,.0f}",
+                                     "ES, recommended": "{:.3%}"}, na_rep="—"), width="stretch")
+    st.caption(f"1-day · {ctl.alpha:.0%} · fitted on the last {ctl.window} days ({chk['window'][0]} to {chk['window'][1]}). "
+               "The recommended column uses the precomputed 500-day snapshot.")
+    if not heavy and st.button("Also fit GARCH-FHS and EVT (a few seconds)"):
+        st.session_state[key] = True
+        st.rerun()
+    worst = table["ES"].max()
+    st.markdown(f"**What this means:** on a bad day (the worst {1 - ctl.alpha:.0%} of days), this portfolio would lose "
+                f"about {usd(worst * ctl.nav)} on average under the most cautious model shown"
+                f"{'' if chk['risk_ok'] else ', and it breaches at least one IPS risk limit over 2004–2022'}.")
+    st.divider()
+    st.caption("Everything below is precomputed for the recommended portfolio.")
 extras = jsonfile("risk_extras.json")
 a = ctl.alpha
 at = snap[snap.alpha == a].set_index("model")
