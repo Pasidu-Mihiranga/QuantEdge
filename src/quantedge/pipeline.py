@@ -78,7 +78,7 @@ def run_evt(cfg: Config, wf_result, label: str) -> dict:
 
 
 def backtest_specs(cfg: Config, evt_threshold_q: float = 0.90) -> list:
-    """The eight conventional models with their refit cadence (Step 11 §3.1)."""
+    """The eight conventional models plus the two GJR variants, with their refit cadence (Step 11 §3.1)."""
     from quantedge.backtest.engine import ModelSpec
     from quantedge.risk.evt import ConditionalEVTModel, EVTModel
     from quantedge.risk.garch import GarchFHSModel
@@ -95,6 +95,8 @@ def backtest_specs(cfg: Config, evt_threshold_q: float = 0.90) -> list:
         ModelSpec("Monte Carlo", lambda: MonteCarloModel(n_sims=20_000, rng=rng), cfg.backtest.refit_every),
         ModelSpec("GARCH-FHS", GarchFHSModel, cfg.backtest.refit_every),
         ModelSpec("Conditional EVT", ConditionalEVTModel, cfg.backtest.refit_every),
+        ModelSpec("GJR-FHS", lambda: GarchFHSModel(o=1), cfg.backtest.refit_every),
+        ModelSpec("GJR conditional EVT", lambda: ConditionalEVTModel(o=1), cfg.backtest.refit_every),
     ]
 
 
@@ -115,14 +117,20 @@ def run_backtests(cfg: Config, wf_result, label: str, window: int | None = None)
     tables = {split: selection_table(results, 0.99, *part.bounds(split)) for split in ("dev", "val")}
     tables["val"].to_parquet(ARTIFACTS / f"backtest_selection_val_{window}.parquet")
     tables["dev"].to_parquet(ARTIFACTS / f"backtest_selection_dev_{window}.parquet")
-    champion, reason = choose_champion(tables["val"], cfg.backtest.champion_rule)
+    rule_choice, reason = choose_champion(tables["val"], cfg.backtest.champion_rule)
+    champion = cfg.backtest.champion or rule_choice
+    if champion != rule_choice:
+        reason = f"locked in config (inputs_lock); the rule on this run picks {rule_choice}"
+        print(f"[backtest] WARNING: the locked champion {champion} differs from the rule's choice {rule_choice}")
     crises = crisis_breakdown(results, cfg.stress["historical"])
     crises.to_parquet(ARTIFACTS / f"backtest_crises_{window}.parquet")
     if window == cfg.risk.default_window:   # other windows are sensitivity runs, never the official choice
         (ARTIFACTS / "champion.json").write_text(
-            json.dumps({"portfolio": label, "window": window, "champion": champion, "reason": reason}, indent=2),
+            json.dumps({"portfolio": label, "window": window, "champion": champion, "rule_choice": rule_choice,
+                        "reason": reason}, indent=2),
             encoding="utf-8")
-    return {"results": results, "tables": tables, "champion": champion, "reason": reason, "crises": crises}
+    return {"results": results, "tables": tables, "champion": champion, "rule_choice": rule_choice, "reason": reason,
+            "crises": crises}
 
 
 def run_stress(cfg: Config, results: dict, macro: pd.DataFrame, focus: str) -> dict:
@@ -251,6 +259,7 @@ def run_risk_snapshot(cfg: Config, wf_result, label: str, evt_threshold_q: float
         "Cornish-Fisher": CornishFisherModel(), "EVT": EVTModel(evt_threshold_q),
         "Monte Carlo": MonteCarloModel(n_sims=cfg.risk.mc_sims, rng=cfg.rng(stream=12)),
         "GARCH-FHS": GarchFHSModel(), "Conditional EVT": ConditionalEVTModel(),
+        "GJR conditional EVT": ConditionalEVTModel(o=1),
     }
     for m in models.values():
         m.fit(port)
@@ -491,7 +500,7 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
         alt = run_portfolio_selection(cfg, clean.macro, variant)
         print(f"[select]   sensitivity '{variant}': top candidate {alt['scorecard'].index[0]}, "
               f"IPS passes: {int(alt['scorecard']['ips_pass'].sum())}")
-    focus = str(sel["scorecard"].index[0])
+    focus = cfg.portfolio.focus or str(sel["scorecard"].index[0])
     wf = sel["results"][focus]
     print(f"[select]   required return {sel['required_return']['required_return']:.2%}; focus: {focus} (provisional)")
 
@@ -523,7 +532,7 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
     status = {"focus_portfolio": focus, "provisional": True,
               "provisional_reason": ("methodology not yet frozen; the champion and the ML adoption are "
                                      "confirmed only after the final test" if passes else
-                                     "the top-ranked candidate does not meet every IPS limit"),
+                                     "the focus portfolio does not meet every IPS limit"),
               "weights": {k: float(v) for k, v in wf.weights_history.iloc[-1].items()},
               "weights_as_of": str(wf.weights_history.index[-1].date()),
               "data_end": str(clean.prices.index.max().date()),

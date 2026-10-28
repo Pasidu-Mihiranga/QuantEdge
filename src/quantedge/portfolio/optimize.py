@@ -90,6 +90,18 @@ def gmv(sigma: pd.DataFrame, cons: OptimizerConstraints) -> OptResult:
     return _result(w.value, cons.tickers, status, prob.value)
 
 
+def min_var_at_equity(sigma: pd.DataFrame, cons: OptimizerConstraints, equity: list[str],
+                      share: float) -> OptResult:
+    """A point on the fixed-equity frontier (notebook 02): min w' Sigma w s.t. sum_{i in equity} w_i = share,
+    plus the IPS constraints."""
+    w = cp.Variable(len(cons.tickers))
+    eq = np.array([1.0 if t in equity else 0.0 for t in cons.tickers])
+    prob = cp.Problem(cp.Minimize(cp.quad_form(w, cp.psd_wrap(sigma.to_numpy()))),
+                      [*_ips_constraints(w, cons), eq @ w == share])
+    status = _solve(prob)
+    return _result(w.value, cons.tickers, status, prob.value)
+
+
 def max_sharpe(mu: pd.Series, sigma: pd.DataFrame, rf_annual: float,
                cons: OptimizerConstraints) -> OptResult:
     """Homogenised tangency: min y' Sigma y s.t. (mu - rf)' y = 1, sum y = kappa,

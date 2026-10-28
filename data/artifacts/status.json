@@ -1,19 +1,19 @@
 {
-  "focus_portfolio": "Min CVaR",
+  "focus_portfolio": "Frontier 35% equity",
   "provisional": true,
-  "provisional_reason": "the top-ranked candidate does not meet every IPS limit",
+  "provisional_reason": "the focus portfolio does not meet every IPS limit",
   "weights": {
-    "SPY": 0.10385033204781005,
-    "EFA": 0.046149667809317535,
-    "EEM": 5.402088670660462e-11,
-    "AGG": 0.6499999999935041,
-    "GLD": 0.19999999999034218,
-    "XLE": 7.919024726519765e-12,
-    "XLK": 9.708637038442602e-11
+    "SPY": 0.08500408896601996,
+    "EFA": 0.2088530960806494,
+    "EEM": 0.05614281137490508,
+    "AGG": 0.6173151363319155,
+    "GLD": 0.03268486366808526,
+    "XLE": 1.9437725719273675e-09,
+    "XLK": 1.6346522949994225e-09
   },
   "weights_as_of": "2022-09-30",
   "data_end": "2026-10-26",
   "analysis_end": "2022-12-30",
-  "config_sha256": "55722d0f48ce4f8537aad3f3cbea30c6a9705ce30edac8ec1366b899b01c2fca",
+  "config_sha256": "0c90ef4190df65649f93074901212ffca3e8953464632998a040b2282e450a18",
   "frozen": false
 }

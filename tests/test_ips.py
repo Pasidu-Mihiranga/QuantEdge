@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -28,13 +30,15 @@ def test_limit_exactly_at_boundary_passes_and_just_above_fails():
 
 
 def test_weight_limits_cover_caps_floors_and_equity_group():
-    w = pd.Series({"SPY": 0.30, "EFA": 0.10, "EEM": 0.12, "AGG": 0.20, "GLD": 0.18,
+    w = pd.Series({"SPY": 0.30, "EFA": 0.10, "EEM": 0.12, "AGG": 0.24, "GLD": 0.14,
                    "XLE": 0.05, "XLK": 0.05})
-    checks = {c.name: c for c in LIMITS.check({"weights": w})}
+    assert LIMITS.asset_floors == {}                  # D3: no AGG floor
+    lim = replace(LIMITS, asset_floors={"AGG": 0.25})  # the floor mechanism is kept for sensitivity cases
+    checks = {c.name: c for c in lim.check({"weights": w})}
     assert not checks["weight EEM"].passed            # cap 10%
     assert not checks["weight AGG floor"].passed      # floor 25%
     assert not checks["equity total"].passed          # 62% > 50%
-    assert checks["weight GLD"].passed
+    assert checks["weight GLD"].passed                # cap 15% (D3)
 
 
 def test_optimizer_constraints_are_feasible_and_respected():

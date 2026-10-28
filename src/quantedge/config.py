@@ -47,6 +47,8 @@ class PortfolioCfg:
     rebalance: str
     cost_bps_per_side: float
     estimation_window_days: int
+    frontier_equity: float | None = None   # pre-registered test portfolio: min variance at this equity share
+    focus: str | None = None               # the pipeline's focus portfolio; None = top of the scorecard
 
 
 @dataclass(frozen=True)
@@ -68,6 +70,7 @@ class BacktestCfg:
     oos_start: pd.Timestamp
     refit_every: int
     champion_rule: str = "lowest_pinball_passing"
+    champion: str | None = None            # locked champion (inputs_lock); None = chosen by the rule
 
 
 @dataclass(frozen=True)
@@ -179,6 +182,7 @@ def load_config(path: Path | str = CONFIG_FILE) -> Config:
             oos_start=pd.Timestamp(raw["backtest"]["oos_start"]),
             refit_every=int(raw["backtest"]["refit_every"]),
             champion_rule=raw["backtest"].get("champion_rule", "lowest_pinball_passing"),
+            champion=raw["backtest"].get("champion"),
         ),
         partition=PartitionCfg(
             dev=(pd.Timestamp(part["dev"][0]), pd.Timestamp(part["dev"][1])),

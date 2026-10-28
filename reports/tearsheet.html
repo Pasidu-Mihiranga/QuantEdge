@@ -19,39 +19,40 @@ all losses 1-day unless stated</div>
 <div class="badge">Rule-engine outcome: ADJUST RISK LIMIT</div>
 <div class='prov'>Provisional: methodology not yet frozen; the final out-of-sample test (2023 onwards) is still locked.</div>
 <div class="cols"><div>
-<h2>Allocation (Min CVaR)</h2>
-<table><tr><td>AGG</td><td class='bar'><span style='width:65.0%'></span></td><td class='num'>65.0%</td><td class='num'>$6,500,000</td></tr>
-<tr><td>GLD</td><td class='bar'><span style='width:20.0%'></span></td><td class='num'>20.0%</td><td class='num'>$2,000,000</td></tr>
-<tr><td>SPY</td><td class='bar'><span style='width:10.4%'></span></td><td class='num'>10.4%</td><td class='num'>$1,038,503</td></tr>
-<tr><td>EFA</td><td class='bar'><span style='width:4.6%'></span></td><td class='num'>4.6%</td><td class='num'>$461,497</td></tr></table>
+<h2>Allocation (Frontier 35% equity)</h2>
+<table><tr><td>AGG</td><td class='bar'><span style='width:61.7%'></span></td><td class='num'>61.7%</td><td class='num'>$6,173,151</td></tr>
+<tr><td>EFA</td><td class='bar'><span style='width:20.9%'></span></td><td class='num'>20.9%</td><td class='num'>$2,088,531</td></tr>
+<tr><td>SPY</td><td class='bar'><span style='width:8.5%'></span></td><td class='num'>8.5%</td><td class='num'>$850,041</td></tr>
+<tr><td>EEM</td><td class='bar'><span style='width:5.6%'></span></td><td class='num'>5.6%</td><td class='num'>$561,428</td></tr>
+<tr><td>GLD</td><td class='bar'><span style='width:3.3%'></span></td><td class='num'>3.3%</td><td class='num'>$326,849</td></tr></table>
 <h2>Return</h2>
-<table><tr><td>Expected (walk-forward, a year)</td><td class="num">4.27%</td></tr>
+<table><tr><td>Expected (walk-forward, a year)</td><td class="num">4.91%</td></tr>
 <tr><td>Required (spending + inflation + costs)</td><td class="num">6.68%</td></tr>
-<tr><td>Volatility (a year)</td><td class="num">6.31%</td></tr></table>
+<tr><td>Volatility (a year)</td><td class="num">7.60%</td></tr></table>
 </div><div>
-<h2>Risk (Conditional EVT)</h2>
-<table><tr><th>Confidence</th><th class="num">VaR</th><th class="num">ES</th></tr><tr><td>95%</td><td class='num'>$108,652</td><td class='num'>$148,984</td></tr>
-<tr><td>99%</td><td class='num'>$171,658</td><td class='num'>$220,606</td></tr>
-<tr><td>10-day 99% (simulated paths)</td><td class="num">$524,831</td>
-<td class="num">$617,508</td></tr>
-<tr><td>Once in 10 years (1 day)</td><td class="num" colspan="2">$341,429</td></tr></table>
-<div class="sub">Backtest 2019–2022: 16 exceptions vs 10.1 expected ·
-Kupiec p = 0.08 · conditional coverage p = 0.12</div>
+<h2>Risk (GJR conditional EVT)</h2>
+<table><tr><th>Confidence</th><th class="num">VaR</th><th class="num">ES</th></tr><tr><td>95%</td><td class='num'>$97,508</td><td class='num'>$133,695</td></tr>
+<tr><td>99%</td><td class='num'>$156,140</td><td class='num'>$190,237</td></tr>
+<tr><td>10-day 99% (simulated paths)</td><td class="num">$573,706</td>
+<td class="num">$675,885</td></tr>
+<tr><td>Once in 10 years (1 day)</td><td class="num" colspan="2">$237,682</td></tr></table>
+<div class="sub">Backtest 2019–2022: 14 exceptions vs 10.1 expected ·
+Kupiec p = 0.24 · conditional coverage p = 0.41</div>
 <h2>Stress (today's weights)</h2>
-<table><tr><td>GFC 2008</td><td class='num'>1.1%</td><td class='num'>$-107,692</td></tr>
-<tr><td>COVID crash 2020</td><td class='num'>-6.6%</td><td class='num'>$660,307</td></tr>
-<tr><td>Rate shock 2022</td><td class='num'>-14.7%</td><td class='num'>$1,465,031</td></tr>
-<tr><td>Hormuz stagflation 2027</td><td class='num'>-16.1%</td><td class='num'>$1,614,574</td></tr>
-<tr><td>Hormuz stagflation 2027 (stress betas)</td><td class='num'>-14.5%</td><td class='num'>$1,449,968</td></tr></table>
+<table><tr><td>GFC 2008</td><td class='num'>-15.2%</td><td class='num'>$1,524,590</td></tr>
+<tr><td>COVID crash 2020</td><td class='num'>-12.4%</td><td class='num'>$1,235,134</td></tr>
+<tr><td>Rate shock 2022</td><td class='num'>-18.7%</td><td class='num'>$1,869,224</td></tr>
+<tr><td>Hormuz stagflation 2027</td><td class='num'>-17.6%</td><td class='num'>$1,761,861</td></tr>
+<tr><td>Hormuz stagflation 2027 (stress betas)</td><td class='num'>-16.6%</td><td class='num'>$1,655,127</td></tr></table>
 </div></div>
 <h2>What you get / what could go wrong / how we will monitor</h2>
 <ul>
-<li><b>What you get:</b> a bond-led allocation that kept the worst crisis loss to 14.7% with today's weights.</li>
-<li><b>What could go wrong:</b> stocks and bonds falling together (as in 2022); a once-a-decade day of about $341,429.</li>
+<li><b>What you get:</b> a bond-led allocation that kept the worst crisis loss to 18.7% with today's weights.</li>
+<li><b>What could go wrong:</b> stocks and bonds falling together (as in 2022); a once-a-decade day of about $237,682.</li>
 <li><b>How we will monitor:</b> quarterly rebalance; re-convene if the 250-day Basel light turns yellow or drawdown exceeds 10%.</li>
 </ul>
 <h2>Decision checks not met</h2>
-<ul><li>99% 1-day ES (selected model): 2.21% vs limit 1.50%</li><li>Expected return vs required: 4.27% vs limit 6.68%</li></ul>
-<div class="sub">Minimum limit amendment: es99_1d_max → 1.63%. Amendments take effect only after explicit investment-committee approval.
+<ul><li>Worst historical stress drawdown: 21.13% vs limit 20.00%</li><li>99% 1-day ES (selected model): 1.90% vs limit 1.50%</li><li>Expected return vs required: 4.91% vs limit 6.68%</li></ul>
+<div class="sub">Minimum limit amendment: es99_1d_max → 1.64%. Amendments take effect only after explicit investment-committee approval.
 The rule engine summarises evidence; the recommendation is the team's own judgement.</div>
 </body></html>

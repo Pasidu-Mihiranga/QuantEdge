@@ -25,6 +25,8 @@ portfolio:
   rebalance: quarterly
   cost_bps_per_side: 5
   estimation_window_days: 756
+  frontier_equity: 0.35        # pre-registered test portfolio (inputs_lock, option C): min variance at 35% equity
+  focus: Frontier 35% equity   # the pipeline's focus portfolio (was: top of the scorecard)
 
 risk:
   confidence_levels: [0.90, 0.95, 0.99]
@@ -37,6 +39,7 @@ backtest:
   oos_start: "2008-01-01"
   refit_every: 5
   champion_rule: lowest_pinball_passing   # decision 2026-10-28 (was: simplest_passing)
+  champion: GJR conditional EVT          # locked champion (notebook 04, inputs_lock); final_test runs it
 ips:                           # Step 05: v1 limits from the client's tolerance, not from results
   spending_rate: 0.04
   cost_drag: 0.002
@@ -47,8 +50,8 @@ ips:                           # Step 05: v1 limits from the client's tolerance,
     es99_1d_max: 0.015         # 99% 1-day ES as a fraction of NAV ($150k)
     es99_10d_max: 0.05         # reported only
     single_asset_max: 0.40
-    asset_caps: {XLE: 0.10, XLK: 0.10, EEM: 0.10, GLD: 0.20, AGG: 0.65}   # asset caps replace the single-asset cap (decision 2026-10-28)
-    asset_floors: {AGG: 0.25}
+    asset_caps: {XLE: 0.10, XLK: 0.10, EEM: 0.10, GLD: 0.15, AGG: 0.65}   # D3 (agreed 2026-10-28); SPY and EFA keep the 40% single-asset cap
+    asset_floors: {}           # D3: no AGG floor (the equity share sets the bond weight)
     equity_group: [SPY, EFA, EEM, XLE, XLK]
     equity_max: 0.50
     cash_max: 0.10

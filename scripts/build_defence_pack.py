@@ -290,10 +290,14 @@ def build() -> str:
         "Every model fails in a COVID-speed crash, which is why we also hold a crisis budget and stress tests.",
         "p. 7 Layer 5 &ldquo;Kupiec, Christoffersen, Basel traffic light&rdquo;; Layer 4 &ldquo;how different "
         "modelling approaches perform under stressed market conditions&rdquo;.",
-        "Chosen on four years, where Kupiec has 79% power (24% over one year). The 2023–2026 test runs once after "
-        "the freeze.",
+        "Chosen on four years, where Kupiec has 79% power (24% over one year). The same champion wins with 250- and "
+        "1000-day windows. The app's code reproduces this independently written backtest exactly (same breaches, "
+        "same loss), so the 2023–2026 test, run once after the freeze, is run by the production code and checked "
+        "by the notebook.",
         [evidence("04_backtesting", "assert basel_zone(4, 250)", "Validation 2019–2022: the six models against "
                   "every test."),
+         evidence("04_backtesting", "champ = json.loads", "Two separately written codes, one answer: the notebook "
+                  "against the app's pipeline on 2019–2022.", [1]),
          evidence("04_backtesting", "exceptions ÷ expected", "Breaches in each crisis window (1 = as many as "
                   "expected).", [1]),
          evidence("04_backtesting", "log = d[d[", "The champion's 99% VaR and every breach on validation.")]))

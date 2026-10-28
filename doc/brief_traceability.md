@@ -10,8 +10,8 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 |---|---|---|---|
 | 1 | Construct and recommend a portfolio from the universe using quantitative techniques | `portfolio/optimize.py`, `walkforward.py`; notebook 02 (minimum-variance frontier) | 🟡 recommendation computed in notebook 06 Part B after the lock |
 | 2 | Measure and compare risk with VaR, ES and EVT | `risk/`; notebook 03; app pages 4–5 | ✅ |
-| 3 | Validate the risk models with out-of-sample backtesting | `backtest/`; app page 6; notebook 04 | 🟡 notebook 04 to finish; final test after the freeze (G10) |
-| 4 | Evaluate behaviour under historical and hypothetical stress | `stress/`; app page 7; notebook 05 (replays, stagflation scenario with severity ladder, reverse stress) | ✅ (shock sizes to confirm) |
+| 3 | Validate the risk models with out-of-sample backtesting | `backtest/`; app page 6; notebook 04 (pipeline reproduces it exactly, option C) | 🟡 final test once after the freeze (G10) |
+| 4 | Evaluate behaviour under historical and hypothetical stress | `stress/`; app page 7; notebook 05 (replays, "Hormuz stagflation 2027" with severity calibration, reverse stress) | ✅ (D5 sizes agreed) |
 | 5 | Clear recommendation in an investment committee memorandum | `decision/`; memo draft; D10 | ⬜ memo written by the team after Part B |
 | 6 | Justify the approach, risk metrics, lookback and construction method | `inputs_lock.md`; notebook 02 §5 (lookback); spec §3 | 🟡 report section to write |
 | — | Define a suitable portfolio, justify assumptions, communicate limitations | App page 8; `reports/limitations.py`; inputs_lock | 🟡 limitations page to update with the locked decisions |
@@ -84,7 +84,7 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 | Requirement | Where it is met | Status |
 |---|---|---|
 | Risk budgeting and position sizing with each position's marginal VaR/ES contribution | `risk/contributions.py`; notebook 03 §6; D8 (40% cap) | 🟡 the sizing action itself in notebook 06 Part B |
-| Historical crisis paths (2008, March 2020, 2022) plus one team-designed hypothetical | `stress/historical.py` (window start fixed, G14), `hypothetical.py`; notebook 05 | ✅ (shock sizes to confirm) |
+| Historical crisis paths (2008, March 2020, 2022) plus one team-designed hypothetical | `stress/historical.py` (window start fixed, G14), `hypothetical.py`; notebook 05 | ✅ (D5 sizes agreed) |
 | One-page plain-English memo: accept / adjust the risk limit / reject | `decision/memo.py`; D10 | ⬜ team-written memo |
 
 ## 9. Use of AI (pp. 8–9)

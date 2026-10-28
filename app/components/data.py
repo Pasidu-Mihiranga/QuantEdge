@@ -14,6 +14,7 @@ BACKTEST_FILES = {
     "Historical": "historical", "Normal": "normal", "Student-t": "student_t",
     "Cornish-Fisher": "cornish_fisher", "EVT": "evt", "Monte Carlo": "monte_carlo",
     "GARCH-FHS": "garch_fhs", "Conditional EVT": "conditional_evt",
+    "GJR-FHS": "gjr_fhs", "GJR conditional EVT": "gjr_conditional_evt",
 }
 ML_FILES = {"Linear QR": "ml_linear_qr", "Linear QR (ratio ES)": "ml_linear_qr_ratio_es"}
 

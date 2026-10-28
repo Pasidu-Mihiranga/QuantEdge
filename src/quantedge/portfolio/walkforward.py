@@ -82,7 +82,8 @@ def walk_forward(returns: pd.DataFrame, strategy: Strategy, rf_daily: pd.Series,
 
 def candidate_strategies(cfg: Config, limits: IPSLimits, tickers: list[str], mrp: float = 0.05
                          ) -> tuple[dict[str, Strategy], OptimizerConstraints]:
-    """The seven Step 07 candidates as walk-forward strategies (`mrp`: CAPM market risk premium)."""
+    """The seven Step 07 candidates plus the pre-registered frontier point (`portfolio.frontier_equity`)
+    as walk-forward strategies (`mrp`: CAPM market risk premium)."""
     cons = constraints_for_optimizer(limits, tickers)
     market = cfg.market_proxy
 
@@ -100,7 +101,23 @@ def candidate_strategies(cfg: Config, limits: IPSLimits, tickers: list[str], mrp
             *inputs(est, rf), est, cons, es_budget=limits.es99_1d_max,
             vol_max=limits.vol_ann_max, alpha=0.99),
     }
+    x = cfg.portfolio.frontier_equity
+    if x is not None and frontier_feasible(limits, tickers, x):   # e.g. not under the AGG <= 40% sensitivity
+        strategies[frontier_name(x)] = lambda est, rf: opt.min_var_at_equity(
+            inputs(est, rf)[1], cons, list(limits.equity_group), x)
     return strategies, cons
+
+
+def frontier_feasible(limits: IPSLimits, tickers: list[str], equity_share: float) -> bool:
+    """Can the caps hold exactly `equity_share` in equities and the rest outside them?"""
+    eq = [t for t in tickers if t in limits.equity_group]
+    rest = [t for t in tickers if t not in limits.equity_group]
+    return (equity_share <= min(limits.equity_max, sum(limits.cap(t) for t in eq)) + 1e-12
+            and 1.0 - equity_share <= sum(limits.cap(t) for t in rest) + 1e-12)
+
+
+def frontier_name(equity_share: float) -> str:
+    return f"Frontier {equity_share:.0%} equity"
 
 
 def historical_es(r: pd.Series, alpha: float = 0.99) -> float:

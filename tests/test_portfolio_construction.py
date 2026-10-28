@@ -51,6 +51,26 @@ def market():
     return returns, rf
 
 
+def test_frontier_point_hits_the_equity_share_and_matches_an_independent_solver(market):
+    from scipy import optimize
+
+    from quantedge.portfolio.walkforward import frontier_name
+
+    returns, _ = market
+    sigma = returns.cov() * 252
+    cons = constraints_for_optimizer(LIMITS, TICKERS)
+    eq = np.array([t in LIMITS.equity_group for t in TICKERS], float)
+    w = opt.min_var_at_equity(sigma, cons, list(LIMITS.equity_group), 0.35).weights.to_numpy()
+    assert eq @ w == pytest.approx(0.35, abs=1e-6)
+    S = sigma.to_numpy()
+    ref = optimize.minimize(lambda x: x @ S @ x, np.full(7, 1 / 7), method="SLSQP",
+                            bounds=list(zip(cons.lower, cons.upper, strict=True)), options={"ftol": 1e-14},
+                            constraints=[{"type": "eq", "fun": lambda x: x.sum() - 1},
+                                         {"type": "eq", "fun": lambda x: eq @ x - 0.35}])
+    assert w @ S @ w == pytest.approx(ref.fun, rel=1e-5)
+    assert frontier_name(0.35) == CFG.portfolio.focus == "Frontier 35% equity"
+
+
 def test_gmv_matches_closed_form_without_bounds():
     s = _sigma2()
     w = opt.gmv(s, _free(2)).weights.to_numpy()
