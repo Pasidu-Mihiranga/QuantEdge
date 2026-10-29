@@ -54,6 +54,11 @@ def main() -> int:
         "requirements.txt": sha256_file(ROOT / "requirements.txt"),
         "data/artifacts/artifacts_manifest.json": sha256_file(ARTIFACTS / "artifacts_manifest.json"),
         "adoption rule text (Step 22 §3.8)": hashlib.sha256(rule.encode("utf-8")).hexdigest(),
+        # the code and records that produce the verdict and the one-shot test
+        **{f: sha256_file(ROOT / f) for f in (
+            "doc/decisions/inputs_lock.md", "src/quantedge/decision/rules.py", "src/quantedge/decision/objective.py",
+            "src/quantedge/backtest/final_test.py", "notebooks/04_backtesting.ipynb", "notebooks/05_stress_regimes.ipynb",
+            "notebooks/06_decision.ipynb")},
     }
     champion = json.loads((ARTIFACTS / "champion.json").read_text(encoding="utf-8"))
     lines = [
