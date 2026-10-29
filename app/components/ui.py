@@ -23,8 +23,7 @@ STATUS = {"ACCEPT": GOOD, "ADJUST": WARN, "REJECT": CRIT}
 
 CSS = """
 <style>
-.block-container {padding-top: 2.2rem; max-width: 1180px;}
-h1 {font-size: 2.0rem !important; line-height: 1.2 !important;}
+.block-container {max-width: 1180px;}
 .qe-verdict {border-radius: 10px; padding: 18px 22px; color: #fff; margin: 4px 0 6px 0;}
 .qe-verdict .v {font-size: 1.55rem; font-weight: 700; letter-spacing: .01em;}
 .qe-verdict .s {font-size: 1.05rem; margin-top: 6px; max-width: 75ch; line-height: 1.45;}
@@ -131,7 +130,7 @@ def note(text: str, kind: str = "note") -> None:
 
 def layout(fig: go.Figure, height: int = 360, title: str | None = None) -> go.Figure:
     fig.update_layout(template="plotly_white", height=height, margin=dict(l=8, r=8, t=48 if title else 16, b=8),
-                      font=dict(size=13, color=INK), title=dict(text=title, x=0, font=dict(size=15)) if title else None,
+                      font=dict(size=13, color=INK, family="IBM Plex Sans, Helvetica, Arial, sans-serif"), title=dict(text=title, x=0, font=dict(size=15)) if title else None,
                       legend=dict(orientation="h", y=-0.18, x=0), hoverlabel=dict(font_size=13))
     return fig
 

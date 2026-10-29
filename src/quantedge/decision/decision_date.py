@@ -321,6 +321,13 @@ def run(cfg: Config, raw=None, write: bool = True) -> dict:
         (ARTIFACTS / "decision_numbers.json").write_text(json.dumps(numbers, indent=2, default=float), encoding="utf-8")
         fr.to_parquet(ARTIFACTS / "decision_frontier.parquet")
         grid.to_parquet(ARTIFACTS / "decision_robustness.parquet")
+        # What-if surface for the app: the forward return of every frontier point over a range of equity premia,
+        # real-yield shifts (inflation unchanged) and AGG tax treatments; the app applies the locked rule to it live.
+        surface = [{"erp": float(e), "dy": float(d), "agg_withholding": t, "equity_share": x,
+                    "forward_return": fwd_return(weights[x], erp=e, agg_wht=t, dy=d)}
+                   for e in np.round(np.arange(0.030, 0.0601, 0.0025), 4) for d in np.round(np.arange(-0.010, 0.01001, 0.001), 4)
+                   for t in (0.0, 0.15) for x in levels]
+        pd.DataFrame(surface).to_parquet(ARTIFACTS / "decision_whatif.parquet")
         pd.DataFrame(weights).T.rename_axis("equity_share").to_parquet(ARTIFACTS / "decision_weights.parquet")
     return {"numbers": numbers, "frontier": fr, "grid": grid, "weights": weights}
 
