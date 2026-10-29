@@ -1,0 +1,24 @@
+{
+  "run_utc": "2026-10-29T01:48:41Z",
+  "test_start": "2023-01-01",
+  "test_end": "2026-10-26",
+  "days": 955,
+  "champion": "GJR conditional EVT",
+  "condition_3": {
+    "Historical": false,
+    "Normal": false,
+    "Student-t": false,
+    "Cornish-Fisher": false,
+    "EVT": false,
+    "Monte Carlo": false,
+    "GARCH-FHS": false,
+    "Conditional EVT": true,
+    "GJR-FHS": false,
+    "GJR conditional EVT": true,
+    "Linear QR": false
+  },
+  "champion_passes": true,
+  "limits_model": "GJR conditional EVT",
+  "rule": "the champion passes its backtests",
+  "deviation": null
+}

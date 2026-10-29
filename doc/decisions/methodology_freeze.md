@@ -22,3 +22,27 @@
 | notebooks/06_decision.ipynb | `760df5834e0050ef9002e7d1ed2823434d0e99ed91449ef410733e6db9542836` |
 
 Any change after the tag is logged below as a post-hoc deviation, with its reason.
+
+## Final test run 2026-10-29T01:48:41Z
+
+
+Test period 2023-01-01 → 2026-10-26, 955 common days, run once. Scores (99% VaR):
+
+| Model | Exceptions (exp. 9.55) | Kupiec p | Cond. coverage p | Passes | Pinball ×10⁴ | vs champion | Adoption condition 3 |
+|---|---|---|---|---|---|---|---|
+| Historical | 6 | 0.215 | 0.0006 | no | 1.556 | +10.8% | no |
+| Normal | 7 | 0.384 | 0.0017 | no | 1.545 | +10.0% | no |
+| Student-t | 7 | 0.384 | 0.0017 | no | 1.592 | +13.4% | no |
+| Cornish-Fisher | 5 | 0.103 | 0.0001 | no | 1.839 | +30.9% | no |
+| EVT | 7 | 0.384 | 0.0017 | no | 1.593 | +13.4% | no |
+| Monte Carlo | 7 | 0.384 | 0.0017 | no | 1.614 | +14.9% | no |
+| GARCH-FHS | 8 | 0.604 | 0.0041 | no | 1.464 | +4.2% | no |
+| Conditional EVT | 9 | 0.857 | 0.0077 | no | 1.427 | +1.6% | yes |
+| GJR-FHS | 7 | 0.384 | 0.0794 | yes | 1.435 | +2.2% | no |
+| GJR conditional EVT | 9 | 0.857 | 0.1893 | yes | 1.404 | +0.0% | yes |
+| Linear QR | 10 | 0.885 | 0.2333 | yes | 1.480 | +5.4% | no |
+
+**Model validity (spec §5 step 7):** the champion passes its backtests; limits use GJR conditional EVT.
+**Challenger:** Linear QR passes coverage but its pinball loss is 5.4% worse than the champion's (margin 2%): condition 3 fails, not adopted.
+
+**Reporting note (2026-10-29):** the run finished every computation and wrote `final_test_result.json`, `final_test_scores.parquet` and one forecast file per model, then stopped while appending this table, because `DataFrame.to_markdown` needs the optional package `tabulate`, which is not installed. The test was **not** rerun. The table above was written from `final_test_scores.parquet` by hand on 2026-10-29; `final_test.py` now falls back to plain text when `tabulate` is missing (a reporting-only change after the tag, no effect on any number).

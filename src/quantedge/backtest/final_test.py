@@ -116,7 +116,10 @@ def run(cfg: Config, deviation: str | None = None) -> dict:
         fh.write(f"\n## Final test run {result['run_utc']}\n\n")
         if deviation:
             fh.write(f"**Post-hoc deviation:** {deviation}\n\n")
-        fh.write(verdict.to_markdown() if hasattr(verdict, "to_markdown") else verdict.to_string())
+        try:
+            fh.write(verdict.to_markdown())
+        except ImportError:                        # to_markdown needs the optional package tabulate
+            fh.write(verdict.to_string())
         fh.write(f"\n\n**Model validity (spec §5 step 7):** {validity['rule']}; limits use {validity['limits_model']}.\n")
     return {"scores": verdict, "result": result}
 
