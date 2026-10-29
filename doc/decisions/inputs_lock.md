@@ -2,7 +2,7 @@
 
 **Purpose.** Every judgement that changes the verdict is recorded here, with its evidence and the booklet clause it answers, **before** Part B of `notebooks/06_decision.ipynb` and the final test are run. This is the team's protection against data snooping and the source for the report's IPS section and the app's Assumptions & Limitations page.
 
-**Status:** values **AGREED by the team on 2026-10-28**, including D6 and D7. **Not yet locked:** the signatures below. · **Signed by:** _[names]_ · **Locked on:** _[date]_
+**Status:** values **AGREED by the team on 2026-10-28**, D10 wording amended 2026-10-29. **LOCKED.** · **Signed by:** Oxshadha (team lead and owner of all notebooks, D6), on behalf of the team · **Locked on:** 2026-10-29 (one day before the D7 freeze date) · Reviewer names for the D6 table: to be added by the team (governance only; no number depends on them)
 
 **Rules**
 - Evidence comes from data up to 2022-12-31 (`notebooks/06_decision.ipynb` Part A, `02`, `03`). The 2023–26 test is untouched.
@@ -71,12 +71,12 @@ The endowment is perpetual. The **return objective is judged over a 10-year roll
 
 | Notebook | Owner | Reviewer (must be able to explain it) |
 |---|---|---|
-| 01 EDA detective | team lead | _[ ]_ |
-| 02 Portfolio and frontier | team lead | _[ ]_ |
-| 03 VaR, ES, EVT | team lead | _[ ]_ |
-| 04 Backtesting | team lead | _[ ]_ |
-| 05 Stress and regimes | team lead | _[ ]_ |
-| 06 Decision | team lead | _[ ]_ |
+| 01 EDA detective | Oxshadha (team lead) | _[ ]_ |
+| 02 Portfolio and frontier | Oxshadha (team lead) | _[ ]_ |
+| 03 VaR, ES, EVT | Oxshadha (team lead) | _[ ]_ |
+| 04 Backtesting | Oxshadha (team lead) | _[ ]_ |
+| 05 Stress and regimes | Oxshadha (team lead) | _[ ]_ |
+| 06 Decision | Oxshadha (team lead) | _[ ]_ |
 
 ## D7 · Hard freeze date (open)
 - **Submission:** the second week of November 2026 (9–13 November).
@@ -96,12 +96,12 @@ The endowment is perpetual. The **return objective is judged over a 10-year roll
 - **Evidence:** an automatic de-risking rule helped in the design period but made things worse out of sample for every N. Reported honestly as a validated negative result.
 - **Decided by / date:** team, 2026-10-28
 
-## D10 · Verdict framing: **ACCEPT with the team-set objective (CPI + 3.5%)** if the recommended point meets it and every risk limit at the decision date; otherwise **ADJUST THE RISK LIMIT** with the minimum change and its dollar cost
+## D10 · Verdict framing (amended 2026-10-29): the locked spec §5 rule. **ACCEPT** if a portfolio meets CPI + 3.5% inside every risk limit at the decision date; **ADJUST THE RISK LIMIT** if one would with the crisis budget loosened by at most 5 pp (amended limit for explicit committee approval); otherwise **REJECT**, with the spending rate the limits can sustain given as advice
+- **Original wording (2026-10-28):** "ACCEPT if the recommended point meets the objective and every risk limit; otherwise ADJUST THE RISK LIMIT with the minimum change and its dollar cost". Amended by the team lead on 2026-10-29, **before the freeze and before any 2023+ data were seen**, because it conflicted with the locked spec §5 rule and the A2 decision-map code: when no portfolio reaches the objective at any risk level within +5 pp (the end-2022 dry run), an ADJUST could not deliver what it promises. Verdict under both wordings at end-2022: original = ADJUST (with no adjustment that reaches the objective); amended = REJECT. The code, notebook 06 Part B and the defence document follow the amended wording
 - **Kind:** preference
 - **Booklet:** p. 8 the memo's options "accept the mandate as proposed / adjust the risk limit / reject"; p. 4 responsibility 2 (the team determines the return objective); p. 4 responsibility 5 "quantify the trade-offs between return-seeking and risk reduction"
 - **Evidence:** a peer-level 4% spending objective is not achievable at a conservative risk level (06 A2–A4). The agreed CPI + 3.5% objective is met within the 25% budget if the decision-date 10-year real yield is at least about 1 pp above end-2022 (ACCEPT at 35% equity, ERP 4.5%), and not met at end-2022 levels (06 A2c). The verdict is therefore decided by the market level at the decision date, computed once after the freeze. The memo quantifies what 4–5% spending would cost in extra crisis loss.
 - **Decided by / date:** team, 2026-10-28
-- **Proposed amendment (2026-10-29, for team confirmation before the freeze):** read D10 as the locked spec §5 rule. ACCEPT if a portfolio meets CPI + 3.5% inside every limit; ADJUST THE RISK LIMIT if one would with the crisis budget at most 5 pp looser; otherwise REJECT, with the sustainable spending rate as advice. Reason: the end-2022 dry run (notebook 06 Part B) has no portfolio reaching the objective at any risk level (even 50% equity earns 5.07% vs 5.90% required), so an ADJUST could not deliver what it promises.
 
 ---
 

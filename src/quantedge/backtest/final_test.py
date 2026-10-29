@@ -9,6 +9,9 @@
   forecasting still trains only on data before each forecast day.
 - Applies adoption condition 3 (Step 22 §3.8): on the test period the challenger's primary loss
   (99% pinball) must be no more than `ml.noninferiority_margin` worse than the champion's.
+- Scores every risk model, not only the champion, so the pre-committed model-validity rule (spec §5
+  step 7) can be applied without a second run: if the champion fails its backtests, the limits use
+  the passing model with the higher current 99% ES; if no model passes, the verdict is REJECT.
 """
 
 from __future__ import annotations
@@ -45,6 +48,18 @@ def adoption_condition_3(test_scores: pd.DataFrame, champion: str, margin: float
     return out
 
 
+def limits_model(scores: pd.DataFrame, champion: str, current_es: dict[str, float]) -> dict:
+    """Spec §5 step 7 on the test period. `scores` has a boolean `passes` column (Kupiec, Christoffersen
+    and Basel); `current_es` is each risk model's 99% ES forecast on the last test day."""
+    if bool(scores.loc[champion, "passes"]):
+        return {"limits_model": champion, "rule": "the champion passes its backtests"}
+    passing = [m for m in scores.index[scores["passes"]] if m in current_es]
+    if not passing:
+        return {"limits_model": None, "rule": "no risk model passes: REJECT (risk cannot be measured reliably)"}
+    best = max(passing, key=current_es.get)
+    return {"limits_model": best, "rule": f"the champion fails; {best} is the passing model with the higher current ES"}
+
+
 def run(cfg: Config, deviation: str | None = None) -> dict:
     from quantedge import pipeline as p
     from quantedge.backtest.engine import run_models
@@ -70,8 +85,9 @@ def run(cfg: Config, deviation: str | None = None) -> dict:
     wpath = point_in_time_weights(wf.weights_history, returns.index, cfg.partition.warmup_weights)
     start, end = part.test_start, returns.index.max()
 
-    specs = [s for s in p.backtest_specs(cfg) if s.name == champion]
+    specs = p.backtest_specs(cfg)                       # every risk model: needed for spec §5 step 7
     results = run_models(specs, returns, wpath, cfg.risk.default_window, start=start, end=end)
+    risk_models = [s.name for s in specs]
 
     macro = pd.read_parquet(ARTIFACTS / "clean_macro.parquet")
     from quantedge.ml.features import build_features, garch_sigma_path
@@ -87,19 +103,21 @@ def run(cfg: Config, deviation: str | None = None) -> dict:
     common = sorted(set.intersection(*(set(d.index) for d in results.values())))
     scores = selection_table({k: v.loc[common] for k, v in results.items()}, 0.99)
     verdict = adoption_condition_3(scores, champion, cfg.ml["noninferiority_margin"])
+    validity = limits_model(scores, champion, {m: float(results[m]["es_0.99"].iloc[-1]) for m in risk_models})
     for name, df in results.items():
         df.to_parquet(ARTIFACTS / f"final_test_{name.lower().replace(' ', '_').replace('-', '_')}.parquet")
     verdict.to_parquet(ARTIFACTS / "final_test_scores.parquet")
     result = {"run_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"), "test_start": str(start.date()),
               "test_end": str(end.date()), "days": len(common), "champion": champion,
-              "condition_3": {k: bool(v) for k, v in verdict["condition_3"].items()}, "deviation": deviation}
+              "condition_3": {k: bool(v) for k, v in verdict["condition_3"].items()},
+              "champion_passes": bool(scores.loc[champion, "passes"]), **validity, "deviation": deviation}
     RESULT.write_text(json.dumps(result, indent=2), encoding="utf-8")
     with FREEZE_RECORD.open("a", encoding="utf-8") as fh:
         fh.write(f"\n## Final test run {result['run_utc']}\n\n")
         if deviation:
             fh.write(f"**Post-hoc deviation:** {deviation}\n\n")
         fh.write(verdict.to_markdown() if hasattr(verdict, "to_markdown") else verdict.to_string())
-        fh.write("\n")
+        fh.write(f"\n\n**Model validity (spec §5 step 7):** {validity['rule']}; limits use {validity['limits_model']}.\n")
     return {"scores": verdict, "result": result}
 
 

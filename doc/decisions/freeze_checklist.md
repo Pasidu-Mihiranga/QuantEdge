@@ -4,12 +4,13 @@ The tag `methodology-freeze-v1` may be created only when every **blocking** item
 
 ## Blocking
 
-- [ ] **Input lock signed** ([inputs_lock.md](inputs_lock.md)): D1–D10 agreed 2026-10-28; signatures and reviewer names outstanding
+- [x] **Input lock signed** ([inputs_lock.md](inputs_lock.md)): D1–D10 agreed 2026-10-28; signed and locked by the team lead on 2026-10-29. Reviewer names moved to the non-blocking list (governance only; no number depends on them)
 - [x] **Hypothetical shock sizes (D5) confirmed by the team** (2026-10-28): "Hormuz stagflation 2027" at 2022-size rates (+250 bp), recorded in `inputs_lock.md` and `config.yaml`; the severe case is shown only as "what would break the budget"
+- [x] **The final test applies the pre-committed model-validity rule** (2026-10-29): it now scores every risk model on 2023–26, not only the champion, so spec §5 step 7 (fallback to the passing model with the higher current ES; REJECT if none passes) is applied in the same single run (`final_test.limits_model`, `tests/test_final_test_rules.py`)
 - [x] **The final test runs the locked champion on the recommended portfolio** (option C, 2026-10-28): the pipeline carries the 35%-equity frontier portfolio and GJR conditional EVT (`config.yaml → portfolio.focus`, `backtest.champion`) and reproduces notebook 04 exactly on 2019–22 (`tests/test_reconciliation.py`; notebook 04 §8 asserts the same). Fallback B not needed
-- [ ] **D10 wording aligned with the locked rule (team to confirm):** D10 says "otherwise ADJUST THE RISK LIMIT", but spec §5 and the A2 decision-map code give REJECT when no portfolio reaches the objective even with the budget loosened by 5 pp (the end-2022 dry run is exactly that case). Proposed: D10 = spec §5 (ACCEPT / ADJUST within 5 pp / REJECT, spending change as advice). The code, notebook 06 Part B and the defence document already follow spec §5
+- [x] **D10 wording aligned with the locked rule (amended by the team lead, 2026-10-29):** D10 says "otherwise ADJUST THE RISK LIMIT", but spec §5 and the A2 decision-map code give REJECT when no portfolio reaches the objective even with the budget loosened by 5 pp (the end-2022 dry run is exactly that case). Proposed: D10 = spec §5 (ACCEPT / ADJUST within 5 pp / REJECT, spending change as advice). The code, notebook 06 Part B and the defence document already follow spec §5
 - [x] **Notebook 06 Part B dry run** (2026-10-29, end-2022 data): REJECT by the locked rule, for return only (35% portfolio 4.91% vs 5.90% required; every risk limit passes); robust in 18 of 18 assumption cases; flips to ACCEPT if the decision-date real yield is about 1 pp higher (TIPS ≥ about 2.58%). The real run: set `DECISION_DATE = "2026-10-26"` after the tag, rerun notebooks 05 and 06 once
-- [x] **Every validation breach explained** (2026-10-29): 14 of 14 with a news-verified market cause, 0 data errors; 8 within the model's own ES forecast, 6 calm-to-stress switches ([exception_log.md](exception_log.md); notebook 04 breach anatomy). Owner to review
+- [x] **Every validation breach explained** (2026-10-29): 14 of 14 with a news-verified market cause, 0 data errors; 8 within the model's own ES forecast, 6 calm-to-stress switches ([exception_log.md](exception_log.md); notebook 04 breach anatomy). Accepted by the owner, 2026-10-29
 - [x] **The pipeline uses the agreed IPS v2** (2026-10-29): D1, D2 and D4 in `config.yaml → ips`; limits and objective measured as notebooks 03 §4 and 06 A2, reproduced within 0.01 bp (`tests/test_objective.py`, notebook 06 A9). The app, the memo and Part B cannot disagree on the verdict
 - [x] IPS calibration decided ([ips_calibration.md](ips_calibration.md)): AGG cap 65%, original 40% case kept for sensitivity
 - [x] Champion rule decided ([champion_rule.md](champion_rule.md)): lowest-loss adequately validated model on validation
@@ -29,4 +30,13 @@ When every blocking item is ticked, run `scripts/freeze.py`. It hashes the adopt
 
 - [x] Every quality flag confirmed against market events (2026-10-29: the last one, 2026-01-30 GLD −10.3%, is genuine: spot gold −9.5%, its largest one-day fall since 1983; [exception_log.md](exception_log.md))
 - [x] Verdict sensitivity grid: MRP 4/5/6% and original IPS done (`verdict_sensitivity.parquet`); cash on/off done; estimation windows 250/1000 done
-- [ ] Reviewer names filled in `doc/ai_log.md`
+- [ ] Reviewer names filled in `doc/ai_log.md` and the D6 table of `inputs_lock.md` (the other four team members)
+
+## After the tag: the one-shot run, in this order (pre-registered 2026-10-29)
+
+1. `python -m quantedge.backtest.final_test` **once**: every risk model and Linear QR on 2023-01-01 → snapshot end; spec §5 step 7 and adoption condition 3 are applied and appended to `methodology_freeze.md`. The result is reported as it comes out.
+2. Notebook 04: extend the validation window to the test period and check the pipeline's final-test numbers (two codes, one answer), as on 2019–22.
+3. Notebook 05: set `END = "2026-10-25"` (data to the last close before the decision date, 2026-10-23); rerun. It re-estimates the stress betas and writes `notebooks/evidence/`; it also scores the pre-registered 2025 and 2026 windows.
+4. Notebook 06: set `DECISION_DATE = "2026-10-26"` (D7); rerun Part B. Its guard refuses unless the tag exists and notebook 05 used the same data. The verdict is whatever the locked rule returns.
+5. Pipeline and app (post-freeze update): decision date in the pipeline; the C3 factor model aligned with notebook 05 (logged deviation); `make notebooks`, `make defence`; republish the defence document.
+6. Any other change after the tag is a post-hoc deviation: logged in `methodology_freeze.md` with its reason, and the result under both versions.

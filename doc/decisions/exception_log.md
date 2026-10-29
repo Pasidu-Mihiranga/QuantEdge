@@ -3,7 +3,7 @@
 **Model:** GJR conditional EVT on the 35%-equity frontier portfolio, 500-day window (notebook 04 §6).
 **Result:** 14 breaches against 10.1 expected (Kupiec p = 0.24, Christoffersen p = 0.53, Basel green).
 **Method:** each breach is checked two ways. (1) Our own data: which holdings lost, how rates, the VIX and oil moved, and the loss against the model's own ES forecast (notebook 04, breach anatomy). (2) Contemporaneous news reports. Basel (1996) categories: a loss no larger than the forecast ES is **bad luck** (the size of 1-in-100 loss the model expected); a larger one means **the market moved more than forecast**; a data error would be **data integrity** (none found).
-**Status:** drafted with AI assistance on 2026-10-29; causes verified against the sources below; **owner to review**.
+**Status:** drafted with AI assistance on 2026-10-29; causes verified against the sources below; **accepted by the owner (Oxshadha, team lead) on 2026-10-29**.
 
 | Date | Loss (% NAV) | VaR | Loss ÷ ES forecast | Stocks and bonds fell together | Category | Cause | Source |
 |---|---|---|---|---|---|---|---|
