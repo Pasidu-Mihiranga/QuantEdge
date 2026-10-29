@@ -43,7 +43,7 @@ The raw data snapshot in `data/raw/` is frozen and SHA-256 hashed (`data/raw/man
 |---|---|
 | `config.yaml` | every parameter (dates, IPS limits, model settings, decision thresholds) |
 | `src/quantedge/` | the package: data, portfolio, risk, backtest, stress, decision, ml |
-| `app/` | Streamlit app: `Home.py` (navigation) and `views/` (Decision, Evidence, Technical appendix) |
+| `app/` | Streamlit app: `Home.py` (top navigation), five pages in `views/`, technical topics in `technical/` (one dropdown on the Assumptions page) |
 | `tests/` | pytest suite (closed-form, simulation-recovery, textbook and leakage tests) |
 | `doc/decisions/` | team decision records and the methodology-freeze checklist |
 | `TODO.md` | implementation progress, step by step |

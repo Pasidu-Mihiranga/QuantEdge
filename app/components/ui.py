@@ -143,3 +143,18 @@ def full(df) -> None:
     """A data table tall enough to show every row (no inner scrolling)."""
     rows = len(df.data) if hasattr(df, "data") else len(df)
     st.dataframe(df, width="stretch", height=35 * (rows + 1) + 3)
+
+
+# ---------- low-cognitive-load helpers (one idea per line, explanations on demand) ----------
+TEXT_WIDTH = 820          # px: about 90 characters, a comfortable reading line
+
+
+def say(text: str) -> None:
+    """A short paragraph at a readable width (dollar signs escaped)."""
+    st.markdown(esc(text), width=TEXT_WIDTH)
+
+
+def explain(text: str, label: str = "How to read this") -> None:
+    """The 'why' behind a chart or number, one click away."""
+    with st.popover(label, icon=":material/help:", type="tertiary"):
+        st.markdown(esc(text))
