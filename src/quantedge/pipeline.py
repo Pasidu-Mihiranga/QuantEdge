@@ -651,6 +651,12 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
 
         (memo.parent / "report.html").write_text(report.render(cfg), encoding="utf-8")
         print(f"[report]   report draft written to {memo.parent / 'report.html'} (narrative in reports/narrative/)")
+    if Partition.from_config(cfg).frozen():
+        from quantedge.decision import decision_date
+
+        d = decision_date.run(cfg)["numbers"]
+        print(f"[decide]   {d['decision_date']}: {d['verdict']} at {d['advised_equity']:.0%} equity "
+              f"(expected {d['expected_return']:.2%} vs required {d['objective']['required_return']:.2%})")
     sens = run_verdict_sensitivity(cfg, clean.macro)
     print(f"[sensitiv] outcomes: {sens['outcome'].to_dict()}")
     print(f"[manifest] {write_artifacts_manifest(cfg)}")

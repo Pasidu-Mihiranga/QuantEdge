@@ -46,3 +46,13 @@ Test period 2023-01-01 → 2026-10-26, 955 common days, run once. Scores (99% Va
 **Challenger:** Linear QR passes coverage but its pinball loss is 5.4% worse than the champion's (margin 2%): condition 3 fails, not adopted.
 
 **Reporting note (2026-10-29):** the run finished every computation and wrote `final_test_result.json`, `final_test_scores.parquet` and one forecast file per model, then stopped while appending this table, because `DataFrame.to_markdown` needs the optional package `tabulate`, which is not installed. The test was **not** rerun. The table above was written from `final_test_scores.parquet` by hand on 2026-10-29; `final_test.py` now falls back to plain text when `tabulate` is missing (a reporting-only change after the tag, no effect on any number).
+
+## Changes after the tag (2026-10-29), each pre-registered as runbook step 5 or reporting only
+
+| Change | Why | Effect on any decision |
+|---|---|---|
+| `final_test.py`: plain-text fallback when `tabulate` is missing | Reporting only (see the note above) | None |
+| Notebook 04 §9, notebook 05 §8, notebook 06 `DECISION_DATE = 2026-10-26` | Runbook steps 2–4 | None: they execute the locked rule |
+| `decision/decision_date.py` and the pipeline's decision stage | Runbook step 5: one production source for every headline number, implementing the locked spec §5 rule exactly as notebook 06 Part B | None: reproduces Part B (verdict, weights, limits, frontier to 1e-4; `tests/test_decision_date.py`) |
+| `stress/factor.py`: regime stress weeks, weekly log returns, scenario loss with the liquidity day | Runbook step 5: the app's scenario uses notebook 05's agreed D5 model (was a different factor model without the liquidity day) | None on the verdict: the scenario binds at no point; it now matches notebook 05 (21.1% at 35% equity) |
+| `config.yaml`: `decision.date`, frontier levels, D8 cap, robustness grid, simulation settings, `stress.hypothetical.liquidity_day` | Values already locked in `inputs_lock.md` and notebook 06, now readable by the production code | None (config hash changes; values are the locked ones) |

@@ -79,6 +79,7 @@ stress:                        # Step 12 (historical windows are also used by th
     name: Hormuz stagflation 2027
     status: "agreed 2026-10-28 (D5), central case at 2022-size rates, the most severe candidate within history (notebook 05 §4b)"
     horizon: episode_3q        # D5: cumulative peak-to-trough episode of about three quarters (agreed 2026-10-28)
+    liquidity_day: {AGG: -0.05}   # D5: one panic day on AGG on top of the factor shock (notebook 05 §4)
     credit_measure: BAA10Y     # long history (since 1986); +150 bp lies between 2022 (+43 bp) and the GFC (about +330 bp)
     shock:
       d_yield10_bp: 250        # 2022-size (2022 saw +248 bp); 98.9th percentile of 39-week changes since 1962 (original design: +150 bp)
@@ -98,6 +99,11 @@ decision:                      # Step 13 rule engine (every threshold displayed 
   return_gap_tolerance: 0.0    # C8 (D10): ACCEPT only if the objective is met; any gap is ADJUST, with its cost
   max_limit_relaxation: 0.50   # ADJUST vs REJECT: largest acceptable loosening of a named limit
   max_budget_loosening: 0.05   # spec §5: ADJUST if a frontier point meets the objective with the crisis budget loosened by <= 5 pp
+  date: "2026-10-26"           # D7 decision date; decision-date numbers use data before it (t − 1), only after the freeze tag
+  frontier_levels: [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]   # the caps force at least 20% equity
+  es_share_cap: 0.40          # D8: no ETF may carry more than 40% of the 99% ES
+  robustness: {erp: [0.035, 0.045, 0.055], agg_spread: [0.003, 0.005, 0.009], agg_withholding: [0.0, 0.15]}   # notebook 06 B5
+  simulation: {paths: 5000, months: 120, block: 12, seed: 20261029}   # notebook 06 B6 (context only)
 
 partition:                     # Step 22: decisions use dev + val only; test locked until the tag
   dev: ["2004-11-18", "2018-12-31"]
