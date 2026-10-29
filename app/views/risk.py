@@ -17,7 +17,7 @@ TAIL = ["#9EC1EA", "#4F86C6", "#1F3F73"]
 
 st.title("Risk, and how sure we are")
 say("How much can the fund lose on a bad day, and does the risk model get that right? Change the confidence level, the "
-    "model and the dates in the sidebar.")
+    "model and the dates under Risk controls in the sidebar.")
 view = st.segmented_control("View", ["A bad day", "Is the model right?"], default="A bad day", required=True,
                             label_visibility="collapsed", key="risk_view",
                             format_func=lambda v: {"A bad day": ":material/trending_down: A bad day",

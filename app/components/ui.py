@@ -23,7 +23,8 @@ STATUS = {"ACCEPT": GOOD, "ADJUST": WARN, "REJECT": CRIT}
 
 CSS = """
 <style>
-.block-container {max-width: 1180px;}
+/* Full-width layout (requested): slimmer side margins and top gap than Streamlit's defaults */
+[data-testid="stMainBlockContainer"], .block-container {padding: 2.2rem 2.2rem 3rem 2.2rem; max-width: 100%;}
 .qe-verdict {border-radius: 10px; padding: 18px 22px; color: #fff; margin: 4px 0 6px 0;}
 .qe-verdict .v {font-size: 1.55rem; font-weight: 700; letter-spacing: .01em;}
 .qe-verdict .s {font-size: 1.05rem; margin-top: 6px; max-width: 75ch; line-height: 1.45;}
@@ -146,7 +147,7 @@ def full(df) -> None:
 
 
 # ---------- low-cognitive-load helpers (one idea per line, explanations on demand) ----------
-TEXT_WIDTH = 820          # px: about 90 characters, a comfortable reading line
+TEXT_WIDTH = "stretch"    # full width; paragraphs are kept to one or two sentences
 
 
 def say(text: str) -> None:

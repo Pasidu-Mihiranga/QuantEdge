@@ -51,12 +51,12 @@ with st.container(horizontal=True):
               delta_arrow="off", border=True)
 
 # ---------- explore, one view at a time ----------
-VIEWS = {"Portfolio": ":material/pie_chart:", "What would change it": ":material/tune:",
+VIEWS = {"The mix": ":material/pie_chart:", "What would change it": ":material/tune:",
          "Alternatives": ":material/compare_arrows:", "How the rule decided": ":material/rule:"}
-view = st.segmented_control("Explore", list(VIEWS), default="Portfolio", format_func=lambda v: f"{VIEWS[v]} {v}",
+view = st.segmented_control("Explore", list(VIEWS), default="The mix", format_func=lambda v: f"{VIEWS[v]} {v}",
                             label_visibility="collapsed", required=True, key="rec_view")
 
-if view == "Portfolio":
+if view == "The mix":
     w = pd.Series(n["weights"]).loc[lambda s: s > 1e-4].sort_values(ascending=False)
     df = pd.DataFrame({"fund": [f"{NAMES[t]} ({t})" for t in w.index], "weight": w.values,
                        "label": [f"{v:.1%} · {money(v * nav)}" for v in w.values]})
@@ -76,7 +76,7 @@ if view == "Portfolio":
             f"({pct(inc, 2)}) cover the 3% spending rate.\n"
             f"- **No fund dominates the tail risk:** the largest share is {n['largest_es_share_etf']} at "
             f"{n['largest_es_share']:.0%}, below the 40% cap."))
-        st.page_link("views/portfolio.py", label="How the same strategy did since 2008", icon=":material/show_chart:")
+        st.page_link("views/portfolio.py", label="Compare other equity shares and the history since 2008", icon=":material/compare_arrows:")
 
 elif view == "What would change it":
     wi = artifact("decision_whatif.parquet")

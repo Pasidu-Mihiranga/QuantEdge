@@ -14,7 +14,7 @@ ACCENT, GREY = "#1F5FAE", "#A3ABB5"
 NAMES = {"SPY": "US stocks", "EFA": "Developed-market stocks", "EEM": "Emerging-market stocks", "AGG": "US bonds",
          "GLD": "Gold", "XLE": "Energy stocks", "XLK": "Technology stocks"}
 
-st.title("The portfolio")
+st.title("Compare portfolios")
 say("Pick an equity share to see the portfolio the rule would build, what it is expected to earn and what a crisis would cost. "
     f"The recommendation is **{eq:.0%}**.")
 x = st.select_slider("Equity share", options=list(fr.index), value=eq, format_func=lambda v: f"{v:.0%}", key="pf_x")
