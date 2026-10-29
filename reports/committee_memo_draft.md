@@ -1,8 +1,9 @@
 # Investment Committee Memo: Serendib University Endowment
 
 ## 1. Recommendation
-Rule-engine outcome: **ADJUST RISK LIMIT**.
-- Expected return is 1.03% below the required return: lower the return objective, review the spending rate, or loosen a named risk limit.
+Rule-engine outcome: **REJECT**.
+- Expected return is 1.03% below the required return, and no frontier point reaches it even with the crisis budget loosened by 5%: the objective is not achievable within the client's risk tolerance at today's market levels.
+- Advice (not a verdict branch): a lower spending rate, or a decision-date real yield high enough to close the gap (notebook 06 B4).
 
 [TEAM: the team's recommendation in two or three sentences, in its own words.]
 

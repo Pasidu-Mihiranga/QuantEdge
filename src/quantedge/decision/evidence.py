@@ -34,6 +34,18 @@ def _json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
 
+def _objective_loss(artifacts: Path, required: float) -> float | None:
+    """Spec §5: D2 loss (worse of historical crisis and hypothetical) of the lowest-risk frontier point whose
+    forward return meets `required`; nan if none does, None if the frontier has not been computed."""
+    path = artifacts / "limit_calibration.parquet"
+    if not path.exists():
+        return None
+    f = pd.read_parquet(path)
+    d2 = f[["worst_crisis_loss", "hypothetical_loss"]].max(axis=1) if "hypothetical_loss" in f else f["worst_crisis_loss"]
+    meets = d2[f["forward_return"] >= required]
+    return float(meets.min()) if len(meets) else float("nan")
+
+
 def build(cfg: Config, artifacts: Path = ARTIFACTS) -> DecisionBundle | None:
     status = _json(artifacts / "status.json")
     names = ["portfolio_scorecard_val", "risk_snapshot", "stress_matrix", "backtest_selection_val_500",
@@ -73,6 +85,7 @@ def build(cfg: Config, artifacts: Path = ARTIFACTS) -> DecisionBundle | None:
         required_return=float(req.get("required_return", float("nan"))),
         relaxation=minimum_relaxation(cands, limits) if len(cands) else None,
         es99_conditional=float(snap99.loc[champ, "es"]),
+        objective_loss=_objective_loss(artifacts, float(req.get("required_return", float("nan")))),
     )
     worst = stress.loc[focus, hist_cols]
     return DecisionBundle(

@@ -75,6 +75,8 @@ class Evidence:
     resized_weights: dict | None = None
     relaxation: Relaxation | None = None   # minimum relaxation across candidates (preferred when given)
     es99_conditional: float = float("nan")  # champion's current conditional ES: a D9 monitoring alert, not a check
+    objective_loss: float | None = None     # spec §5: D2 loss of the lowest-risk frontier point that meets the
+                                            # required return (nan: no point does); None: not evaluated
 
 
 @dataclass(frozen=True)
@@ -160,7 +162,26 @@ def evaluate(ev: Evidence, lim: IPSLimits, dcfg: dict) -> Verdict:
     if not by["C6"].passed:
         reasons.append("The selected model fails its backtest: use the most conservative valid model for limits.")
     if gap >= dcfg["return_gap_tolerance"]:
+        adjustments["return_gap"] = gap
+        if ev.objective_loss is not None:
+            # Spec §5: ADJUST only if some frontier point meets the objective with the crisis budget loosened by at
+            # most `max_budget_loosening`; otherwise REJECT, with any spending change given as advice.
+            budget, room = lim.stress_drawdown_max, dcfg["max_budget_loosening"]
+            if ev.objective_loss == ev.objective_loss and ev.objective_loss <= budget + room + 1e-12:
+                loosen = adjustments.setdefault("loosen_limits_to", {})
+                loosen["stress_drawdown_max"] = max(loosen.get("stress_drawdown_max", budget), ev.objective_loss)
+                adjustments["client_approval_required"] = True
+                reasons += [f"Expected return is {gap:.2%} below the required return. A frontier point meets it if the "
+                            f"crisis budget is loosened to {ev.objective_loss:.1%} (at most +{room:.0%} allowed).",
+                            "Amended limits require explicit approval by the investment committee (client) before "
+                            "implementation."]
+                return Verdict("ADJUST RISK LIMIT", checks, reasons, adjustments)
+            return Verdict("REJECT", checks, [
+                f"Expected return is {gap:.2%} below the required return, and no frontier point reaches it even with "
+                f"the crisis budget loosened by {room:.0%}: the objective is not achievable within the client's risk "
+                "tolerance at today's market levels.",
+                "Advice (not a verdict branch): a lower spending rate, or a decision-date real yield high enough to "
+                "close the gap (notebook 06 B4)."], adjustments)
         reasons.append(f"Expected return is {gap:.2%} below the required return: lower the return objective, "
                        "review the spending rate, or loosen a named risk limit.")
-        adjustments["return_gap"] = gap
     return Verdict("ADJUST RISK LIMIT", checks, reasons, adjustments)

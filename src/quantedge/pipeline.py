@@ -233,9 +233,14 @@ def run_decision_evidence(cfg: Config, results: dict, stress_out: dict, macro: p
     frontier = {x: opt.min_var_at_equity(sigma, cons, equity, x).weights for x in FRONTIER_LEVELS}
     table, derived = calibrate_limits(frontier, returns.loc[: part.dev[1]], returns, cfg.stress["historical"],
                                       cfg.ips["crisis_budget"])
+    betas = pd.read_parquet(ARTIFACTS / "stress_betas_full.parquet")
+    shock = pd.Series(cfg.stress["hypothetical"]["shock"], dtype=float)
+    r_star = betas[shock.index] @ shock
     fm = decision_measures(cfg, {f"{x:.0%}": w for x, w in frontier.items()},
-                           {}, macro, as_of, raw)
+                           {f"{x:.0%}": -float(w.reindex(r_star.index, fill_value=0.0) @ r_star)
+                            for x, w in frontier.items()}, macro, as_of, raw)
     table["forward_return"] = fm["forward_return"].to_numpy()
+    table["hypothetical_loss"] = fm["hypothetical_loss"].to_numpy()
     table.to_parquet(ARTIFACTS / "limit_calibration.parquet")
     derived |= {"as_of": str(as_of.date()), "config_vol_ann_max": limits.vol_ann_max,
                 "config_es99_1d_max": limits.es99_1d_max}
@@ -504,6 +509,7 @@ def run_verdict_sensitivity(cfg: Config, macro: pd.DataFrame) -> pd.DataFrame:
     D1/D2 evidence as the verdict (`decision_measures`): risk limits by minimum relaxation across
     IPS-compliant candidates, the return objective against the forward expected return."""
     from quantedge.data.load import load_raw
+    from quantedge.decision.evidence import _objective_loss
     from quantedge.decision.rules import MEASURE_LIMIT, minimum_relaxation
 
     betas = pd.read_parquet(ARTIFACTS / "stress_betas_full.parquet")
@@ -524,10 +530,14 @@ def run_verdict_sensitivity(cfg: Config, macro: pd.DataFrame) -> pd.DataFrame:
         top = cfg.portfolio.focus if cfg.portfolio.focus in card.index else str(card.index[0])
         relax = minimum_relaxation(cands, limits) if len(cands) else None
         gap = sel["required_return"]["required_return"] - float(meas.loc[top, "forward_return"])
+        obj = _objective_loss(ARTIFACTS, sel["required_return"]["required_return"])   # base-case frontier (spec §5)
         if relax is None or relax.max_relative > cfg.decision["max_limit_relaxation"]:
             outcome = "REJECT"
         elif relax.max_relative == 0 and gap <= cfg.decision["return_gap_tolerance"]:
             outcome = "ACCEPT"
+        elif gap > cfg.decision["return_gap_tolerance"] and obj is not None and not (
+                obj <= limits.stress_drawdown_max + cfg.decision["max_budget_loosening"] + 1e-12):
+            outcome = "REJECT"
         else:
             outcome = "ADJUST RISK LIMIT"
         rows.append({"case": name, "top_candidate": top, "forward_return": float(meas.loc[top, "forward_return"]),

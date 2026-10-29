@@ -97,6 +97,7 @@ decision:                      # Step 13 rule engine (every threshold displayed 
   rc_flag: 1.5                 # sizing flag (reported, not a verdict check)
   return_gap_tolerance: 0.0    # C8 (D10): ACCEPT only if the objective is met; any gap is ADJUST, with its cost
   max_limit_relaxation: 0.50   # ADJUST vs REJECT: largest acceptable loosening of a named limit
+  max_budget_loosening: 0.05   # spec §5: ADJUST if a frontier point meets the objective with the crisis budget loosened by <= 5 pp
 
 partition:                     # Step 22: decisions use dev + val only; test locked until the tag
   dev: ["2004-11-18", "2018-12-31"]

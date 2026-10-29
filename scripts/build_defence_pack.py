@@ -163,14 +163,40 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 def build() -> str:
     S = []
     S.append(section(
+        "verdict", "Verdict", "The verdict by the locked rule (dry run on end-2022 data)",
+        "So, do you accept the mandate? And if not, what should the committee do?",
+        "On end-2022 market levels the locked rule says <strong>REJECT the mandate as proposed</strong>, and it says it "
+        "for one reason only: return. Four portfolios (20–35% equity) pass every risk limit, but the best of them is "
+        "expected to earn 4.91% a year against the 5.90% that CPI + 3.5% needs (about USD 98,000 a year short). Taking "
+        "more risk does not fix it: even 50% equity earns only 5.07%, so loosening the risk limit cannot reach the "
+        "objective, and an ADJUST would not be honest. The verdict flips to ACCEPT if the 10-year real yield is about "
+        "1 pp higher at the decision date (TIPS at about 2.6% or more), a threshold fixed in advance and checked once on "
+        "26 October. Until then our advice is the 35% portfolio, resized so no ETF carries more than 40% of the tail "
+        "risk, which can sustain about 2% spending with real growth.",
+        "p. 8 memo options &ldquo;accept the mandate as proposed / adjust the risk limit / reject&rdquo;; p. 4 "
+        "responsibility 5 &ldquo;quantify the trade-offs between return-seeking and risk reduction&rdquo;; p. 8 "
+        "&ldquo;one clear recommendation&rdquo;.",
+        "REJECT in all 18 combinations of the equity premium (3.5–5.5%), AGG spread (0.3–0.9%) and AGG tax; an ERP "
+        "of 7.75% would be needed to flip it. Ten-year odds of a 3.5% real return at 35% equity: about 34%. The app's "
+        "rule engine gives the same verdict. The real verdict is computed once, after the freeze, with decision-date "
+        "yields.",
+        [evidence("06_decision", "meets = sc[\"meets required return\"]", "The verdict on one chart: no point reaches "
+                  "the required return inside the budget or the +5 pp zone.", [1, 0]),
+         evidence("06_decision", "def verdict_with", "Robustness: the verdict over every combination of our assumptions."),
+         evidence("06_decision", "def dollars(w)", "The advised portfolio and two alternatives in dollars, and the "
+                  "D8 resizing (EFA's tail-risk share cut from 47% to 40%).", [0, 1, 2]),
+         evidence("06_decision", "def rule(spending, limits)", "Model validity, the verdict under each IPS version, "
+                  "and the rupee view.", [0, 1, 2])]))
+    S.append(section(
         "objective", "D1 · D10", "Return objective: CPI + 3.5% a year (3% spending + 0.5% real growth)",
         "Why do you spend 3% when most endowments spend 4–5%? And why should we accept your portfolio at all?",
         "The booklet asks the endowment to preserve <em>and grow</em> its capital, and leaves the return objective to us. "
         "A conservative portfolio of these seven ETFs can sustain about 3% spending plus 0.5% real growth only if real "
         "bond yields are about 1 pp above their end-2022 level; at end-2022 levels it sustains about 2%. A peer-level 4% "
         "would need far more equity risk than this committee accepts. So we set CPI + 3.5% and the verdict is "
-        "<strong>ACCEPT</strong> if the recommended point meets it at the decision date, otherwise "
-        "<strong>ADJUST THE RISK LIMIT</strong>, with its dollar cost.",
+        "<strong>ACCEPT</strong> if a portfolio meets it inside every risk limit at the decision date; "
+        "<strong>ADJUST THE RISK LIMIT</strong> if one would with the crisis budget at most 5 pp looser; otherwise "
+        "<strong>REJECT</strong>, with the spending rate the limits can sustain given as advice.",
         "p. 3 &ldquo;preserve and grow its capital &hellip; sustainable real growth&rdquo;; p. 4 responsibility 2 "
         "&ldquo;determine an appropriate return objective&rdquo;; p. 8 memo options.",
         "At 3% spending the 10-year chance of losing a fifth of real value is about 26% (about 40% at 4%), even in the "
@@ -311,7 +337,9 @@ def build() -> str:
         "volatility-adjusted models pass Kupiec, Christoffersen and the traffic light; historical VaR gets the count "
         "right but its breaches bunch together, and the normal model fails. The pre-registered rule picks "
         "<strong>GJR conditional EVT</strong> (14 breaches against 10 expected), statistically tied with the runner-up. "
-        "Every model fails in a COVID-speed crash, which is why we also hold a crisis budget and stress tests.",
+        "Every model fails in a COVID-speed crash, which is why we also hold a crisis budget and stress tests. All 14 "
+        "breaches have a verified market cause; 8 were no larger than the model's own ES forecast, and the other 6 "
+        "are sudden calm-to-crisis switches.",
         "p. 7 Layer 5 &ldquo;Kupiec, Christoffersen, Basel traffic light&rdquo;; Layer 4 &ldquo;how different "
         "modelling approaches perform under stressed market conditions&rdquo;.",
         "Chosen on four years, where Kupiec has 79% power (24% over one year). The same champion wins with 250- and "
@@ -324,7 +352,10 @@ def build() -> str:
                   "against the app's pipeline on 2019–2022.", [1]),
          evidence("04_backtesting", "exceptions ÷ expected", "Breaches in each crisis window (1 = as many as "
                   "expected).", [1]),
-         evidence("04_backtesting", "log = d[d[", "The champion's 99% VaR and every breach on validation.")]))
+         evidence("04_backtesting", "log = d[d[", "The champion's 99% VaR and every breach on validation, each with "
+                  "its verified cause."),
+         evidence("04_backtesting", "Breach anatomy", "Every breach explained: who lost, what moved, the loss against "
+                  "the model's own ES forecast, and the statistical checks.")]))
     S.append(section(
         "stress", "D2 · D5", "What happens in a crisis?",
         "What would a 2008 or a 2022 do to the endowment?",
@@ -380,6 +411,7 @@ def build() -> str:
 
     index = "".join(f'<li><a href="#{sid}"><span class="code-i">{code}</span> {q}</a></li>'
                     for sid, code, q in [
+                        ("verdict", "Verdict", "Do you accept the mandate? If not, what should we do?"),
                         ("objective", "D1 · D10", "Why 3% spending, and will you accept the mandate?"),
                         ("d2", "D2", "Why a 25% crisis budget?"),
                         ("ips", "IPS v1 → v2", "Why did your risk limits change? Isn't that moving the goalposts?"),
@@ -404,6 +436,7 @@ def build() -> str:
     with decision-date market levels, and the final verdict is computed once.</p>
   </div>
   <div class="glance">
+    <div class="tile"><span class="v">REJECT · dry run</span><span class="k">risk passes; return 1 pp short at end-2022 yields</span></div>
     <div class="tile"><span class="v">CPI + 3.5%</span><span class="k">return objective (3% spending + 0.5% growth)</span></div>
     <div class="tile"><span class="v">25%</span><span class="k">largest crisis loss accepted</span></div>
     <div class="tile"><span class="v">≈ 35%</span><span class="k">equity at the 25% budget</span></div>

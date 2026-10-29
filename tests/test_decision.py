@@ -50,6 +50,21 @@ def test_verdict_branches(changes, status, dcfg):
     assert len(v.checks) == 8
 
 
+@pytest.mark.parametrize("objective_loss, status", [
+    (float("nan"), "REJECT"),              # no frontier point reaches the required return at any risk
+    (0.27, "REJECT"),                      # reachable only beyond budget (20%) + 5 pp
+    (0.24, "ADJUST RISK LIMIT"),           # reachable with the budget loosened to 24%
+])
+def test_spec5_return_route_decides_adjust_or_reject(objective_loss, status, dcfg):
+    v = evaluate(replace(GOOD, expected_return=0.045, required_return=0.059, objective_loss=objective_loss), LIM, dcfg)
+    assert v.status == status, v.reasons
+    if status == "ADJUST RISK LIMIT":
+        assert v.adjustments["loosen_limits_to"] == {"stress_drawdown_max": 0.24}
+        assert v.adjustments["client_approval_required"] is True
+    else:
+        assert "not achievable" in v.reasons[0] and "Advice" in v.reasons[1]
+
+
 def test_adjust_names_the_limit_and_new_value(dcfg):
     v = evaluate(replace(GOOD, vol_ann=0.091), LIM, dcfg)
     assert v.adjustments["loosen_limits_to"]["vol_ann_max"] == pytest.approx(0.091)

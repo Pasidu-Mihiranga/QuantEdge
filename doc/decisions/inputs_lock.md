@@ -101,6 +101,7 @@ The endowment is perpetual. The **return objective is judged over a 10-year roll
 - **Booklet:** p. 8 the memo's options "accept the mandate as proposed / adjust the risk limit / reject"; p. 4 responsibility 2 (the team determines the return objective); p. 4 responsibility 5 "quantify the trade-offs between return-seeking and risk reduction"
 - **Evidence:** a peer-level 4% spending objective is not achievable at a conservative risk level (06 A2–A4). The agreed CPI + 3.5% objective is met within the 25% budget if the decision-date 10-year real yield is at least about 1 pp above end-2022 (ACCEPT at 35% equity, ERP 4.5%), and not met at end-2022 levels (06 A2c). The verdict is therefore decided by the market level at the decision date, computed once after the freeze. The memo quantifies what 4–5% spending would cost in extra crisis loss.
 - **Decided by / date:** team, 2026-10-28
+- **Proposed amendment (2026-10-29, for team confirmation before the freeze):** read D10 as the locked spec §5 rule. ACCEPT if a portfolio meets CPI + 3.5% inside every limit; ADJUST THE RISK LIMIT if one would with the crisis budget at most 5 pp looser; otherwise REJECT, with the sustainable spending rate as advice. Reason: the end-2022 dry run (notebook 06 Part B) has no portfolio reaching the objective at any risk level (even 50% equity earns 5.07% vs 5.90% required), so an ADJUST could not deliver what it promises.
 
 ---
 
