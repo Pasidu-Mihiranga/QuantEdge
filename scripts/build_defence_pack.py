@@ -163,28 +163,28 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 def build() -> str:
     S = []
     S.append(section(
-        "verdict", "Verdict", "The verdict by the locked rule (dry run on end-2022 data)",
-        "So, do you accept the mandate? And if not, what should the committee do?",
-        "On end-2022 market levels the locked rule says <strong>REJECT the mandate as proposed</strong>, and it says it "
-        "for one reason only: return. Four portfolios (20–35% equity) pass every risk limit, but the best of them is "
-        "expected to earn 4.91% a year against the 5.90% that CPI + 3.5% needs (about USD 98,000 a year short). Taking "
-        "more risk does not fix it: even 50% equity earns only 5.07%, so loosening the risk limit cannot reach the "
-        "objective, and an ADJUST would not be honest. The verdict flips to ACCEPT if the 10-year real yield is about "
-        "1 pp higher at the decision date (TIPS at about 2.6% or more), a threshold fixed in advance and checked once on "
-        "26 October. Until then our advice is the 35% portfolio, resized so no ETF carries more than 40% of the tail "
-        "risk, which can sustain about 2% spending with real growth.",
+        "verdict", "Verdict", "The verdict by the locked rule: ACCEPT at 35% equity (26 October 2026)",
+        "So, do you accept the mandate? How sure are you?",
+        "<strong>Yes: ACCEPT the mandate as proposed.</strong> On the decision date the 35% portfolio (SPY 15.6%, EFA "
+        "9.4%, AGG 65%, XLE 10%) is expected to earn 6.04% a year after costs, against the 5.94% that CPI + 3.5% needs "
+        "(about USD 10,700 a year above), and it passes every risk limit: its worst crisis replay is 23.9% (the GFC) "
+        "against a 25% budget. We said in advance what would decide it: on end-2022 yields the same rule gave REJECT "
+        "and we pre-registered that it would flip if the 10-year TIPS yield reached about 2.58%. On the day it was "
+        "2.66%. The rule picked the lowest-risk portfolio that meets the objective; 30% equity falls short and 40% "
+        "breaks the crisis budget. <strong>It is a narrow ACCEPT, and we say so:</strong> it is lost if the real yield "
+        "falls 0.15 pp or if the equity premium is below 4.15% (we assumed 4.5%).",
         "p. 8 memo options &ldquo;accept the mandate as proposed / adjust the risk limit / reject&rdquo;; p. 4 "
         "responsibility 5 &ldquo;quantify the trade-offs between return-seeking and risk reduction&rdquo;; p. 8 "
         "&ldquo;one clear recommendation&rdquo;.",
-        "REJECT in all 18 combinations of the equity premium (3.5–5.5%), AGG spread (0.3–0.9%) and AGG tax; an ERP "
-        "of 7.75% would be needed to flip it. Ten-year odds of a 3.5% real return at 35% equity: about 34%. The app's "
-        "rule engine gives the same verdict. The real verdict is computed once, after the freeze, with decision-date "
-        "yields.",
+        "Over 18 combinations of our return assumptions the verdict is ACCEPT in 7, ADJUST in 4, REJECT in 7; the risk "
+        "limits pass in all of them, so only the return objective is sensitive. Ten-year odds of a 3.5% real return: "
+        "about 50%; chance of losing a fifth of real value after spending: about 7%. The app's production code "
+        "reproduces this notebook's verdict, weights and frontier (to 0.0001).",
         [evidence("06_decision", "meets = sc[\"meets required return\"]", "The verdict on one chart: no point reaches "
-                  "the required return inside the budget or the +5 pp zone.", [1, 0]),
+                  "the required return inside the crisis budget; the 35% point is the lowest-risk one that does.", [1, 0]),
          evidence("06_decision", "def verdict_with", "Robustness: the verdict over every combination of our assumptions."),
          evidence("06_decision", "def dollars(w)", "The advised portfolio and two alternatives in dollars, and the "
-                  "D8 resizing (EFA's tail-risk share cut from 47% to 40%).", [0, 1, 2]),
+                  "D8 check (no fund above 40% of the tail risk, so no resizing).", [0, 1, 2]),
          evidence("06_decision", "def rule(spending, limits)", "Model validity, the verdict under each IPS version, "
                   "and the rupee view.", [0, 1, 2])]))
     S.append(section(
@@ -232,9 +232,9 @@ def build() -> str:
         "2.1% ES. The new limits come from <em>one</em> client preference, the 25% crisis budget, so they all agree "
         "(36% equity, volatility 8.4%, ES 2.23%). The causality runs one way: the committee's preference sets the "
         "limit, and the limit sets the portfolio. Under the new limits the 35% portfolio passes every risk check. "
-        "What now decides the verdict is <strong>return</strong>: at end-2022 yields the portfolio is about 1 pp short of "
-        "CPI + 3.5%, so the end-2022 dry run says ADJUST. The real verdict uses the decision-date yields and is computed "
-        "once, after the freeze.",
+        "What decides the verdict is <strong>return</strong>, not risk: on end-2022 yields the portfolio was about 1 pp "
+        "short of CPI + 3.5% (REJECT in the dry run); on the decision date it is 0.11 pp above it (ACCEPT). The limits "
+        "recalibrated at the decision date (8.3%, 2.26%) barely moved, which shows the calibration is stable.",
         "p. 4 responsibility 3 &ldquo;define and justify the risk constraints&rdquo;; p. 3 &ldquo;avoiding large losses "
         "is more important than maximizing gains&rdquo;; p. 8 &ldquo;adjust the risk limit&rdquo; memo option.",
         "Agreed and locked on 2026-10-28, before the 2023–2026 test, using data up to 2022 only. The app's production "
@@ -342,11 +342,13 @@ def build() -> str:
         "are sudden calm-to-crisis switches.",
         "p. 7 Layer 5 &ldquo;Kupiec, Christoffersen, Basel traffic light&rdquo;; Layer 4 &ldquo;how different "
         "modelling approaches perform under stressed market conditions&rdquo;.",
-        "Chosen on four years, where Kupiec has 79% power (24% over one year). The same champion wins with 250- and "
-        "1000-day windows. The app's code reproduces this independently written backtest exactly (same breaches, "
-        "same loss), so the 2023–2026 test, run once after the freeze, is run by the production code and checked "
-        "by the notebook.",
-        [evidence("04_backtesting", "assert basel_zone(4, 250)", "Validation 2019–2022: the six models against "
+        "<strong>Confirmed on the one-shot 2023–2026 test</strong> (957 days, run once after the freeze): 9 breaches against "
+        "9.6 expected, Kupiec p = 0.85, conditional coverage p = 0.19, and the lowest loss of all eleven models. Every "
+        "model without GJR's asymmetry failed there because its breaches clustered. The notebook and the production "
+        "code agree on every breach and loss (largest VaR gap 0.35 bp).",
+        [evidence("04_backtesting", "TEST = (pd.Timestamp(fres", "The one-shot final test, 2023–2026: the six "
+                  "models against every test, run once.", [1, 0]),
+         evidence("04_backtesting", "assert basel_zone(4, 250)", "Validation 2019–2022: the six models against "
                   "every test."),
          evidence("04_backtesting", "champ = json.loads", "Two separately written codes, one answer: the notebook "
                   "against the app's pipeline on 2019–2022.", [1]),
@@ -411,7 +413,7 @@ def build() -> str:
 
     index = "".join(f'<li><a href="#{sid}"><span class="code-i">{code}</span> {q}</a></li>'
                     for sid, code, q in [
-                        ("verdict", "Verdict", "Do you accept the mandate? If not, what should we do?"),
+                        ("verdict", "Verdict", "Do you accept the mandate? How sure are you?"),
                         ("objective", "D1 · D10", "Why 3% spending, and will you accept the mandate?"),
                         ("d2", "D2", "Why a 25% crisis budget?"),
                         ("ips", "IPS v1 → v2", "Why did your risk limits change? Isn't that moving the goalposts?"),
@@ -431,18 +433,19 @@ def build() -> str:
     <h1>Serendib Decision Defence</h1>
     <p>Every decision the team made, the question a judge is likely to ask about it, our answer in plain English, and the
     chart or table that backs it. Built from the analysis notebooks on {date.today():%d %B %Y}.</p>
-    <p class="status"><strong>Dry run.</strong> These figures use data up to 2022-12-31. The 2023–2026 test period stays
-    locked until the methodology freeze on 30 October 2026; after it, the notebooks and this document are regenerated
-    with decision-date market levels, and the final verdict is computed once.</p>
+    <p class="status"><strong>Final.</strong> Inputs locked and methodology frozen on 29 October 2026 (tag
+    <code>methodology-freeze-v1</code>); the 2023–2026 test was then run once and the verdict computed at the decision date,
+    26 October 2026 (market data to 23 October). Sections on decisions D1–D9 show the evidence from data up to 2022 on
+    which they were chosen.</p>
   </div>
   <div class="glance">
-    <div class="tile"><span class="v">REJECT · dry run</span><span class="k">risk passes; return 1 pp short at end-2022 yields</span></div>
+    <div class="tile"><span class="v">ACCEPT · 35%</span><span class="k">6.04% expected vs 5.94% required; every risk limit passes</span></div>
     <div class="tile"><span class="v">CPI + 3.5%</span><span class="k">return objective (3% spending + 0.5% growth)</span></div>
     <div class="tile"><span class="v">25%</span><span class="k">largest crisis loss accepted</span></div>
     <div class="tile"><span class="v">≈ 35%</span><span class="k">equity at the 25% budget</span></div>
-    <div class="tile"><span class="v">8.4% · 2.23%</span><span class="k">volatility and 99% ES limits, both set by the budget</span></div>
-    <div class="tile"><span class="v">$125–135k</span><span class="k">1-in-100-day loss (35% equity)</span></div>
-    <div class="tile"><span class="v">$430–520k</span><span class="k">once-in-a-decade day</span></div>
+    <div class="tile"><span class="v">8.3% · 2.26%</span><span class="k">volatility and 99% ES limits, both set by the budget</span></div>
+    <div class="tile"><span class="v">$2.39M</span><span class="k">worst crisis replay (GFC), inside the $2.5M budget</span></div>
+    <div class="tile"><span class="v">9 vs 9.6</span><span class="k">breaches on the one-shot 2023–2026 test: passed</span></div>
   </div>
   <nav class="index" aria-label="Questions">
     <h3>Likely questions</h3>

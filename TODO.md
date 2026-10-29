@@ -122,6 +122,16 @@ Plan: `My reserch/specs/01_problem_spec.md` (v2) and `02_gap_register.md` (v2); 
 - [ ] Step 18: pitch deck and Q&A drills (deferred until the numbers are final after the freeze)
 - [ ] Gate G4 checklist
 
+## Post-freeze (2026-10-29)
+- [x] Freeze: inputs locked and signed (team lead), D10 amended to the spec §5 rule, tag `methodology-freeze-v1`
+- [x] Final test run once: champion GJR conditional EVT passes (9 vs 9.6 breaches, Kupiec p 0.86, CC p 0.19, lowest loss of 11 models); Linear QR not adopted; notebook 04 §9 reproduces it
+- [x] Decision-date run: notebook 05 §8 (pre-registered episodes 5.7% and 2.9%; scenario 21.1%) and notebook 06 Part B: **ACCEPT at 35% equity** (6.04% vs 5.94%; narrow: lost below ERP 4.15% or TIPS 2.51%; 7/18 cases ACCEPT)
+- [x] `decision/decision_date.py`: one source of headline numbers, reconciled with notebook 06 (`tests/test_decision_date.py`)
+- [x] App rebuilt for the committee (Decision / Evidence / Technical appendix; 12 pages, every booklet item; screenshot-reviewed twice) — 220 tests
+- [x] Defence document updated with the final verdict and test (new link after the account change)
+- [ ] Deploy to Streamlit Community Cloud (team account); reviewer names (D6); team-written memo, report narrative and deck from `decision_numbers.json`
+- [ ] Memo and tear sheet generators (`decision/memo.py`, `reports/tearsheet.py`) still read the pre-freeze evidence; switch them to `decision_numbers.json`
+
 ## Deviations from the plan
 - 2026-10-28: the snapshot can be extended with `download --add` (append-only, hash-checked) instead of a full refresh, so verified results do not move; new file prefixes `ctx_` (context) and `ext_` (validation history) are never loaded by `load_raw`.
 - 2026-10-28: Steps 19–21 and 23 removed and LightGBM dropped after the independent audit (gap G13); archived at tag `archive/mirofish-ml`. `ml.lgbm.retrain_every` moved to `ml.retrain_every` (used by linear QR and the GARCH-sigma feature). `requirements-research.txt` and the `lightgbm` pin removed.
