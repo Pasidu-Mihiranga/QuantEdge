@@ -22,6 +22,19 @@ Requires Python 3.12 and [uv](https://docs.astral.sh/uv/). On Windows use `.\mak
 .\make.ps1 test        # fast tests; .\make.ps1 test-all includes the slow ones
 ```
 
+On macOS or Linux:
+
+```
+make setup             # once: create .venv and install everything
+make run               # start the app at http://localhost:8501
+# or, without make:
+.venv/bin/python -m streamlit run app/Home.py
+```
+
+**Use the project's Python, not a global `streamlit`.** If you type `streamlit run app/Home.py` and Anaconda (or another
+global Python) is first on your PATH, its older Streamlit starts without this project's packages and the app fails with
+`ModuleNotFoundError: No module named 'quantedge'`. `make run` and `.venv/bin/python -m streamlit` always use `.venv`.
+
 The raw data snapshot in `data/raw/` is frozen and SHA-256 hashed (`data/raw/manifest.json`). Refreshing it is an explicit step: `.\make.ps1 data`.
 
 ## Where things are
@@ -30,7 +43,7 @@ The raw data snapshot in `data/raw/` is frozen and SHA-256 hashed (`data/raw/man
 |---|---|
 | `config.yaml` | every parameter (dates, IPS limits, model settings, decision thresholds) |
 | `src/quantedge/` | the package: data, portfolio, risk, backtest, stress, decision, ml |
-| `app/` | Streamlit app: Home plus 10 pages |
+| `app/` | Streamlit app: `Home.py` (navigation) and `views/` (Decision, Evidence, Technical appendix) |
 | `tests/` | pytest suite (closed-form, simulation-recovery, textbook and leakage tests) |
 | `doc/decisions/` | team decision records and the methodology-freeze checklist |
 | `TODO.md` | implementation progress, step by step |
