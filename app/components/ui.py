@@ -130,7 +130,7 @@ def note(text: str, kind: str = "note") -> None:
 
 def layout(fig: go.Figure, height: int = 360, title: str | None = None) -> go.Figure:
     fig.update_layout(template="plotly_white", height=height, margin=dict(l=8, r=8, t=48 if title else 16, b=8),
-                      font=dict(size=13, color=INK, family="IBM Plex Sans, Helvetica, Arial, sans-serif"), title=dict(text=title, x=0, font=dict(size=15)) if title else None,
+                      font=dict(size=13, color=INK, family="Google Sans, Helvetica, Arial, sans-serif"), title=dict(text=title, x=0, font=dict(size=15)) if title else None,
                       legend=dict(orientation="h", y=-0.18, x=0), hoverlabel=dict(font_size=13))
     return fig
 
