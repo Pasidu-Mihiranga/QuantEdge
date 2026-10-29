@@ -2,16 +2,15 @@ import streamlit as st
 
 from components import charts
 from components.data import ML_FILES, backtest, jsonfile, ml_forecast, parquet, require
-from components.sidebar import provisional_banner, sidebar
+from components.sidebar import sidebar
 from quantedge.backtest.coverage import clopper_pearson, power_kupiec, rolling_basel
 from quantedge.backtest.report import selection_table
 
-st.set_page_config(page_title="Backtesting", layout="wide")
 ctl = sidebar()
-st.title("Backtesting and model validation")
-provisional_banner()
+st.title("All risk models")
+st.caption("Every model, every window and the machine-learning challenger on the pre-freeze periods (2008–2022). The one-shot 2023–2026 test is on 'Can we trust the risk model?'.")
 st.markdown("<div class='qe-banner qe-locked'>Dev 2004–2018 · Validation 2019–2022 (model selection) · "
-            "Final test 2023+ locked until the methodology freeze</div>", unsafe_allow_html=True)
+            "Final test 2023–2026 run once after the freeze (see 'Can we trust the risk model?')</div>", unsafe_allow_html=True)
 
 tab_bt, tab_arena = st.tabs(["Backtest", "Model Arena (champion vs challengers)"])
 
@@ -28,7 +27,8 @@ with tab_bt:
     t = selection_table({ctl.model: d}, a).iloc[0]
     lo, hi = clopper_pearson(int(t.exceptions), int(t["T"]))
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Exceptions / expected", f"{int(t.exceptions)} / {t.expected:.1f}", f"rate CI {lo:.2%}–{hi:.2%}", delta_color="off")
+    c1.metric("Exceptions / expected", f"{int(t.exceptions)} / {t.expected:.1f}")
+    c1.caption(f"95% interval for the breach rate: {lo:.2%}–{hi:.2%}")
     c2.metric("Kupiec p", f"{t.kupiec_p:.3f}")
     c3.metric("Christoffersen independence p", f"{t.ind_p:.3f}")
     c4.metric("Conditional coverage p", f"{t.cc_p:.3f}")
@@ -51,7 +51,8 @@ with tab_bt:
                 "z2_975", "z2_zone", "pinball", "fz0", "passes"]
         st.dataframe(sel[cols].round(5), width="stretch")
     champ = jsonfile("champion.json")
-    st.success(f"Champion: **{champ.get('champion')}**: {champ.get('reason')}")
+    st.success(f"Champion: **{champ.get('champion')}**: lowest 99% pinball loss among the models that pass every test "
+               "on 2019–2022 (rule fixed in advance); confirmed on the one-shot 2023–2026 test.")
     crises = parquet("backtest_crises_500.parquet")
     if crises is not None:
         st.subheader("Crisis breakdown (99%)")

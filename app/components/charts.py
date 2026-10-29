@@ -61,7 +61,7 @@ def cumulative(perf: pd.DataFrame, title: str) -> go.Figure:
 def underwater(perf: pd.DataFrame, title: str) -> go.Figure:
     wealth = (1 + perf.fillna(0)).cumprod()
     dd = wealth / wealth.cummax() - 1
-    fig = px.area(dd, title=title)
+    fig = px.line(dd, title=title)        # one line per series: stacked areas would add the drawdowns up
     fig.update_yaxes(tickformat=".0%", title="Drawdown")
     return fig.update_layout(**LAYOUT)
 

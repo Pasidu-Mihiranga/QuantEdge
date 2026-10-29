@@ -3,12 +3,10 @@ import streamlit as st
 
 from components.charts import LAYOUT
 from components.data import jsonfile, parquet, require
-from components.sidebar import provisional_banner, sidebar, usd
+from components.ui import money
 
-st.set_page_config(page_title="Tail Risk (EVT)", layout="wide")
-ctl = sidebar()
-st.title("Extreme Value Theory: peaks over threshold")
-provisional_banner()
+st.title("Tail risk (EVT) diagnostics")
+st.markdown("How the tail of the loss distribution was modelled: the peaks-over-threshold method fits a Generalised Pareto distribution to losses above a high threshold. The locked choice is the **90% quantile** (notebook 03 §3); the rules below show how much the choice matters. Fitted on data to end-2022, before the freeze.")
 
 ev = parquet("evt_threshold_evidence.parquet")
 sens = parquet("evt_sensitivity.parquet")
@@ -22,7 +20,9 @@ fig.add_scatter(x=ev["quantile"], y=ev["xi"], mode="lines+markers", name="ξ",
 fig.update_xaxes(title="Threshold quantile", tickformat=".1%")
 fig.update_yaxes(title="Shape ξ (95% CI)")
 st.plotly_chart(fig.update_layout(**LAYOUT), width="stretch")
-st.dataframe(ev[["quantile", "u", "n_u", "xi", "se_xi", "beta_star", "ad_p", "ks_p"]].round(4),
+st.dataframe(ev[["quantile", "u", "n_u", "xi", "se_xi", "beta_star", "ad_p", "ks_p"]].rename(columns={
+    "quantile": "threshold quantile", "u": "threshold (loss)", "n_u": "losses above it", "xi": "shape ξ", "se_xi": "ξ std. error",
+    "beta_star": "scale β*", "ad_p": "Anderson-Darling p", "ks_p": "Kolmogorov-Smirnov p"}).round(4),
              width="stretch", hide_index=True)
 st.markdown("""
 - **Rule A (diagnostic):** lowest threshold with stable ξ, at least 50 exceedances and an Anderson-Darling bootstrap p > 0.10.
@@ -40,6 +40,7 @@ st.caption("At 99% the rules agree; they diverge only in the far tail, where EVT
 extras = jsonfile("risk_extras.json")
 rl = extras.get("return_level_10y_evt")
 if rl is not None:
-    st.metric("Once-in-10-years daily loss (EVT, 1-in-2,520 days)", usd(rl * ctl.nav), f"{rl:.2%} of NAV", delta_color="off")
+    st.metric("Once-in-10-years daily loss (EVT, end-2022 fit)", money(rl * 10_000_000))
+    st.caption(f"{rl:.2%} of the endowment")
 st.caption("ξ is the tail-shape parameter: ξ = 0.2 means the loss tail decays like a power law with index 5. "
            "It is not a crash probability.")

@@ -96,6 +96,50 @@ def ten_year_odds(w: pd.Series, returns: pd.DataFrame, cpi: pd.Series, fwd: floa
             "p_real_value_below_80": float(np.mean(value / price < 0.8)), "paths": paths}
 
 
+def risk_snapshot(cfg: Config, w: pd.Series, returns: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+    """VaR, ES and EVT of the recommended weights, every model fitted on the last W days before the
+    decision date (the risk dashboard), plus the once-in-a-decade loss and 10-day figures."""
+    from quantedge.risk.evt import ConditionalEVTModel, EVTModel, return_level_p
+    from quantedge.risk.garch import GarchFHSModel
+    from quantedge.risk.horizon import horizon_table
+    from quantedge.risk.montecarlo import MonteCarloModel
+    from quantedge.risk.var import CornishFisherModel, HistoricalModel, NormalModel, StudentTModel
+
+    window = returns.iloc[-cfg.risk.default_window:]
+    port = window @ w.reindex(window.columns, fill_value=0.0)
+    models = {
+        "Historical": HistoricalModel(), "Normal": NormalModel(), "Student-t": StudentTModel(),
+        "Cornish-Fisher": CornishFisherModel(), "EVT": EVTModel(0.90),
+        "Monte Carlo": MonteCarloModel(n_sims=cfg.risk.mc_sims, rng=cfg.rng(stream=12)),
+        "GARCH-FHS": GarchFHSModel(), "GJR-FHS": GarchFHSModel(o=1), "Conditional EVT": ConditionalEVTModel(),
+        "GJR conditional EVT": ConditionalEVTModel(o=1),
+    }
+    for m in models.values():
+        m.fit(port)
+    alphas = sorted({*cfg.risk.confidence_levels, 0.975})
+    snap = pd.DataFrame([{"model": n, "alpha": a, "var": m.var(a), "es": m.es(a)} for n, m in models.items() for a in alphas])
+    p10 = return_level_p(10)
+    h10 = horizon_table(models["GJR-FHS"], port, 10, cfg.rng(stream=13))
+    h99 = h10[(h10.method == "GARCH-FHS paths") & (h10.alpha == 0.99)].iloc[0]
+    extra = {"window_start": str(window.index[0].date()), "window_end": str(window.index[-1].date()),
+             "once_in_10y_champion": float(models["GJR conditional EVT"].var(p10)), "once_in_10y_evt": float(models["EVT"].var(p10)),
+             "var99_10d": float(h99["var"]), "es99_10d": float(h99["es"])}
+    return snap, extra
+
+
+def performance(cfg: Config, returns: pd.DataFrame) -> pd.DataFrame:
+    """Walk-forward daily returns (quarterly rebalance, costs) of the recommended strategy and the
+    60/40 benchmark from 2008 to the decision date (the portfolio panel)."""
+    from quantedge.portfolio.walkforward import candidate_strategies, walk_forward
+
+    rf = pd.read_parquet(ARTIFACTS / "returns_rf.parquet")["rf"].reindex(returns.index)
+    strategies, _ = candidate_strategies(cfg, IPSLimits.from_config(cfg.ips), list(returns.columns))
+    names = [cfg.portfolio.focus, "60/40 benchmark"]
+    out = {n: walk_forward(returns, strategies[n], rf, window=cfg.portfolio.estimation_window_days,
+                           cost_bps=cfg.portfolio.cost_bps_per_side, name=n).perf for n in names}
+    return pd.DataFrame(out)
+
+
 def _fred(raw, name: str, before: pd.Timestamp) -> pd.Series:
     s = raw.fred[name].dropna()
     return s.loc[s.index < before]
@@ -240,6 +284,7 @@ def run(cfg: Config, raw=None, write: bool = True) -> dict:
                  "models_passing": [m for m in scores.index if bool(scores.loc[m, "passes"])],
                  "challenger_adopted": bool(final.get("condition_3", {}).get("Linear QR", False))}
 
+    champ_name = champ or json.loads((ARTIFACTS / "champion.json").read_text(encoding="utf-8"))["champion"]
     numbers = {
         "decision_date": str(D.date()), "data_end": str(returns.index[-1].date()), "nav_usd": nav,
         "verdict": verdict, "recommended_equity": rec, "advised_equity": point,
@@ -256,8 +301,23 @@ def run(cfg: Config, raw=None, write: bool = True) -> dict:
         "robustness": {k: int(v) for k, v in grid["verdict"].value_counts().items()},
         "alternatives": alternatives, "ten_year": odds, "model_validity": model,
         "scenario": {"name": hyp["name"], "loss": float(fr.loc[point, "hypothetical_loss"])},
+        # Every crisis with the recommended weights held at target (D2 convention), and the team's scenario
+        "crisis_map": {**{k: float(v) for k, v in crisis_loss(w_final, returns, cfg.stress["historical"]).items()},
+                       **{f"{k} (pre-registered)": float(v)
+                          for k, v in crisis_loss(w_final, returns, cfg.stress.get("preregistered", {})).items()},
+                       f"{hyp['name']} (scenario)": scenario_loss(betas, hyp["shock"], w_final, hyp.get("liquidity_day"))},
     }
+    snap, extra = risk_snapshot(cfg, w_final, returns)
+    nav_ = nav
+    numbers["risk_day"] = {"var99": float(snap.query("model == @champ_name and alpha == 0.99")["var"].iloc[0]),
+                           "es99": float(snap.query("model == @champ_name and alpha == 0.99")["es"].iloc[0]),
+                           "evt_es99": float(snap.query("model == 'EVT' and alpha == 0.99")["es"].iloc[0]),
+                           "model": champ_name, **extra}
+    numbers["risk_day_usd"] = {k: v * nav_ for k, v in numbers["risk_day"].items() if isinstance(v, float)}
     if write:
+        snap.to_parquet(ARTIFACTS / "decision_risk_snapshot.parquet")
+        betas.to_parquet(ARTIFACTS / "decision_scenario_betas.parquet")
+        performance(cfg, returns).to_parquet(ARTIFACTS / "decision_performance.parquet")
         (ARTIFACTS / "decision_numbers.json").write_text(json.dumps(numbers, indent=2, default=float), encoding="utf-8")
         fr.to_parquet(ARTIFACTS / "decision_frontier.parquet")
         grid.to_parquet(ARTIFACTS / "decision_robustness.parquet")

@@ -8,13 +8,10 @@ import streamlit as st
 from components import charts
 from components.charts import LAYOUT
 from components.data import parquet, require
-from components.sidebar import provisional_banner, sidebar
 from quantedge.paths import ARTIFACTS
 
-st.set_page_config(page_title="Regimes, Overlay, Copula, Macro", layout="wide")
-ctl = sidebar()
-st.title("Innovation: regimes, risk overlay, joint crashes, macro and FX")
-provisional_banner()
+st.title("Regimes, overlay, copula, FX")
+st.caption("Extensions tested on data to end-2022, before the freeze. None changes the recommendation; each is reported with its result, including the negative ones.")
 
 summary_file = ARTIFACTS / "innovation_summary.json"
 if not require(parquet("overlay_compare.parquet"), "The Step 14 results"):
@@ -26,20 +23,23 @@ tab_r, tab_o, tab_c, tab_m = st.tabs(["Regimes", "Volatility-target overlay", "t
 
 with tab_r:
     p = parquet("regime_p_high.parquet")
-    fig = go.Figure(go.Scatter(x=p.index, y=p["p_high"], mode="lines", line=dict(color="#c0392b", width=1)))
-    fig.add_hline(y=0.7, line_dash="dot", annotation_text="governance trigger 0.7")
-    st.plotly_chart(fig.update_layout(title="Filtered probability of the high-volatility regime", **LAYOUT), width="stretch")
+    monthly = p["p_high"].resample("ME").mean()
+    fig = go.Figure(go.Scatter(x=monthly.index, y=monthly, mode="lines", fill="tozeroy", line=dict(color="#1f5fae", width=1.5),
+                               hovertemplate="%{x|%b %Y}: %{y:.0%}<extra></extra>"))
+    fig.add_hline(y=0.7, line=dict(dash="dot", color="#1d2733"), annotation_text="governance trigger 0.7",
+                  annotation_position="top left")
+    fig.update_yaxes(tickformat=".0%", range=[0, 1])
+    st.plotly_chart(fig.update_layout(title="Probability of the high-volatility regime (monthly average of the daily filter)", **LAYOUT), width="stretch")
     c1, c2, c3 = st.columns(3)
     c1.metric("99% ES, high-vol vs calm", f"{rg['es99_high_over_calm']:.1f}×")
-    c2.metric("Expected regime length", f"{rg['duration_calm_days']:.0f} / {rg['duration_high_days']:.0f} days", "calm / high-vol",
-              delta_color="off")
+    c2.metric("Expected regime length (calm / high-volatility)", f"{rg['duration_calm_days']:.0f} / {rg['duration_high_days']:.0f} days")
     c3.metric("P(high-vol), end of 2022", f"{rg['p_high_latest']:.0%}")
     st.dataframe(parquet("regime_vix.parquet").style.format("{:.0%}"), width="stretch")
     st.caption(f"Parameters estimated on data to {rg['fit_window_end']}, then the filter runs forward with them "
                "fixed: the probability on any day uses only earlier data. Used as a governance trigger, not a trading signal.")
 
 with tab_o:
-    perf = parquet("overlay_performance.parquet").loc[ctl.start:ctl.end]
+    perf = parquet("overlay_performance.parquet")
     c1, c2 = st.columns(2)
     c1.plotly_chart(charts.cumulative(perf, "Growth of $1 after costs"), width="stretch")
     c2.plotly_chart(charts.underwater(perf, "Drawdown"), width="stretch")
@@ -52,10 +52,12 @@ with tab_o:
 
 with tab_c:
     c1, c2, c3 = st.columns(3)
-    c1.metric("99% ES, t-copula vs Gaussian", f"{cp['es99_t']:.2%}", f"{cp['es_uplift_t_vs_gauss']:+.1%}", delta_color="inverse")
-    c2.metric("Joint SPY/EFA/EEM crash (t / Gaussian)", f"{cp['joint_crash_t']:.2%}", f"Gaussian {cp['joint_crash_gauss']:.2%}",
-              delta_color="off")
-    c3.metric("Tail dependence SPY–EFA (λ_L)", f"{cp['lambda_L_spy_efa']:.2f}", f"ν = {cp['nu']:.1f}", delta_color="off")
+    c1.metric("99% ES with a t-copula", f"{cp['es99_t']:.2%}")
+    c1.caption(f"{cp['es_uplift_t_vs_gauss']:+.1%} versus a Gaussian copula")
+    c2.metric("Chance of a joint SPY/EFA/EEM crash day (t-copula)", f"{cp['joint_crash_t']:.2%}")
+    c2.caption(f"Gaussian copula: {cp['joint_crash_gauss']:.2%}")
+    c3.metric("Tail dependence SPY–EFA (λ_L)", f"{cp['lambda_L_spy_efa']:.2f}")
+    c3.caption(f"t-copula degrees of freedom ν = {cp['nu']:.1f}")
     st.caption(f"Historical joint-crash frequency: {cp['joint_crash_history']:.2%}. A Gaussian copula has no tail "
                "dependence; the t-copula lets large losses arrive together. Marginals: empirical body with GPD tails.")
 
@@ -69,8 +71,8 @@ with tab_m:
     st.plotly_chart(fig, width="stretch")
     c1, c2 = st.columns(2)
     c1.metric("+100 bp in the 10-year yield", f"{mc['rates_plus_100bp']:.1%}")
-    c2.metric("Inflation-surprise beta (t-stat)", f"{mc['inflation']['beta']:.2f}", f"t = {mc['inflation']['t']:.2f}",
-              delta_color="off")
+    c2.metric("Inflation-surprise beta", f"{mc['inflation']['beta']:.2f}")
+    c2.caption(f"t-statistic {mc['inflation']['t']:.2f}")
     lkr = mc.get("lkr")
     if lkr:
         st.subheader("USD/LKR: the endowment spends in rupees")

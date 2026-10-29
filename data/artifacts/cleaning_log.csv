@@ -14,4 +14,4 @@ order,step,detail,n_affected
 13,align_macro,VIXCLS: carried forward 0 days (limit 3 business days); 0 days remain missing,0
 14,quality_flag,jump: 24 points flagged and kept (no deletion),24
 15,quality_flag,large_negative: 1 points flagged and kept (no deletion),1
-16,analysis_window,Stationarity and stylised facts use data up to 2022-12-30 (test period locked until the methodology freeze),4561
+16,analysis_window,Stationarity and stylised facts use data up to 2026-10-26 (test period locked until the methodology freeze),5518

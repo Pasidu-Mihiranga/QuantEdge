@@ -87,6 +87,9 @@ stress:                        # Step 12 (historical windows are also used by th
       d_vix: 25                # VIX to about 45
       dln_usd: 0.0770          # USD +8% = ln(1.08)
       d_credit_bp: 150         # Baa-Treasury spread; about half its 2008 widening (+330 bp). Provisional, team to confirm
+  preregistered:               # notebook 05 §6: fixed before the freeze, computed once after it
+    2025 tariff shock: ["2025-02-19", "2025-04-08"]
+    2026 Hormuz shock: ["2026-02-27", "2026-03-30"]
   reverse:
     loss: 0.25                 # D2 crisis budget (agreed 2026-10-28)
     horizon_days: 21

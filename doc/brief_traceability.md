@@ -10,11 +10,11 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 |---|---|---|---|
 | 1 | Construct and recommend a portfolio from the universe using quantitative techniques | `portfolio/optimize.py`, `walkforward.py`; notebook 02 (minimum-variance frontier) | 🟡 recommendation computed in notebook 06 Part B after the lock |
 | 2 | Measure and compare risk with VaR, ES and EVT | `risk/`; notebook 03; app pages 4–5 | ✅ |
-| 3 | Validate the risk models with out-of-sample backtesting | `backtest/`; app page 6; notebook 04 (pipeline reproduces it exactly, option C) | 🟡 final test once after the freeze (G10) |
-| 4 | Evaluate behaviour under historical and hypothetical stress | `stress/`; app page 7; notebook 05 (replays, "Hormuz stagflation 2027" with severity calibration, reverse stress) | ✅ (D5 sizes agreed) |
+| 3 | Validate the risk models with out-of-sample backtesting | `backtest/`; app 'Can we trust the risk model?'; notebook 04 §9 (production and notebook agree on the test) | ✅ final test run once 2026-10-29: champion passes (9 vs 9.6 breaches, Kupiec p 0.86, CC p 0.19) |
+| 4 | Evaluate behaviour under historical and hypothetical stress | `stress/`; app 'What can go wrong?'; notebook 05 (replays, "Hormuz stagflation 2027" with severity calibration, reverse stress) | ✅ (D5 sizes agreed) |
 | 5 | Clear recommendation in an investment committee memorandum | `decision/`; memo draft; D10 | ⬜ memo written by the team after Part B |
 | 6 | Justify the approach, risk metrics, lookback and construction method | `inputs_lock.md`; notebook 02 §5 (lookback); spec §3 | 🟡 report section to write |
-| — | Define a suitable portfolio, justify assumptions, communicate limitations | App page 8; `reports/limitations.py`; inputs_lock | 🟡 limitations page to update with the locked decisions |
+| — | Define a suitable portfolio, justify assumptions, communicate limitations | App 'Assumptions & Limitations' and 'What did we promise?'; `reports/limitations.py`; inputs_lock | ✅ rewritten with D1–D10 (2026-10-29) |
 
 ## 2. Manager's responsibilities (p. 4)
 
@@ -25,7 +25,7 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 | 3 | Define and justify the risk constraints | D2 (crisis budget → volatility and ES limits), D3 caps, D8 ES-share cap; notebook 03 §4 | ✅ agreed |
 | 4 | Show why the portfolio suits a conservative institution | Memo; notebooks 02–03 evidence | ⬜ memo |
 | 5 | Quantify the return-seeking vs risk-reduction trade-off | Notebook 02 §4 (per 10 pp of equity: +0.35 pp a year, −3.3 pp crisis loss); notebook 06 A2b | ✅ (dry run; refresh at the decision date) |
-| 6 | Articulate the assumptions | inputs_lock; app page 8 | 🟡 page to update |
+| 6 | Articulate the assumptions | inputs_lock; app 'Assumptions & Limitations' | ✅ |
 | 7 | Downside protection and tail-risk management | Notebook 03 (VaR, ES, EVT, GARCH); D2; D9 alert | ✅ |
 | 8 | Robustness under stress scenarios | Notebook 05: within the 25% budget in every required crisis; only a combined severe stagflation breaks it | ✅ |
 | 9 | Optional: other macro, industry or market risks | Notebook 01 §8 (rate-hiking regime, tested), macro and LKR analysis (Step 14 D), Sri Lanka CPI (World Bank via FRED) | 🟡 to summarise in the report |
@@ -53,11 +53,11 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 |---|---|---|---|
 | — | Python for all analysis; Streamlit interface; free-tier toolkit | Repo; MiroFish (paid LLM) removed | ✅ |
 | 1 | Sidebar: confidence 90/95/99%, VaR methodology, backtest date range | `app/components/sidebar.py` | 🟡 date range stops at 2022 until the freeze (G10) |
-| 2 | Portfolio panel: weights, cumulative return, drawdown chart | App page 3 | ✅ (Sharpe fixed, G6) |
+| 2 | Portfolio panel: weights, cumulative return, drawdown chart | App 'How is the money invested?' (drawdown chart fixed: lines, not stacked areas) | ✅ |
 | 3 | Risk dashboard: VaR, ES and EVT side by side at the same confidence | App pages 4–5 | ✅ |
-| 4 | Backtesting panel: Kupiec/Christoffersen and a traffic light | App page 6 | ✅ |
-| 5 | Stress-test panel: impact under each crisis scenario | App page 7 | ✅ (numbers refresh after notebook 05) |
-| 6 | "Assumptions & Limitations" page, plain language (graded) | App page 8 | 🟡 to add the locked decisions D1–D10 and the new findings |
+| 4 | Backtesting panel: Kupiec/Christoffersen and a traffic light | App 'Can we trust the risk model?' (2008–2026, one-shot test marked) | ✅ |
+| 5 | Stress-test panel: impact under each crisis scenario | App 'What can go wrong?' (every crisis in dollars, scenario builder, reverse stress) | ✅ |
+| 6 | "Assumptions & Limitations" page, plain language (graded) | App 'Assumptions & Limitations' | ✅ |
 
 ## 6. Deliverables (p. 6)
 
@@ -113,6 +113,6 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 |---|---|---|---|
 | Investment decision-making (incl. optional items) | 30% | Return objective CPI + 3.5%, decision evidence pack, price list of equity, macro/regime analysis | Part B verdict and the memo |
 | Technical rigour and correctness | 25% | Independent audit, validation ladder, hypothesis tests, backtests | Notebook 04 (GJR-GARCH), final test |
-| Software and interface quality | 15% | Mandatory app items, one-command run, tests, reproducibility | Deployment; app page 8 update |
+| Software and interface quality | 15% | Mandatory app items, one-command run, tests, reproducibility | Deployment to Streamlit Community Cloud |
 | Innovation and ambition | 15% | Regime-conditioned risk (tested), EVT threshold rules, risk overlay and trigger (validated, including a negative result) | Present them clearly in the report |
 | Communication and defence | 15% | Notebooks with owners | Owners (D6), memo, deck, Q&A bank |

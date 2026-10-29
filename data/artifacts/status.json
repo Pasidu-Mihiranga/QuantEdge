@@ -1,6 +1,6 @@
 {
   "focus_portfolio": "Frontier 35% equity",
-  "provisional": true,
+  "provisional": false,
   "provisional_reason": "methodology not yet frozen; the champion and the ML adoption are confirmed only after the final test",
   "weights": {
     "SPY": 0.08500408896601996,
@@ -13,7 +13,7 @@
   },
   "weights_as_of": "2022-09-30",
   "data_end": "2026-10-26",
-  "analysis_end": "2022-12-30",
-  "config_sha256": "ab42ba114965c4234ae5a6e47390e2c7cc5c873bfd8a7d2d47db011e450e7ecb",
-  "frozen": false
+  "analysis_end": "2026-10-26",
+  "config_sha256": "3bb2b990899df1e0f60b652e4840938638eb0816096699d5bb520e26fa19b226",
+  "frozen": true
 }

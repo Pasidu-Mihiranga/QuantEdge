@@ -5,12 +5,9 @@ import streamlit as st
 
 from components.charts import LAYOUT
 from components.data import csv, parquet, require
-from components.sidebar import sidebar
 from quantedge.paths import MANIFEST
 
-st.set_page_config(page_title="Data & Quality", layout="wide")
-sidebar()
-st.title("Data sources, cleaning and quality")
+st.title("Data and quality checks")
 
 st.subheader("Sources and snapshot manifest")
 if MANIFEST.exists():

@@ -49,7 +49,7 @@ def sidebar() -> Controls:
                            horizontal=True, help="10-day figures: simulated GARCH paths and overlapping history.")
         s = status()
         st.caption(f"Data to {s.get('data_end', '?')} · analysis to {s.get('analysis_end', '?')}")
-        st.caption("Final-test period (2023+) locked until the methodology freeze.")
+        st.caption("This page shows the pre-freeze periods (2008–2022).")
     return Controls(alpha, model, window, float(nav), horizon, f"{dates[0]}-01-01", f"{dates[1]}-12-31")
 
 

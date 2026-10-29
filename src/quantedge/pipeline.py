@@ -627,7 +627,7 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
     passes = all(c.passed for c in IPSLimits.from_config(cfg.ips).check(
         {"vol_ann": m.vol_ann, "stress_drawdown": max(m.worst_hist_drawdown, m.hypothetical_loss),
          "es99_1d": m.es99_1d, "weights": wf.weights_history.iloc[-1]}))
-    status = {"focus_portfolio": focus, "provisional": True,
+    status = {"focus_portfolio": focus, "provisional": not Partition.from_config(cfg).frozen(),
               "provisional_reason": ("methodology not yet frozen; the champion and the ML adoption are "
                                      "confirmed only after the final test" if passes else
                                      "the focus portfolio does not meet every IPS limit"),

@@ -1,10 +1,10 @@
 {
   "regime": {
-    "sigma_calm": 0.002800664454642683,
-    "sigma_high": 0.008531322232822817,
-    "duration_calm_days": 78.88166075639344,
-    "duration_high_days": 20.59073103205822,
-    "p_high_latest": 0.9662799259675957,
+    "sigma_calm": 0.0028006636260664635,
+    "sigma_high": 0.008531338140607962,
+    "duration_calm_days": 78.88296975569271,
+    "duration_high_days": 20.58961088041031,
+    "p_high_latest": 0.9662778637944878,
     "es99_high_over_calm": 4.680360371386798,
     "fit_window_end": "2018-12-31"
   },
