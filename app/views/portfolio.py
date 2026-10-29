@@ -15,9 +15,10 @@ NAMES = {"SPY": "US stocks", "EFA": "Developed-market stocks", "EEM": "Emerging-
          "GLD": "Gold", "XLE": "Energy stocks", "XLK": "Technology stocks"}
 
 st.title("Compare portfolios")
-say("Pick an equity share to see the portfolio the rule would build, what it is expected to earn and what a crisis would cost. "
-    f"The recommendation is **{eq:.0%}**.")
-x = st.select_slider("Equity share", options=list(fr.index), value=eq, format_func=lambda v: f"{v:.0%}", key="pf_x")
+say("Choose how much of the fund goes into stocks and see the portfolio we would build, what it is expected to earn and "
+    f"what a crisis would cost. We recommend **{eq:.0%}**.")
+with st.container(border=True):
+    x = st.select_slider("Share in stocks", options=list(fr.index), value=eq, format_func=lambda v: f"{v:.0%}", key="pf_x")
 r = fr.loc[x]
 ok_lim, ok_obj = bool(r.within_limits), bool(r.meets_objective)
 with st.container(horizontal=True):
@@ -43,10 +44,9 @@ base = alt.Chart(df).encode(y=alt.Y("fund:N", sort=None, title=None, axis=alt.Ax
 st.altair_chart((base.mark_bar(color=ACCENT if abs(x - eq) < 1e-9 else GREY, cornerRadiusEnd=4, height=24)
                  + base.mark_text(align="left", dx=6).encode(text="label:N")).properties(height=46 * len(df) + 10),
                 alt=f"Weights at {x:.0%} equity")
-explain("For each equity share the rule builds the least-risky mix of the seven funds (estimated on the last three years, "
-        "within the caps: bonds up to 65%, energy, technology and emerging markets up to 10% each). The rule then recommends "
-        "the lowest equity share that meets the objective inside every risk limit. Below 35% the return falls short; above "
-        "it the crisis loss breaks the 25% budget.")
+explain("For each share in stocks we build the mix with the least risk, using the last three years of prices and the "
+        "fund's limits (bonds at most 65%; energy, technology and emerging markets at most 10% each). Below 35% the expected "
+        "return falls short of what the fund needs; above 35% a crisis like 2008 would cost more than the 25% limit.")
 
 st.subheader("How the recommended strategy did since 2008")
 show = st.segmented_control("Show", ["Growth of the fund", "Falls from the peak"], default="Growth of the fund", required=True,
@@ -69,6 +69,7 @@ stats = {LABEL[c]: {"Return a year": pct(float((1 + r_[c]).prod() ** (252 / len(
                     "Volatility": pct(float(r_[c].std() * np.sqrt(252))),
                     "Worst fall": pct(float(((1 + r_[c]).cumprod() / (1 + r_[c]).cumprod().cummax() - 1).min()))} for c in perf.columns}
 st.dataframe(pd.DataFrame(stats), alt="Return, volatility and worst fall since 2008")
-explain("Walk-forward: every quarter the weights were chosen using only data available then, and trading costs were paid. "
+explain("Every quarter the mix was rebuilt using only the prices known at the time, and trading costs were paid, so "
+        "this is what the strategy could really have done. "
         "The 60/40 mix earned more because it held 60% in US stocks during an exceptional decade for them, but it breaks the "
         "committee's limits (a 33% crisis loss) and is shown only as a reference. History is not a forecast.")

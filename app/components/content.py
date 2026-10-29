@@ -2,7 +2,7 @@
 
 DECISIONS = [
     ("D1", "Spending rate and objective", "3.0% a year; objective US inflation + 3.5% (3% spending + 0.5% real growth)",
-     "2.5–3.5%", "The booklet asks the fund to preserve and grow its capital. A conservative mix of these funds can sustain "
+     "2.5–3.5%", "The fund must preserve and grow its capital. A conservative mix of these funds can sustain "
      "about 3% with real growth; peers' 4–5% would need far more equity risk."),
     ("D2", "Crisis budget", "Lose at most 25% in a crisis (historical replays and our scenario)", "20–30%",
      "The one preference that sets everything else: it allows about 36% equity, and the volatility and tail-loss limits are "
@@ -18,12 +18,12 @@ DECISIONS = [
     ("D7", "Dates", "Methodology frozen 29 Oct 2026; decision date 26 Oct 2026; submission 9–13 Nov", "—",
      "The 2023–2026 test was run once, after the freeze."),
     ("D8", "Risk budget per fund", "No fund may carry more than 40% of the portfolio's tail risk", "35–50%",
-     "Position sizing by each fund's contribution to the average loss on the worst days (booklet p. 8)."),
+     "Sizes each position by how much it adds to the losses on the worst days."),
     ("D9", "Monitoring", "When the model's daily risk forecast stays above the limit for 5 days, the committee meets; no "
-     "automatic trading", "—", "An automatic de-risking rule was tested and made losses worse out of sample."),
+     "automatic trading", "—", "An automatic selling rule was tested and made losses worse in recent years."),
     ("D10", "Verdict rule", "ACCEPT if a portfolio meets the objective inside every limit; ADJUST if it would with the crisis "
      "budget at most 5 points looser; otherwise REJECT, with the sustainable spending rate as advice", "—",
-     "Fixed before the test; the wording was aligned with the locked rule on 29 Oct, before any 2023+ data were seen."),
+     "Fixed before the final test, so the answer could not be tuned to the data."),
 ]
 
 NOT_CAPTURED = [
@@ -43,9 +43,8 @@ NOT_CAPTURED = [
      "from about 103 to 323 per dollar since 2005, so the fund's purchasing power in Sri Lanka depends on the exchange "
      "rate as much as on the portfolio."),
     ("Only seven funds", "No cash, derivatives, leverage, private assets or ESG screens, as the mandate requires."),
-    ("Model choice", "Models were chosen on 2019–2022, so their test statistics there are optimistic. Only the one-shot "
-     "2023–2026 test is clean, and 957 days give limited power: it shows the model is not detectably wrong, not that it "
-     "is right."),
+    ("A limited test", "The risk model was chosen on 2019–2022, so it naturally looks good there. The 2023–2026 test is the "
+     "fair one, but four years can only show the model is not badly wrong, not that it is perfect."),
 ]
 
 # Every 99% VaR breach of the champion on validation (2019–2022), with its verified cause (doc/decisions/exception_log.md)

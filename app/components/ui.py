@@ -25,6 +25,9 @@ CSS = """
 <style>
 /* Full-width layout (requested): slimmer side margins and top gap than Streamlit's defaults */
 [data-testid="stMainBlockContainer"], .block-container {padding: 2.2rem 2.2rem 3rem 2.2rem; max-width: 100%;}
+/* More breathing room between sections and inside bordered panels */
+[data-testid="stMain"] [data-testid="stVerticalBlock"] {gap: 1.25rem;}
+[data-testid="stSlider"] {padding: 0 0.6rem;}
 .qe-verdict {border-radius: 10px; padding: 18px 22px; color: #fff; margin: 4px 0 6px 0;}
 .qe-verdict .v {font-size: 1.55rem; font-weight: 700; letter-spacing: .01em;}
 .qe-verdict .s {font-size: 1.05rem; margin-top: 6px; max-width: 75ch; line-height: 1.45;}
