@@ -12,6 +12,8 @@ The fund must pay for its spending, hold its real value and grow a little. We se
 
 One preference sets the risk limits: the most the committee will lose in any crisis, historical or designed. We set this crisis budget at 25% (range considered 20–30%). The frontier point whose crisis loss equals 25% then fixes the volatility limit (8.29%) and the 99% ES limit (2.26%), so the limits cannot contradict one another. An earlier draft (volatility 8%, crisis loss 20%, ES 1.5%) was replaced because its three limits implied three different equity shares.
 
+A feasibility study on data to 2022 supports the change: none of 26 tested portfolios could meet either earlier set of limits, while 13 meet the agreed limits. That screen uses a simple return estimate before fees and tax; the forward estimate behind the recommendation is stricter.
+
 {{limits}}
 
 The limits were set with knowledge of results up to 2022. The protection against fitting them to that history is the one-shot test that followed.

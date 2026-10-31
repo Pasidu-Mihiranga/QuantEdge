@@ -57,6 +57,30 @@ def run_portfolio_selection(cfg: Config, macro: pd.DataFrame, variant: str | Non
     return {"scorecard": card, "results": results, "required_return": req}
 
 
+def run_ips_feasibility(cfg: Config, macro: pd.DataFrame) -> dict:
+    """Feasibility study across the mean-variance frontier for the IPS and each `ips.variants` case (data to 2022)."""
+    from quantedge.decision.feasibility import frontier_feasibility, summarise
+
+    end = Partition.from_config(cfg).val[1]
+    returns = load_returns("dev+val", cfg)
+    rf = pd.read_parquet(ARTIFACTS / "returns_rf.parquet")["rf"].reindex(returns.index).dropna()
+    rf_annual = float((1.0 + rf.iloc[-1]) ** 252 - 1.0)
+    req = required_return(macro["CPIAUCSL"], cfg.ips["spending_rate"], cfg.ips["real_growth"], macro["T10YIE"],
+                          cfg.ips["cpi_years"], as_of=end)["required_return"]
+    tables, summaries = [], {}
+    for case in (None, *cfg.ips.get("variants", {})):
+        limits = IPSLimits.from_config(cfg.ips, case)
+        tab = frontier_feasibility(returns, rf_annual, limits, req, cfg.stress["historical"], market=cfg.market_proxy,
+                                   mrp=cfg.ips["forward"]["erp"])
+        name = case or "adopted"
+        summaries[name] = {**summarise(tab, limits, req), "rf_annual": rf_annual,
+                           "sample": [str(returns.index.min().date()), str(returns.index.max().date())]}
+        tables.append(tab.assign(case=name))
+    pd.concat(tables).to_parquet(ARTIFACTS / "ips_feasibility.parquet")
+    (ARTIFACTS / "ips_feasibility.json").write_text(json.dumps(summaries, indent=2), encoding="utf-8")
+    return summaries
+
+
 def run_evt(cfg: Config, wf_result, label: str) -> dict:
     """Step 10 threshold analysis on the point-in-time risk series of one candidate (dev + val)."""
     from quantedge.portfolio.weights_path import pit_risk_returns, point_in_time_weights
@@ -560,6 +584,9 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
     focus = cfg.portfolio.focus or str(sel["scorecard"].index[0])
     wf = sel["results"][focus]
     print(f"[select]   required return {sel['required_return']['required_return']:.2%}; focus: {focus} (provisional)")
+
+    for case, s in run_ips_feasibility(cfg, clean.macro).items():
+        print(f"[ips]      feasibility ({case}): {s['finding']}")
 
     evt_out = run_evt(cfg, wf, f"{focus} (provisional)")
     rule_a = evt_out["choices"][0]

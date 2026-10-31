@@ -30,8 +30,9 @@ pages = {
                 url_path="methodology"),
     ],
 }
+pages["Explore"] = [st.Page("side/custom.py", title="Try your own portfolio", icon=":material/tune:", url_path="custom")]
 if (ARTIFACTS / "swarm_comparison.json").exists():         # appears once real simulation runs exist
-    pages["Explore"] = [st.Page("side/swarm.py", title="Crowd simulation", icon=":material/groups:", url_path="crowd")]
+    pages["Explore"].append(st.Page("side/swarm.py", title="Crowd simulation", icon=":material/groups:", url_path="crowd"))
 page = st.navigation(pages, position="sidebar")
 st.sidebar.caption("Team Gmora · QuantEdge 1.0")
 page.run()

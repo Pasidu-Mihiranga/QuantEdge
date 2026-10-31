@@ -53,7 +53,7 @@ If `streamlit run` reports `No module named 'quantedge'`, a global Python was us
 
 ## What the app shows
 
-Five pages are written for the investment committee, in plain language. Five more hold the technical detail, and a crowd simulation offers a comparison with our scenario.
+Five pages are written for the investment committee, in plain language. Five more hold the technical detail, and two Explore pages let you try your own portfolio and compare our scenario with a crowd simulation.
 
 ### Our recommendation
 
@@ -94,6 +94,12 @@ Every limit with the room left, every assumption, and 24 limitations with what w
 Data quality flags, all risk models on 2008–2022, EVT threshold diagnostics, and the regime, overlay, copula and FX studies.
 
 ![EVT threshold diagnostics](doc/screenshots/08_evt.png)
+
+### Try your own portfolio
+
+Set any mix of the seven funds and see it measured exactly as the recommendation was: expected return, worst crisis, a very bad day and volatility, each against its limit. With the sliders untouched, the page gives the recommendation's own numbers.
+
+![Try your own portfolio](doc/screenshots/10_custom.png)
 
 ### Crowd simulation
 

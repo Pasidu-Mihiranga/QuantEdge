@@ -1,5 +1,6 @@
 """Smoke test: every committee and technical page runs without exceptions (Step 15 §5), plus the main controls."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -126,3 +127,20 @@ def test_pages_do_not_depend_on_the_git_tag():
 def test_side_feature_page_stays_out_of_the_committee_pages():
     home = (APP / "Home.py").read_text(encoding="utf-8")
     assert "side/swarm.py" in home and home.index('"Explore"') > home.index('"Technical detail"')
+
+
+def test_custom_page_reproduces_the_recommendation_and_flags_a_breach():
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(APP / "side" / "custom.py"), default_timeout=120).run()
+    assert not at.exception
+    values = {m.label: m.value for m in at.metric}
+    n = json.loads((ARTIFACTS / "decision_numbers.json").read_text(encoding="utf-8"))
+    assert values["Expected return a year"] == f"{n['expected_return']:.2%}"
+    assert values["Worst crisis"] == f"{n['risk']['d2_loss']:.1%}"
+    assert values["A very bad day"] == f"{n['risk']['es99_ttc']:.2%}"
+    at.slider(key="cw_SPY").set_value(60)
+    at.slider(key="cw_AGG").set_value(20).run()
+    assert not at.exception
+    risky = {m.label: m.value for m in at.metric}
+    assert float(risky["Worst crisis"].rstrip("%")) > n["limits"]["crisis_budget"] * 100        # a stock-heavy mix breaks the budget

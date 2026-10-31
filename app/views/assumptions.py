@@ -2,6 +2,8 @@
 to the technical pages in the sidebar."""
 
 
+import json
+
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -9,6 +11,7 @@ import streamlit as st
 from components.content import DECISIONS, NOT_CAPTURED
 from components.ui import artifact, money, need_numbers, pct, say
 from quantedge.config import load_config
+from quantedge.paths import ARTIFACTS
 from quantedge.reports.limitations import LIMITATIONS
 
 n = need_numbers()
@@ -100,6 +103,16 @@ rob = n["robustness"]
 st.info(f"Our return assumptions decide the verdict: over {sum(rob.values())} combinations it is ACCEPT in {rob.get('ACCEPT', 0)}, "
         f"ADJUST in {rob.get('ADJUST', 0)}, REJECT in {rob.get('REJECT', 0)}. The risk limits hold in every case. Try it "
         "yourself on 'Our recommendation', under What would change it.", icon=":material/tune:")
+
+feas = json.loads((ARTIFACTS / "ips_feasibility.json").read_text(encoding="utf-8"))
+with st.expander("Could any portfolio meet these limits?", icon=":material/rule:"):
+    st.table(pd.DataFrame([{"Limits": name, "Portfolios tested": s["points"], "Inside every risk limit": s["points_meeting_risk_limits"],
+                            "Also meet the objective": s["points_meeting_everything"]}
+                           for name, s in (("Agreed limits", feas["adopted"]), ("First draft limits", feas["v1_limits"]),
+                                           ("Original limits (bonds at most 40%)", feas["original_agg40"]))]).set_index("Limits"))
+    say("We tested 26 portfolios on data to 2022. No portfolio could meet either earlier set of limits, even with hindsight, "
+        "which is why they were replaced. This is a screen with a simple return estimate before fees and tax. Our recommendation "
+        "uses the stricter forward estimate, on which the same limits gave REJECT on end-2022 yields and ACCEPT on the decision date.")
 
 with st.expander("The choices we made, and why", icon=":material/gavel:"):
     st.table(pd.DataFrame([d[1:] for d in DECISIONS if d[0] not in ("D6", "D7")],
