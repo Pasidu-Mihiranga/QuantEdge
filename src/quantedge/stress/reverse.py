@@ -56,3 +56,14 @@ def parametric_var_es(sigma_daily: pd.DataFrame, w: pd.Series, alpha: float = 0.
     m = 0.0 if mu_daily is None else float(wv @ mu_daily.reindex(sigma_daily.columns).to_numpy())
     z = stats.norm.ppf(alpha)
     return -m + z * s, -m + s * stats.norm.pdf(z) / (1 - alpha)
+
+
+def rarity(years: float) -> str:
+    """How rare a return period is, in words; past a million years the number says more about the model than the event."""
+    return "rarer than once in a million years" if years > 1e6 else f"about once in {years:,.0f} years"
+
+
+def rarity_text(calm_years: float, crisis_years: float) -> str:
+    """The calm and crisis return periods in one phrase."""
+    calm, crisis = rarity(calm_years), rarity(crisis_years)
+    return f"{calm}, even in a crisis" if calm == crisis else f"{calm} in calm markets and {crisis} in a crisis"

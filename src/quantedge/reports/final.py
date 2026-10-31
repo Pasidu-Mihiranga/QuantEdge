@@ -7,6 +7,12 @@ it, rewrites it in its own words and owns the recommendation (brief §8.7).
 from __future__ import annotations
 
 import html
+import re
+
+TEAM = "Team Gmora"
+# Source Sans 3: a text face with tabular figures, kept in reports/fonts so the documents build the same offline.
+FONT_LINK = '<link rel="stylesheet" href="fonts/source-sans.css">'
+FONT = "'Source Sans 3', Helvetica, Arial, sans-serif"
 
 GOVERNANCE = [
     "Rebalance to the target weights every quarter.",
@@ -54,7 +60,7 @@ def memo(n: dict) -> str:
     gov = "\n".join(f"- {g}" for g in GOVERNANCE)
     return f"""# Investment committee memo: Serendib University Endowment Fund
 
-*USD {nav / 1e6:.0f}M · decision date {n['decision_date']} · market data to {n['data_end']} · draft for the team's review*
+*{TEAM} · USD {nav / 1e6:.0f}M · decision date {n['decision_date']} · market data to {n['data_end']}*
 
 ## Recommendation
 {headline(n)}
@@ -83,6 +89,46 @@ def memo(n: dict) -> str:
 """
 
 
+def memo_page(n: dict) -> str:
+    """The memo as one A4 page of HTML, from the same Markdown."""
+    inline = lambda t: re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", html.escape(t))  # noqa: E731
+    out: list[str] = []
+    for block in memo(n).strip().split("\n\n"):
+        for chunk in re.split(r"\n(?=## )", block):
+            head, _, rest = chunk.partition("\n")
+            if head.startswith("# "):
+                out.append(f"<h1>{inline(head[2:])}</h1>")
+            elif head.startswith("## "):
+                out.append(f"<h2>{inline(head[3:])}</h2>")
+                chunk = rest
+            lines = [x for x in chunk.splitlines() if not x.startswith("# ")]
+            if not lines:
+                continue
+            if lines[0].startswith("|"):
+                rows = [[c.strip() for c in x.strip("|").split("|")] for x in lines if not x.startswith("|--")]
+                body = "".join("<tr>" + "".join(f"<t{'h' if i == 0 else 'd'}>{c}</t{'h' if i == 0 else 'd'}>" for c in r) + "</tr>"
+                               for i, r in enumerate(rows))
+                out.append(f"<table>{body}</table>")
+            elif lines[0].startswith("- "):
+                out.append("<ul>" + "".join(f"<li>{inline(x[2:])}</li>" for x in lines) + "</ul>")
+            elif lines[0].startswith("*"):
+                out.append(f"<p class='sub'>{inline(lines[0].strip('*'))}</p>")
+            else:
+                out.append(f"<p>{inline(' '.join(lines))}</p>")
+    return f"""<!doctype html><html><head><meta charset="utf-8"><title>Investment Committee Memo</title>
+{FONT_LINK}
+<style>
+@page {{ size: A4; margin: 15mm 17mm; }}
+body {{ font-family: {FONT}; font-size: 11.4pt; color: #1d2733; line-height: 1.42; margin: 0; }}
+h1 {{ font-size: 21pt; line-height: 1.2; font-weight: 700; margin: 0 0 5px; color: #16304f; }}
+h2 {{ font-size: 13pt; font-weight: 600; color: #1f5fae; margin: 15px 0 4px; }}
+.sub {{ color: #5b6573; font-size: 10pt; }} p {{ margin: 0 0 5px; }} b {{ font-weight: 600; }}
+ul {{ margin: 3px 0 4px 16px; padding: 0; }} li {{ margin-bottom: 3px; }}
+table {{ border-collapse: collapse; margin: 5px 0; font-size: 10.8pt; font-variant-numeric: tabular-nums; }}
+td, th {{ padding: 2px 20px 2px 0; border-bottom: 1px solid #e3e7ec; text-align: left; font-weight: 400; }} th {{ font-weight: 600; }}
+</style></head><body>{''.join(out)}</body></html>"""
+
+
 def tear_sheet(n: dict) -> str:
     """One A4 page of HTML for the executive reader."""
     nav, o, r, lim, mv = n["nav_usd"], n["objective"], n["risk"], n["limits"], n["model_validity"]
@@ -95,28 +141,30 @@ def tear_sheet(n: dict) -> str:
     lead = html.escape(headline(n)).replace("**", "")
     rob = n["robustness"]
     return f"""<!doctype html><html><head><meta charset="utf-8"><title>Serendib Endowment Tear Sheet</title>
+{FONT_LINK}
 <style>
-@page {{ size: A4; margin: 12mm; }}
-body {{ font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1d2733; margin: 0 auto; max-width: 780px; line-height: 1.35; }}
-h1 {{ font-size: 16pt; margin: 0 0 2px; }} h2 {{ font-size: 11pt; margin: 12px 0 4px; color: #1f5fae; }}
-.sub {{ color: #5b6573; font-size: 8.5pt; }}
+@page {{ size: A4; margin: 14mm 15mm; }}
+body {{ font-family: {FONT}; font-size: 11.2pt; color: #1d2733; margin: 0 auto; max-width: 780px; line-height: 1.42; }}
+h1 {{ font-size: 22pt; line-height: 1.2; font-weight: 700; margin: 0 0 4px; color: #16304f; }}
+h2 {{ font-size: 13pt; font-weight: 600; margin: 16px 0 5px; color: #1f5fae; }} b {{ font-weight: 600; }}
+.sub {{ color: #5b6573; font-size: 10pt; }}
 .badge {{ display: inline-block; padding: 4px 10px; border-radius: 4px; color: #fff; font-weight: 700; background: {colour}; margin: 8px 0 4px; }}
 .cols {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
 .tiles {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0; }}
-.tile {{ border: 1px solid #dde1e7; border-radius: 6px; padding: 6px 8px; }} .tile b {{ display: block; font-size: 13pt; }}
-table {{ border-collapse: collapse; width: 100%; }} td {{ padding: 2px 4px; border-bottom: 1px solid #e8ebef; }}
+.tile {{ border: 1px solid #dde1e7; border-radius: 6px; padding: 8px 10px; font-size: 10.2pt; }} .tile b {{ display: block; font-size: 15pt; font-weight: 700; }}
+table {{ border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }} td {{ padding: 3px 4px; border-bottom: 1px solid #e8ebef; }}
 .num {{ text-align: right; white-space: nowrap; }} .bar {{ width: 40%; }} .bar span {{ display: block; height: 9px; background: #1f5fae; border-radius: 2px; }}
 ul {{ margin: 2px 0 0 16px; padding: 0; }} li {{ margin-bottom: 2px; }}
 </style></head><body>
 <h1>Serendib University Endowment Fund</h1>
-<div class="sub">USD {nav / 1e6:.0f}M · seven ETFs · decision date {n['decision_date']} · market data to {n['data_end']}</div>
+<div class="sub">{TEAM} · USD {nav / 1e6:.0f}M · seven ETFs · decision date {n['decision_date']} · market data to {n['data_end']}</div>
 <div class="badge">{html.escape(n['verdict'])}</div>
 <p>{lead}</p>
 <div class="tiles">
 <div class="tile"><b>{n['expected_return']:.2%}</b>expected a year (needs {o['required_return']:.2%})</div>
 <div class="tile"><b>{money(-r['worst_crisis_loss'] * nav)}</b>worst crisis (limit {money(lim['crisis_budget'] * nav)})</div>
 <div class="tile"><b>{money(-r['es99_ttc'] * nav)}</b>a very bad day, worst 1 in 100</div>
-<div class="tile"><b>{mv['exceptions']} vs {mv['expected']:.0f}</b>days worse than forecast, {mv['test_start'][:4]}–{mv['test_end'][:4]}</div>
+<div class="tile"><b>{mv['exceptions']} vs {mv['expected']:.1f}</b>days worse than forecast, {mv['test_start'][:4]}–{mv['test_end'][:4]}</div>
 </div>
 <div class="cols"><div>
 <h2>The portfolio</h2><table>{bars}</table>
@@ -128,7 +176,7 @@ ul {{ margin: 2px 0 0 16px; padding: 0; }} li {{ margin-bottom: 2px; }}
 <ul>
 <li><b>Risk model:</b> {html.escape(mv['champion'])} passed a one-time test on data it had never seen (Kupiec p = {mv['kupiec_p']:.2f}, Christoffersen conditional coverage p = {mv['cc_p']:.2f}).</li>
 <li><b>Return:</b> a narrow margin of {money(n['return_margin_usd'])} a year. The answer changes if the equity premium is below {n['erp_breakeven']:.2%} or if the 10-year real yield falls below {n['yield_margin']['tips_threshold']:.2%}. It holds in {rob.get('ACCEPT', 0)} of {sum(rob.values())} assumption combinations.</li>
-<li><b>Ten years ahead:</b> about a {n['ten_year']['p_objective']:.0%} chance of meeting the objective; a {n['ten_year']['p_real_value_below_80']:.0%} chance real value ends below 80% of today's.</li>
+<li><b>Ten years ahead:</b> the chance of meeting the objective is about {n['ten_year']['p_objective']:.0%}, and the chance real value ends below 80% of today's is {n['ten_year']['p_real_value_below_80']:.0%}.</li>
 </ul>
 <h2>Next steps</h2>
 <ul><li>Take tax advice on the bond fund's interest before investing: if it is taxed, the objective is no longer met.</li>

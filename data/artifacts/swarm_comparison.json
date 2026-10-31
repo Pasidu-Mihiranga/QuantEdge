@@ -1,0 +1,157 @@
+{
+  "scenario": "Hormuz stagflation 2027",
+  "team": {
+    "shock": {
+      "d_yield10_bp": 250,
+      "dln_oil": 0.3365,
+      "d_vix": 25,
+      "dln_usd": 0.077,
+      "d_credit_bp": 150
+    },
+    "loss": 0.21043632927066575,
+    "parts": {
+      "SPY": 0.03342126197060713,
+      "EFA": 0.021908361373416656,
+      "AGG": 0.10847689238999562,
+      "XLE": 0.01412981618444012,
+      "AGG panic day": 0.0324999973522062
+    }
+  },
+  "runs": [
+    {
+      "run": "run_1",
+      "shock": {
+        "d_yield10_bp": 145.0,
+        "dln_oil": 0.0,
+        "d_vix": 41.917449999999974,
+        "dln_usd": 0.0,
+        "d_credit_bp": 204.8249999999998
+      },
+      "loss": 0.18842015358637793,
+      "parts": {
+        "SPY": 0.03913914974084205,
+        "EFA": 0.01801883402107356,
+        "AGG": 0.07428067354571036,
+        "XLE": 0.02448149892654578,
+        "AGG panic day": 0.0324999973522062
+      },
+      "horizon_days": 189,
+      "behaviour": {
+        "panic_selling": 3,
+        "flight_to_safety": [
+          "AGG",
+          "GLD",
+          "cash"
+        ],
+        "contagion_breadth": 3,
+        "herding": 3,
+        "investor_disagreement": 1,
+        "duration": "months"
+      },
+      "summary": "In a market dominated by inflationary pressures and rising risks, retail investors engage in panic selling, while conservative investors seek safety in gold, high-quality bonds, and cash. This capital reallocation is amplified by significant herding effects, leading to increased market volatility and a widespread flight from risk assets.",
+      "mechanisms": [
+        "Self-reinforcing feedback loop between persistent inflation, escalating risk perception, and subsequent investor behavior.",
+        "Widespread increase in risk aversion, coupled with differing perceptions of risk and reward among various investor groups.",
+        "Herding effects significantly amplify market volatility through collective, often irrational, actions.",
+        "Forced de-leveraging by hedge funds and leveraged traders when volatility and margins rise."
+      ],
+      "limitations": [
+        "Inability of the simulation to fully capture all subtle psychological nuances of individual investors.",
+        "Possibility that unforeseen external events could alter the predicted path.",
+        "Does not account for unforeseen 'black swan' events.",
+        "Model is specifically designed to focus on reactions to existing and projected economic conditions rather than predicting entirely new events.",
+        "Some investors may engage in contrarian trading, but their scale is insufficient to change the overall trend."
+      ]
+    },
+    {
+      "run": "run_2",
+      "shock": {
+        "d_yield10_bp": 145.0,
+        "dln_oil": 0.8400997190368754,
+        "d_vix": 23.76324999999996,
+        "dln_usd": 0.07304826067106678,
+        "d_credit_bp": 71.99999999999999
+      },
+      "loss": 0.14464346895262772,
+      "parts": {
+        "SPY": 0.026845497835187682,
+        "EFA": 0.0194125282343807,
+        "AGG": 0.07242342000479461,
+        "XLE": -0.00653797447394147,
+        "AGG panic day": 0.0324999973522062
+      },
+      "horizon_days": 189,
+      "behaviour": {
+        "panic_selling": 3,
+        "flight_to_safety": [
+          "GLD",
+          "AGG",
+          "cash"
+        ],
+        "contagion_breadth": 3,
+        "herding": 3,
+        "investor_disagreement": 2,
+        "duration": "months"
+      },
+      "summary": "The market enters a period of high volatility and pervasive risk-off sentiment, triggered by an oil supply shock causing inflation and central bank rate hikes. Individual investors engage in rapid panic selling and fund outflows, driven by headlines and recent losses, while capital-preservation entities seek safety in gold, high-quality bonds, and cash.",
+      "mechanisms": [
+        "Oil supply shock causes oil prices to rise 40% and inflation to re-accelerate.",
+        "Central bank resumes hiking, pushing long-term yields higher.",
+        "Individual investors exhibit trend-following, headline-sensitive panic selling and fund outflows, leading to herding.",
+        "Capital-preservation entities (pension funds, endowments) prioritize safety, seeking gold, high-quality bonds, and cash.",
+        "Hedge funds and leveraged traders are forced to de-lever when volatility and margins rise.",
+        "Widening credit spreads and strengthening US dollar reflect systemic stress."
+      ],
+      "limitations": [
+        "The report does not explicitly state its own limitations, but the prompt's constraints imply not inventing verified prices, returns, or unsupported probabilities."
+      ]
+    },
+    {
+      "run": "run_3",
+      "shock": {
+        "d_yield10_bp": 145.0,
+        "dln_oil": 0.5870246485720793,
+        "d_vix": 23.76324999999996,
+        "dln_usd": 0.13073786524242942,
+        "d_credit_bp": 204.8249999999998
+      },
+      "loss": 0.19408429136749072,
+      "parts": {
+        "SPY": 0.036410994153665825,
+        "EFA": 0.028173937069743468,
+        "AGG": 0.086709886328859,
+        "XLE": 0.010289476463016247,
+        "AGG panic day": 0.0324999973522062
+      },
+      "horizon_days": 189,
+      "behaviour": {
+        "panic_selling": 3,
+        "flight_to_safety": [
+          "GLD",
+          "AGG",
+          "cash"
+        ],
+        "contagion_breadth": 3,
+        "herding": 3,
+        "investor_disagreement": 0,
+        "duration": "months"
+      },
+      "summary": "The simulation forecasts a market dominated by risk aversion, characterized by widespread panic selling from retail investors and forced de-leveraging by institutions. Capital flows significantly towards safe-haven assets like gold and high-quality bonds, exacerbated by an oil supply shock, renewed inflation, and central bank tightening, leading to prolonged market fragility.",
+      "mechanisms": [
+        "Retail investor panic selling and herding behavior.",
+        "Hedge fund and leveraged trader de-leveraging due to rising volatility and margin calls.",
+        "Mechanical rebalancing by pension funds and endowments when risk limits are breached.",
+        "Capital flight to traditional safe havens (gold, high-quality bonds, cash).",
+        "Strengthening of the US dollar as a global safe haven.",
+        "Oil supply shock causing re-accelerated inflation.",
+        "Central bank resuming monetary tightening, leading to rising long-term yields.",
+        "Deteriorating growth forecasts and widening corporate credit spreads.",
+        "Protracted risk aversion leading to slow re-entry into risk assets."
+      ],
+      "limitations": []
+    }
+  ],
+  "mean_loss": 0.17571597130216546,
+  "min_loss": 0.14464346895262772,
+  "max_loss": 0.19408429136749072
+}

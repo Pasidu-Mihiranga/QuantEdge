@@ -1,4 +1,4 @@
-"""Option C (inputs_lock): before the freeze, the pipeline must reproduce notebook 04's independently
+"""Option C: before the freeze, the pipeline must reproduce notebook 04's independently
 written backtest on validation 2019-22 for the pre-registered 35%-equity frontier portfolio.
 
 The reference numbers below are copied from notebooks/04_backtesting.ipynb §2 (run 2026-10-28). Notebook 04

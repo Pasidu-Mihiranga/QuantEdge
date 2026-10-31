@@ -1,8 +1,17 @@
-The fund is a perpetual USD 10M endowment that values avoiding large losses over maximising gains. We judge the investment horizon as long, with the return objective assessed over rolling 10-year periods and risk monitored daily.
+### Client and horizon
 
-- **Return objective:** US inflation + 3.5% a year: 3% spending plus 0.5% real growth, compounded. Inflation is the 10-year breakeven at the decision date.
-- **Crisis budget:** at most a 25% loss in any crisis, historical or our own scenario. This single preference sets the other limits.
-- **Derived limits:** the frontier point whose crisis loss equals the budget sets volatility (8.29%) and the 99% ES limit (2.26%), so the limits cannot contradict one another.
-- **Caps:** AGG at most 65%, each sector or emerging-market fund at most 10%, gold at most 15%, equity at most 50%.
+The fund is a perpetual USD 10M endowment supporting scholarships, research and faculty development. A perpetual fund can wait out a market fall, but it cannot stop paying scholarships during one. We therefore judge the return objective over rolling 10-year periods, monitor risk daily and over 10 days, and budget risk per crisis episode.
 
-An earlier draft (volatility 8%, crisis loss 20%, ES 1.5%) was replaced because its limits gave three different equity shares. These limits were set with knowledge of in-sample results, up to 2022; the protection is the one-shot test that followed. The change log is in the input lock.
+### Return objective
+
+The fund must pay for its spending, hold its real value and grow a little. We set spending at 3.0% of a 12-quarter average value (range considered 2.5–3.5%), add 0.5% real growth, and use the 10-year breakeven inflation rate at the decision date.
+
+> Required return = (1 + 3.0%) × (1 + 0.5%) × (1 + 2.34%) − 1 = 5.94% a year
+
+### Risk constraints
+
+One preference sets the risk limits: the most the committee will lose in any crisis, historical or designed. We set this crisis budget at 25% (range considered 20–30%). The frontier point whose crisis loss equals 25% then fixes the volatility limit (8.29%) and the 99% ES limit (2.26%), so the limits cannot contradict one another. An earlier draft (volatility 8%, crisis loss 20%, ES 1.5%) was replaced because its three limits implied three different equity shares.
+
+{{limits}}
+
+The limits were set with knowledge of results up to 2022. The protection against fitting them to that history is the one-shot test that followed.

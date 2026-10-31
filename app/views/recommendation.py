@@ -31,7 +31,7 @@ with st.container(border=True):
              "REJECT": ("REJECT the mandate as proposed", "red", ":material/cancel:")}[key]
     st.badge(badge[0], icon=badge[2], color=badge[1])
     if key == "ACCEPT":
-        st.subheader(f"Invest {eq:.0%} in equities and {1 - eq:.0%} in bonds and real assets. Expected return "
+        st.subheader(f"Invest {eq:.0%} in equities and {1 - eq:.0%} in {'bonds' if n['weights']['GLD'] < 1e-4 else 'bonds and gold'}. Expected return "
                      f"{pct(n['expected_return'], 2)} a year against the {pct(obj['required_return'], 2)} the objective "
                      "needs, with every risk limit met.")
     else:

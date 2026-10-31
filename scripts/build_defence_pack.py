@@ -466,8 +466,7 @@ def build() -> str:
       2023–2026 test is clean.</li>
     </ul>
   </section>
-  <footer>Source of every chart and table: the notebooks in <code>notebooks/</code>; decisions and their evidence:
-  <code>doc/decisions/inputs_lock.md</code>; booklet coverage: <code>doc/brief_traceability.md</code>. Regenerate with
+  <footer>Source of every chart and table: the notebooks in <code>notebooks/</code>; booklet coverage: <code>doc/brief_traceability.md</code>. Regenerate with
   <code>python scripts/build_defence_pack.py</code>.</footer>
 </main>""".replace('class="code-i"', 'class="code"')
 

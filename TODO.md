@@ -136,6 +136,14 @@ Plan: `My reserch/specs/01_problem_spec.md` (v2) and `02_gap_register.md` (v2); 
 - [x] Review follow-ups (2026-10-29): every limit with its room left and its source, and the first-draft → agreed calibration, back on Assumptions; 24 limitations with mitigations (shared `reports/limitations.py`, updated after the freeze) and the tax card stating that a taxed bond fund flips the verdict to REJECT; 'Why the models disagree' (fat tails, skew, today's volatility); a Diversification view (bad-day saving, crises fund by fund vs together, correlations by crisis); scenario plausibility (`stress.factor.episode_plausibility`, Mahalanobis frequency over 3-quarter periods, + test); `doc/brief_traceability.md` page names. 229 tests
 - [x] Scenario maths corrected 2026-10-31 (simple returns across ETFs; 21.09% → 21.04% at 35% equity, verdict unchanged), both values in `doc/decisions/methodology_freeze.md`
 
+## Submission package (2026-10-31)
+- [x] Report rebuilt on the final weights: 15 pages, 5 figures, 16 tables, references; PDFs of the report, memo and tear sheet (`make pdf`); page limits enforced by a test
+- [x] README written for judges, with 8 screenshots; one-command run on a fresh machine with or without uv
+- [x] `deploy/` server kit for EC2 (systemd + nginx), tested on clean Ubuntu 24.04 and Amazon Linux 2023 containers
+- [x] Live on EC2 at http://3.234.207.173 (systemd + nginx); every page checked in a browser. The previous app on the server is stopped, not deleted
+- [x] Side feature: MiroFish comparison page, three saved English runs (crowd 17.6% against 21.0%), 8 tests; not yet deployed
+- [ ] Team: rewrite the memo and report narrative, reviewer names in the AI log, pitch deck, Q&A rehearsal
+
 ## Deviations from the plan
 - 2026-10-28: the snapshot can be extended with `download --add` (append-only, hash-checked) instead of a full refresh, so verified results do not move; new file prefixes `ctx_` (context) and `ext_` (validation history) are never loaded by `load_raw`.
 - 2026-10-28: Steps 19–21 and 23 removed and LightGBM dropped after the independent audit (gap G13); archived at tag `archive/mirofish-ml`. `ml.lgbm.retrain_every` moved to `ml.retrain_every` (used by linear QR and the GARCH-sigma feature). `requirements-research.txt` and the `lightgbm` pin removed.

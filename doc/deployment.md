@@ -1,24 +1,47 @@
 # Deploying the app
 
-The booklet requires Streamlit as the interface and accepts an app that is deployed or runnable locally with one command. `make run` meets the second; a public link is the safer choice for judges.
+The booklet requires Streamlit as the interface and accepts an app that is deployed or runnable locally with one command. `make run` meets the second. A public link is the easier choice for judges.
 
-## Streamlit Community Cloud (recommended, free)
+The app reads `data/artifacts/` only: it needs no secrets, API keys or network data, and it does not need the git tag.
 
-1. Merge the work into the branch you want to deploy and push it to GitHub.
+## AWS EC2
+
+`deploy/` installs the app as a service behind nginx on port 80. It works on Ubuntu, Debian and Amazon Linux, and it can be run again for every new release.
+
+**Before the first deploy, in the EC2 console:**
+
+1. Note the instance's **public IPv4 address** and its operating system (user `ubuntu` on Ubuntu, `ec2-user` on Amazon Linux).
+2. Under **Security group → Inbound rules**, allow port 22 from your own IP and port 80 from anywhere.
+3. Attach an **Elastic IP**, so the link does not change if the instance restarts. It is free while attached to a running instance.
+4. Use at least a `t3.small` (2 GB). A 1 GB instance works with the swap file the script adds, but it is slow to install.
+
+**Deploy from your computer, in the repository folder:**
+
+```bash
+chmod 400 qunatage.pem
+deploy/deploy.sh <public-ip> ubuntu qunatage.pem
+```
+
+The script sends only files git tracks or would track, so keys never leave your machine. It finishes with a health check, then the app is at `http://<public-ip>`.
+
+**Later:**
+
+| Task | Command, on the server |
+|---|---|
+| Is it running? | `systemctl status quantedge` |
+| Recent errors | `journalctl -u quantedge -n 50` |
+| Restart | `sudo systemctl restart quantedge` |
+
+To release a new version, run `deploy/deploy.sh` again.
+
+The link is plain HTTP until a domain is attached, because certificates are issued for domains, not bare IP addresses. Browsers show "Not secure", which does no harm here: the app has no logins and takes no personal data.
+
+## Streamlit Community Cloud (free fallback)
+
+1. Push the branch to GitHub.
 2. Sign in at https://share.streamlit.io with a GitHub account that can see the repository.
 3. Choose **Create app**, then the repository, the branch and the main file `app/Home.py`.
-4. Under **Advanced settings**, choose **Python 3.12**. The packages come from `requirements.txt`.
+4. Under **Advanced settings**, choose **Python 3.12**.
 5. Deploy, then open every page once and check the verdict on the first page.
 
-The app reads `data/artifacts/` only: it needs no secrets, API keys or network data, and it does not need the git tag. An idle app sleeps and wakes on the next visit, so open it shortly before judging.
-
-## Any other host (AWS and others)
-
-Any host works if it runs the same command, so Streamlit stays the interface. On a small Linux server with Python 3.12:
-
-```
-pip install -r requirements.txt
-python -m streamlit run app/Home.py --server.port 8501 --server.address 0.0.0.0
-```
-
-Open port 8501 to the web, or put a reverse proxy in front for HTTPS. AWS is not free in the long run, and the booklet treats a free-tier toolkit as a fairness requirement, so Community Cloud is the better fit here.
+An idle app sleeps and wakes on the next visit, so open it shortly before judging.

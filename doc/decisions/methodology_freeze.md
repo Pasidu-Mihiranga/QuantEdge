@@ -83,3 +83,12 @@ Test period 2023-01-01 → 2026-10-26, 955 common days, run once. Scores (99% Va
 
 - The memo and tear sheet are written from `decision_numbers.json`; the pre-freeze generators were removed. No number changes.
 - The app reads 2023+ returns without looking for the git tag, because a hosted clone may not carry tags. The guard in `partition.py` is unchanged for all analysis code.
+
+## Report and deployment changes (2026-10-31), reporting only
+
+- **Report tables:** rebuilt on the final weights; they had still shown the provisional 35% candidate. Verdict, weights, limits and test results are unchanged.
+- **EVT threshold evidence on the final weights:** the 90% threshold fixed before the decision date fails goodness-of-fit at 5% (Anderson-Darling p = 0.03, Kolmogorov-Smirnov p = 0.03), while 95% fits (p = 0.47, 0.82). 99% ES is 2.23% at 90% and 2.38% at 95%. The threshold was not changed; the report gives 99% ES as a range. The verdict does not use this estimate.
+- **`requirements.txt`:** adds `matplotlib==3.11.2` for the report figures, so its hash differs from the table above. No analysis depends on it.
+- **`reports/decision_defence.html`:** one footer reference removed. Its figures are unchanged.
+- **Side feature (2026-10-31):** a MiroFish comparison was added after the freeze (`src/quantedge/behavioral/`, `scripts/run_swarm.py`, one app page). It reads three saved runs and feeds nothing into the verdict, weights, limits or scenario. Hashed files are unchanged.
+

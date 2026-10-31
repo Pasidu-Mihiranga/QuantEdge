@@ -27,7 +27,13 @@ STATUS = {"ACCEPT": GOOD, "ADJUST": WARN, "REJECT": CRIT}
 CSS = """
 <style>
 /* Full-width layout (requested): slimmer side margins and top gap than Streamlit's defaults */
-[data-testid="stMainBlockContainer"], .block-container {padding: 2.2rem 2.2rem 3rem 2.2rem; max-width: 100%;}
+[data-testid="stMainBlockContainer"], .block-container {padding: 1.4rem 2.2rem 3rem 2.2rem; max-width: 100%;}
+/* The toolbar is hidden, so its bar keeps no space; the sidebar reopen button still sits on top. */
+[data-testid="stHeader"] {height: 0; min-height: 0; background: transparent;}
+[data-testid="stExpandSidebarButton"] {position: fixed; top: .5rem; left: .6rem; z-index: 1000;}
+[data-testid="stSidebarHeader"] {height: 1.8rem; min-height: 1.8rem; padding-top: .4rem; padding-bottom: 0;}
+/* Until the icon font arrives the browser prints the icon's name; keep it inside the icon's square. */
+[data-testid="stIconMaterial"] {display: inline-block; width: 1em; height: 1em; line-height: 1; overflow: hidden;}
 /* More breathing room between sections and inside bordered panels */
 [data-testid="stMain"] [data-testid="stVerticalBlock"] {gap: 1.25rem;}
 [data-testid="stSlider"] {padding: 0 0.6rem;}

@@ -70,7 +70,7 @@ class BacktestCfg:
     oos_start: pd.Timestamp
     refit_every: int
     champion_rule: str = "lowest_pinball_passing"
-    champion: str | None = None            # locked champion (inputs_lock); None = chosen by the rule
+    champion: str | None = None            # locked champion; None = chosen by the rule
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,17 @@
+[Unit]
+Description=Serendib Endowment committee app (QuantEdge 1.0)
+After=network.target
+
+[Service]
+User=quantedge
+WorkingDirectory=/opt/quantedge/app
+ExecStart=/opt/quantedge/venv/bin/python -m streamlit run app/Home.py --server.address 127.0.0.1 --server.port 8501 --server.headless true --browser.gatherUsageStats false
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

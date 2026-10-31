@@ -37,9 +37,9 @@ LIMITATIONS: dict[str, list[tuple[str, str, str]]] = {
     ],
     "Stress": [
         ("Historical paths may not repeat", "The next crisis may differ", "Factor-driven hypothetical and reverse stress"),
-        ("Factor betas are unstable across regimes", "Scenario impacts are estimates", "Stress-week betas (D5), SE bands"),
+        ("Factor betas are unstable across regimes", "Scenario impacts are estimates", "Stress-week betas, SE bands"),
         ("The hypothetical scenario is one of many", "Shock sizes and horizon are judgement",
-         "Anchored on historical extremes; sizes, horizon and credit measure fixed before the freeze (D5)"),
+         "Anchored on historical extremes; sizes, horizon and credit measure fixed before the freeze"),
         ("The scenario treats the fund as unrebalanced during the episode", "Each fund's scenario move is applied to its "
          "starting weight", "Corrected after the freeze so that fund moves are added as simple returns (0.04 points, logged)"),
         ("The bad-day risk budget does not see the stagflation scenario", "Bonds carry little bad-day risk but most of the "

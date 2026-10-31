@@ -1,0 +1,23 @@
+# Swarm comparison scenario. The trigger is the event behind the team's Hormuz stagflation 2027 scenario.
+version: 2
+mirofish_commit: 7657031ac01184afe2cb220f5ee3545573b5e843   # 666ghj/MiroFish, run unmodified outside this repository
+scale:
+  max_rounds: 20
+  replicates: 3
+archetypes:
+  - id: institutional
+    profile: "Pension funds and endowments: long horizon, benchmark-aware, rebalance mechanically, sell risk only when limits bind."
+  - id: retail
+    profile: "Individual investors: trend-following, sensitive to headlines and recent losses, prone to panic selling and fund outflows."
+  - id: bond
+    profile: "Fixed-income managers: duration-focused, react to policy-rate guidance and inflation prints, flee to short maturities in rate shocks."
+  - id: speculative
+    profile: "Hedge funds and leveraged traders: momentum and macro bets, forced to de-lever when volatility and margins rise."
+  - id: conservative
+    profile: "Capital-preservation investors: seek gold, high-quality bonds and cash in stress; slow to re-enter risk."
+scenarios:
+  H1:
+    kind: forward
+    title: "Hormuz stagflation 2027"
+    trigger: "Inflation re-accelerates after an oil supply shock (oil +40%). Long-term yields rise as the central bank resumes hiking; growth forecasts are cut; credit spreads widen; the US dollar strengthens."
+    as_of: "2026-10-23"

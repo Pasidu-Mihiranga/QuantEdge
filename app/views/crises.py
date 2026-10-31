@@ -13,7 +13,7 @@ from quantedge.stress.factor import (
     scenario_loss,
     weekly_factors,
 )
-from quantedge.stress.reverse import most_likely_breach, stressed_sigma
+from quantedge.stress.reverse import most_likely_breach, rarity_text, stressed_sigma
 
 n = need_numbers()
 cfg = load_config()
@@ -56,7 +56,7 @@ bars = alt.Chart(df).mark_bar(cornerRadiusEnd=4, height=24).encode(
     color=alt.Color("type:N", scale=alt.Scale(domain=["happened", "our scenario"], range=[GREY, ACCENT]),
                     legend=alt.Legend(title=None, orient="bottom")),
     tooltip=["crisis:N", "kind:N", alt.Tooltip("loss:Q", format="$,.0f")])
-text = alt.Chart(df).mark_text(align="left", dx=6).encode(y=alt.Y("crisis:N", sort=None), x="loss:Q", text="label:N")
+text = alt.Chart(df).mark_text(align="left", dx=8).encode(y=alt.Y("crisis:N", sort=None), x=alt.datum(budget * nav), text="label:N")  # right of the budget line
 rule = alt.Chart(pd.DataFrame({"x": [budget * nav]})).mark_rule(color=CRIT, strokeWidth=2).encode(x="x:Q")
 st.altair_chart((bars + text + rule).properties(height=330), alt="Every crisis against the 25% budget")
 explain("Each grey bar shows what today's portfolio would have lost if it had lived through that crisis. The blue bar "
@@ -141,6 +141,6 @@ with st.expander("What would it take to lose 25%? (reverse stress)", icon=":mate
     st.dataframe(pd.DataFrame({"In calm markets": calm.x_star, "In a crisis": crisis.x_star}).style.format("{:+.1%}"),
                  alt="Most plausible fund moves that would cost 25%")
     say(f"The table shows the most likely combination of fund moves that would cost {pct(budget, 0)} within a month: a broad "
-        f"stock crash with bonds not helping. In calm markets that is roughly a once-in-{calm.years_between:,.0f}-years event; "
-        f"when markets are already in crisis mode it becomes about once in {crisis.years_between:,.0f} years. Treat these as "
-        "rough: real crises are more frequent than simple models suggest.")
+        f"stock crash with bonds not helping. A simple bell-curve model calls this "
+        f"{rarity_text(calm.years_between, crisis.years_between)}. Read the direction, not the odds: real crises are more "
+        "frequent than simple models suggest.")

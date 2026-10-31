@@ -120,7 +120,7 @@ def run_backtests(cfg: Config, wf_result, label: str, window: int | None = None)
     rule_choice, reason = choose_champion(tables["val"], cfg.backtest.champion_rule)
     champion = cfg.backtest.champion or rule_choice
     if champion != rule_choice:
-        reason = f"locked in config (inputs_lock); the rule on this run picks {rule_choice}"
+        reason = f"locked in config; the rule on this run picks {rule_choice}"
         print(f"[backtest] WARNING: the locked champion {champion} differs from the rule's choice {rule_choice}")
     crises = crisis_breakdown(results, cfg.stress["historical"])
     crises.to_parquet(ARTIFACTS / f"backtest_crises_{window}.parquet")
@@ -614,6 +614,7 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
               f"(expected {d['expected_return']:.2%} vs required {d['objective']['required_return']:.2%})")
         reports = ROOT / "reports"
         (reports / "committee_memo_draft.md").write_text(final.memo(d), encoding="utf-8")
+        (reports / "memo.html").write_text(final.memo_page(d), encoding="utf-8")
         (reports / "tearsheet.html").write_text(final.tear_sheet(d), encoding="utf-8")
         (reports / "report.html").write_text(report.render(cfg), encoding="utf-8")
         print(f"[report]   memo, tear sheet and report written to {reports}")

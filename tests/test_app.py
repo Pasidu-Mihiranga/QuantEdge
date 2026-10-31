@@ -121,3 +121,8 @@ def test_pages_do_not_depend_on_the_git_tag():
     # A hosted clone may carry no tags: the app reads 2023+ returns only through ui.returns_to_decision (frozen=True).
     for v in [*VIEWS, *(APP / "technical").glob("*.py")]:
         assert 'load_returns("all"' not in v.read_text(encoding="utf-8"), v.name
+
+
+def test_side_feature_page_stays_out_of_the_committee_pages():
+    home = (APP / "Home.py").read_text(encoding="utf-8")
+    assert "side/swarm.py" in home and home.index('"Explore"') > home.index('"Technical detail"')

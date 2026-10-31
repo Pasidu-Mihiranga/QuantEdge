@@ -9,9 +9,10 @@ import streamlit as st
 st.set_page_config(page_title="Serendib Endowment", page_icon=":material/account_balance:", layout="wide")
 
 from components.ui import style  # noqa: E402  (after set_page_config)
+from quantedge.paths import ARTIFACTS  # noqa: E402
 
 style()
-page = st.navigation({
+pages = {
     "For the committee": [
         st.Page("views/recommendation.py", title="Our recommendation", icon=":material/verified:", default=True),
         st.Page("views/crises.py", title="What can go wrong", icon=":material/thunderstorm:", url_path="crises"),
@@ -28,5 +29,9 @@ page = st.navigation({
         st.Page("technical/methodology.py", title="Methodology", icon=":material/menu_book:",
                 url_path="methodology"),
     ],
-}, position="sidebar")
+}
+if (ARTIFACTS / "swarm_comparison.json").exists():         # appears once real simulation runs exist
+    pages["Explore"] = [st.Page("side/swarm.py", title="Crowd simulation", icon=":material/groups:", url_path="crowd")]
+page = st.navigation(pages, position="sidebar")
+st.sidebar.caption("Team Gmora · QuantEdge 1.0")
 page.run()

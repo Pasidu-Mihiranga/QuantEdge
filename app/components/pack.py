@@ -55,7 +55,7 @@ def summary_html(n: dict) -> str:
         f"<div class=meta>Serendib University Endowment · {money(nav)} · decision date {e(n['decision_date'])} · "
         f"market data to {e(n['data_end'])}</div>",
         f"<div class=verdict><b>{e(n['verdict'])}.</b> Invest {n['advised_equity']:.0%} in equities and "
-        f"{1 - n['advised_equity']:.0%} in bonds and real assets. Expected return {pct(n['expected_return'], 2)} a year "
+        f"{1 - n['advised_equity']:.0%} in {'bonds' if n['weights']['GLD'] < 1e-4 else 'bonds and gold'}. Expected return {pct(n['expected_return'], 2)} a year "
         f"against the {pct(obj['required_return'], 2)} the objective needs (spending {pct(obj['spending'], 1)}, real growth "
         f"{pct(obj['real_growth'], 1)}, plus inflation).</div>",
         "<h2>Allocation</h2><table><tr><th>Fund</th><th class=n>Ticker</th><th class=n>Weight</th><th class=n>USD</th></tr>"

@@ -1,6 +1,7 @@
 # Competition source material (kept local, not redistributed)
 *.pdf
 *.pptx
+!reports/*.pdf
 
 # Python / tooling
 .venv/

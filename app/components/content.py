@@ -1,4 +1,4 @@
-"""Plain-language text for the committee pages, taken from doc/decisions/inputs_lock.md (locked 2026-10-29)."""
+"""Plain-language text for the committee pages, from the team's locked decisions (2026-10-29)."""
 
 DECISIONS = [
     ("D1", "Spending rate and objective", "3.0% a year; objective US inflation + 3.5% (3% spending + 0.5% real growth)",

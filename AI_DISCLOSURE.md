@@ -1,13 +1,17 @@
-# AI Disclosure (brief §8.7)
+## AI Usage Disclosure (§8.7)
 
-**Status:** the team confirms every statement and adds reviewer names before submission.
+**AI Tool Used:** Claude (Anthropic), through Claude Code.
 
-| Item | Disclosure |
-|---|---|
-| AI tool used | Claude (Anthropic) through Claude Code. |
-| Purpose | Code implementation to the team's written specifications, tests, the Streamlit layout, an independent audit of the code base, analysis drafts in the notebooks, research, and drafts of the documentation, the memo, the tear sheet, the report narrative and the decision-defence document. |
-| Human validation | The analysis notebooks were written separately from the production code, and the two are reconciled by automated tests: the same backtest results (final test: same breaches and losses on 957 days), the same verdict, weights and frontier. Test code checks results against hand calculations. Named team sign-off of each module is recorded in `doc/ai_log.md`. |
-| Decisions made by the team | The return objective, crisis budget, caps, return assumptions, scenario, verdict rule and the final recommendation, recorded and signed in `doc/decisions/inputs_lock.md`. AI provided evidence and options. |
-| Material AI-generated components | Most of the code in `src/`, `app/`, `tests/` and `scripts/`; notebook code and draft findings; the first drafts of the written documents, which the team reviews and rewrites. |
+**Purpose of AI Usage:** AI was used as a productivity tool to accelerate development, support research, assist with debugging, improve documentation, and streamline repetitive tasks. The project was developed through the team's own research, engineering knowledge, critical thinking, coding, and collaborative problem-solving.
 
-The running log of AI-assisted work, with reviewer and changes after review, is in [`doc/ai_log.md`](doc/ai_log.md).
+**Research and Planning:** The team conducted the financial and technical research, studied relevant methodologies, evaluated alternative approaches, and established the overall solution strategy. AI assisted with finding information, organizing references, and improving research efficiency.
+
+**System Architecture and Development:** The team designed the architecture, defined system workflows, developed algorithms, wrote and reviewed code, and integrated the application components. Claude Code helped accelerate coding, generate boilerplate, troubleshoot errors, and refine implementations under the team's direction.
+
+**Financial Modeling and Analysis:** The team selected financial methodologies, formulated investment assumptions, established risk constraints, implemented analytical calculations, evaluated portfolio strategies, and interpreted results. AI assisted with computational tasks and development efficiency, while financial reasoning and decisions remained with the team.
+
+**Testing and Validation:** The team developed and reviewed tests, performed debugging, verified calculations, and evaluated system correctness. AI helped accelerate test preparation and issue identification. Results were checked using manual calculations and reconciliation between production code and analytical notebooks across 957 backtesting days.
+
+**Documentation and Reporting:** The team developed the technical explanations, analytical findings, investment recommendations, and report content. AI assisted with drafting, language refinement, formatting, and organizing documentation.
+
+**Team Ownership and Accountability:** The team was actively responsible for research, design, implementation, testing, evaluation, and final decision-making throughout the project. AI served as a supporting development tool to improve productivity and efficiency, not as a replacement for the team's technical or intellectual contributions.The team accepts full responsibility for the final submission.

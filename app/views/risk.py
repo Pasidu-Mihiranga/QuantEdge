@@ -99,7 +99,7 @@ if view == "A bad day":
                "Student-t": "A bell curve with fat tails: higher far out in the tail, lower near the middle.",
                "Cornish-Fisher": "Bends the bell curve for skew and fat tails; breaks down when the tails are this fat.",
                "EVT": "Fits only the worst days, so it describes the far tail best.",
-               "Monte Carlo": "Simulates 20,000 days from fat-tailed returns with fixed correlations.",
+               "Monte Carlo": "Simulates 100,000 days from a fitted fat-tailed distribution.",
                "GARCH-FHS": "Rescales history to today's volatility: higher when markets are nervous.",
                "GJR-FHS": "As GARCH-FHS, but falls raise volatility more than rises do.",
                "Conditional EVT": "Today's volatility plus an EVT tail.",

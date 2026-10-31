@@ -54,3 +54,64 @@ def test_md_to_html_escapes_and_formats():
 
     out = md_to_html("A **bold** <script> line\n\n- one\n- two")
     assert "<b>bold</b>" in out and "&lt;script&gt;" in out and "<li>two</li>" in out
+
+
+def test_report_tables_use_the_final_weights():
+    import json
+    import re
+
+    from quantedge.reports import report
+
+    n = json.loads((ARTIFACTS / "decision_numbers.json").read_text(encoding="utf-8"))
+    out = report.render(load_config())
+    assert "Page budget" not in out and "cdn.jsdelivr" not in out        # finished document, no network needed
+    assert f"{n['largest_es_share']:.2%}" in out                         # Euler shares of the recommended weights
+    assert f"{n['weights']['SPY']:.2%}" in out and "8.50%" not in out    # not the provisional candidate
+    assert len(re.findall(r"<svg", out)) == 5 and "Table 16" in out
+    assert not re.search(r"<p>\{\{\w+\}\}</p>", out)                     # every placed block exists
+
+
+def test_memo_page_is_html_with_every_section():
+    import json
+
+    from quantedge.reports import final
+
+    n = json.loads((ARTIFACTS / "decision_numbers.json").read_text(encoding="utf-8"))
+    page = final.memo_page(n)
+    assert final.TEAM in page and "<table>" in page and page.count("<h2>") == 5 and "**" not in page and "|--" not in page
+
+
+def test_pdfs_meet_the_booklet_page_limits():
+    from quantedge.paths import ROOT
+
+    pdf = ROOT / "reports" / "QuantEdge_Technical_Report.pdf"
+    if not pdf.exists():
+        pytest.skip("run scripts/build_pdfs.py first")
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("build_pdfs", ROOT / "scripts" / "build_pdfs.py")
+    b = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(b)
+    assert 7 <= b.pages(pdf) <= 15
+    assert b.pages(ROOT / "reports" / "Investment_Committee_Memo.pdf") == 1
+    assert b.pages(ROOT / "reports" / "Executive_Tear_Sheet.pdf") == 1
+
+
+def test_rarity_never_prints_an_absurd_return_period():
+    from quantedge.stress.reverse import rarity, rarity_text
+
+    assert rarity(1e27) == "rarer than once in a million years" and rarity(40.2) == "about once in 40 years"
+    assert rarity_text(1e27, 2e6).endswith("even in a crisis") and "in calm markets" in rarity_text(1e27, 40)
+
+
+def test_judge_facing_documents_name_no_internal_records():
+    import json
+
+    from quantedge.paths import ROOT
+    from quantedge.reports import final, report
+
+    n = json.loads((ARTIFACTS / "decision_numbers.json").read_text(encoding="utf-8"))
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    for text in (report.render(load_config()), final.memo(n), final.tear_sheet(n), readme):
+        assert "inputs_lock" not in text and "ai_log" not in text
+    assert "AI disclosure" not in report.render(load_config())   # disclosed separately, in AI_DISCLOSURE.md

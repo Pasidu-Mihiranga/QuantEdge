@@ -8,6 +8,10 @@ from components.ui import money
 st.title("Tail risk (EVT) diagnostics")
 st.markdown("How the tail of the loss distribution was modelled: the peaks-over-threshold method fits a Generalised Pareto distribution to losses above a high threshold. The locked choice is the **90% quantile** (notebook 03 §3); the rules below show how much the choice matters. Fitted on data to end-2022, before the freeze.")
 
+st.caption("Shown for the 35% candidate used to fix the threshold before the decision date. On the final weights the fit at "
+           "90% is weaker (Anderson-Darling p = 0.03) and 95% fits better with a heavier tail, so the report gives 99% ES as a "
+           "range, 2.2–2.4%.")
+
 ev = parquet("evt_threshold_evidence.parquet")
 sens = parquet("evt_sensitivity.parquet")
 if not (require(ev, "EVT threshold evidence") and require(sens, "The EVT sensitivity table")):
