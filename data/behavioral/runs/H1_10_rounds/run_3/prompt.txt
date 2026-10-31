@@ -1,0 +1,1 @@
+Simulate how the five groups of market participants in the briefing react to the event over the following days to months: who sells, who buys, where money flows, how panic or herding develops, and how the funds are likely to move. Report the main mechanisms, alternative paths, assumptions and limitations. Do not invent verified prices, returns or unsupported probabilities.

@@ -6,9 +6,9 @@
       "confidence": "high"
     },
     "oil": {
-      "direction": "+",
-      "intensity": "extreme",
-      "confidence": "high"
+      "direction": "0",
+      "intensity": "low",
+      "confidence": "medium"
     },
     "vix": {
       "direction": "+",
@@ -18,45 +18,44 @@
     "usd": {
       "direction": "+",
       "intensity": "medium",
-      "confidence": "high"
+      "confidence": "medium"
     },
     "credit_spread": {
       "direction": "+",
       "intensity": "medium",
-      "confidence": "high"
+      "confidence": "medium"
     }
   },
   "behaviour": {
     "panic_selling": 3,
     "flight_to_safety": [
       "GLD",
-      "AGG",
-      "cash"
+      "cash",
+      "AGG"
     ],
-    "contagion_breadth": 3,
+    "contagion_breadth": 2,
     "herding": 3,
-    "investor_disagreement": 2,
+    "investor_disagreement": 1,
     "duration": "months"
   },
   "asset_directions": {
     "SPY": "-",
     "EFA": "-",
     "EEM": "-",
-    "AGG": "-",
+    "AGG": "+",
     "GLD": "+",
-    "XLE": "0",
+    "XLE": "-",
     "XLK": "-"
   },
-  "narrative_summary": "The market enters a period of high volatility and pervasive risk-off sentiment, triggered by an oil supply shock causing inflation and central bank rate hikes. Individual investors engage in rapid panic selling and fund outflows, driven by headlines and recent losses, while capital-preservation entities seek safety in gold, high-quality bonds, and cash.",
+  "narrative_summary": "Retail investors are exhibiting significant panic selling and a strong flight to safety, driven by macroeconomic uncertainty and emotional responses. Institutional investors, particularly pension funds and fixed-income managers, are focusing on capital preservation and strategic rebalancing, leading to a general shift towards less volatile assets. This divergence in behavior, coupled with forced deleveraging from leveraged traders, amplifies market moves and reinforces a self-fulfilling cycle of volatility and risk aversion.",
   "key_mechanisms": [
-    "Oil supply shock causes oil prices to rise 40% and inflation to re-accelerate.",
-    "Central bank resumes hiking, pushing long-term yields higher.",
-    "Individual investors exhibit trend-following, headline-sensitive panic selling and fund outflows, leading to herding.",
-    "Capital-preservation entities (pension funds, endowments) prioritize safety, seeking gold, high-quality bonds, and cash.",
-    "Hedge funds and leveraged traders are forced to de-lever when volatility and margins rise.",
-    "Widening credit spreads and strengthening US dollar reflect systemic stress."
+    "Retail investor panic selling driven by headlines and recent losses",
+    "Flight to safety into gold, high-quality bonds, and cash by both retail and institutional investors",
+    "Mechanical rebalancing by pension funds and endowments to manage risk and adhere to limits",
+    "Forced deleveraging by hedge funds and leveraged traders amplifying market moves",
+    "Herding behavior among retail investors, reinforcing market trends"
   ],
   "stated_limitations": [
-    "The report does not explicitly state its own limitations, but the prompt's constraints imply not inventing verified prices, returns, or unsupported probabilities."
+    "The simulation predicts behavior patterns but does not provide specific verified prices or unsupported probabilities."
   ]
 }

@@ -141,7 +141,7 @@ Plan: `My reserch/specs/01_problem_spec.md` (v2) and `02_gap_register.md` (v2); 
 - [x] README written for judges, with 8 screenshots; one-command run on a fresh machine with or without uv
 - [x] `deploy/` server kit for EC2 (systemd + nginx), tested on clean Ubuntu 24.04 and Amazon Linux 2023 containers
 - [x] Live on EC2 at https://quantedge.gmora.dev (systemd, nginx, Let's Encrypt); every page checked in a browser. The previous app on the server is stopped, not deleted
-- [x] Side feature: MiroFish comparison page, three saved English runs (crowd 17.6% against 21.0%), 8 tests; not yet deployed
+- [x] Side feature: MiroFish comparison page, three 40-round runs (crowd 17.1% against 21.0%), 8 tests; not yet deployed
 - [ ] Team: rewrite the memo and report narrative, reviewer names in the AI log, pitch deck, Q&A rehearsal
 
 ## Deviations from the plan

@@ -1,6 +1,6 @@
 """Run the MiroFish comparison and write its results for the app. MiroFish runs separately, on http://localhost:5001.
 
-    python scripts/run_swarm.py run H1 --k 1 --max-rounds 10    # one simulation
+    python scripts/run_swarm.py run H1 --k 1 --max-rounds 40    # one simulation
     python scripts/run_swarm.py summarise H1                    # data/artifacts/swarm_comparison.json from finished runs
 """
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     ap.add_argument("action", choices=["run", "summarise"])
     ap.add_argument("scenario")
     ap.add_argument("--k", type=int, default=1)
-    ap.add_argument("--max-rounds", type=int, default=20)
+    ap.add_argument("--max-rounds", type=int, default=40)
     ap.add_argument("--resume", help="simulation id: go straight to the report and questionnaire")
     a = ap.parse_args()
     if a.action == "summarise":

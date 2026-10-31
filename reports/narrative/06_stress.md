@@ -43,7 +43,7 @@ The volatility-target overlay into AGG raised return and cut drawdown on this da
 
 ### Crowd simulation
 
-We also gave the same event to a MiroFish agent simulation, in which AI investors react and describe the market moves. Their answers set only direction and strength; the sizes come from history over the same three quarters, and the moves pass through the same stress test. Three runs gave losses of 14.5–19.4%, an average of 17.6%, against 21.0% for our scenario. This is a comparison only: it is not tested against real events and is not used in the recommendation.
+We also gave the same event to a MiroFish agent simulation, in which AI investors react and describe the market moves. Their answers set only direction and strength; the sizes come from history over the same three quarters, and the moves pass through the same stress test. Three 40-round runs gave losses of 15.6–17.8%, an average of 17.1%, against 21.0% for our scenario. This is a comparison only: it is not tested against real events and is not used in the recommendation.
 
 ### Currency
 

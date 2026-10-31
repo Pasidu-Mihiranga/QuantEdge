@@ -31,6 +31,8 @@ def test_schema_accepts_valid_and_rejects_invalid_answers():
     assert validate(ANSWER) is ANSWER
     with pytest.raises(SchemaError):
         validate({**ANSWER, "asset_directions": {"SPY": "-"}})
+    with pytest.raises(SchemaError):
+        validate({**ANSWER, "factors": {**ANSWER["factors"], "oil": None}})
 
 
 def test_parse_json_answer_tolerates_code_fences():

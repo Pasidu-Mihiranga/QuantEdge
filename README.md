@@ -103,7 +103,7 @@ Set any mix of the seven funds and see it measured exactly as the recommendation
 
 ### Crowd simulation
 
-We gave the same crisis to a crowd of AI investors built with [MiroFish](https://github.com/666ghj/MiroFish): pension funds, retail savers, bond managers, traders and cautious holders react to it and to each other. The page sets their reaction next to the scenario the team designed: the loss, each fund's share, the market moves, and how the panic spread. Across three runs the crowd lost 17.6% on average, against 21.0% for our scenario.
+We gave the same crisis to a crowd of AI investors built with [MiroFish](https://github.com/666ghj/MiroFish): pension funds, retail savers, bond managers, traders and cautious holders react to it and to each other. The page sets their reaction next to the scenario the team designed: the loss, each fund's share, the market moves, and how the panic spread. Across three 40-round runs the crowd lost 17.1% on average, against 21.0% for our scenario.
 
 The crowd's answers pick only the direction and strength of each market move. The sizes come from market history, and both sides go through the same stress test, so the comparison is like for like. It is there for comparison: the page reads saved runs and is not used in the recommendation.
 
