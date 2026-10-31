@@ -35,6 +35,8 @@ make run               # start the app at http://localhost:8501
 global Python) is first on your PATH, its older Streamlit starts without this project's packages and the app fails with
 `ModuleNotFoundError: No module named 'quantedge'`. `make run` and `.venv/bin/python -m streamlit` always use `.venv`.
 
+To deploy it, see [doc/deployment.md](doc/deployment.md).
+
 The raw data snapshot in `data/raw/` is frozen and SHA-256 hashed (`data/raw/manifest.json`). Refreshing it is an explicit step: `.\make.ps1 data`.
 
 ## Where things are
@@ -43,7 +45,9 @@ The raw data snapshot in `data/raw/` is frozen and SHA-256 hashed (`data/raw/man
 |---|---|
 | `config.yaml` | every parameter (dates, IPS limits, model settings, decision thresholds) |
 | `src/quantedge/` | the package: data, portfolio, risk, backtest, stress, decision, ml |
-| `app/` | Streamlit app: `Home.py` (top navigation), five pages in `views/`, technical topics in `technical/` (one dropdown on the Assumptions page) |
+| `app/` | Streamlit app: `Home.py` (navigation), committee pages in `views/`, technical pages in `technical/` |
+| `notebooks/` | analysis notebooks, written separately from the package and reconciled with it by tests |
+| `reports/` | memo draft, tear sheet, technical report and decision-defence document, generated from the final numbers |
 | `tests/` | pytest suite (closed-form, simulation-recovery, textbook and leakage tests) |
 | `doc/decisions/` | team decision records and the methodology-freeze checklist |
 | `TODO.md` | implementation progress, step by step |
@@ -55,6 +59,6 @@ The raw data snapshot in `data/raw/` is frozen and SHA-256 hashed (`data/raw/man
 - [Hybrid validation and ML challenger plan](doc/ML_Challenger_and_Partition_Plan.md): a leakage-safe chronological partition combined with walk-forward, with a linear quantile-regression challenger against the best conventional VaR model (LightGBM and LSTM rejected, archived at the git tag `archive/mirofish-ml`)
 - [Step-by-step plans (index)](doc/steps/00_INDEX.md): 23 steps, from data acquisition to the pitch. Steps 19–21 (MiroFish behavioural stress lab, its evaluation, research papers) and 23 (LSTM) were removed on 2026-10-28 after an independent audit; they are archived at the git tag `archive/mirofish-ml`
 
-## Status
+## Result
 
-Steps 01–13, the ML challengers and the Streamlit app are implemented and tested. The methodology is frozen (git tag `methodology-freeze-v1`): the data split is development 2004–2018, validation 2019–2022 (all selection decisions) and a final test from 2023, which was run once after the freeze and is recorded in `data/artifacts/final_test_result.json`. See [TODO.md](TODO.md) and [the freeze checklist](doc/decisions/freeze_checklist.md).
+Decision date 26 October 2026: **ACCEPT at 35% equity** (SPY 15.6%, EFA 9.4%, AGG 65.0%, XLE 10.0%), expected 6.04% a year against 5.94% required, a narrow margin. The risk model (GJR conditional EVT) passed a one-shot test on 2023–2026, run once after the methodology freeze (git tag `methodology-freeze-v1`). The data split is development 2004–2018, validation 2019–2022 and final test 2023–2026. Later changes are logged in [the freeze record](doc/decisions/methodology_freeze.md).

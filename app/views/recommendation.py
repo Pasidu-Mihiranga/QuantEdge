@@ -6,9 +6,8 @@ import pandas as pd
 import streamlit as st
 
 from components.pack import crises_table, summary_html, weights_table
-from components.ui import artifact, esc, money, need_numbers, pct, say
+from components.ui import artifact, esc, money, need_numbers, pct, returns_to_decision, say
 from quantedge.config import load_config
-from quantedge.data.partition import load_returns
 from quantedge.decision.decision_date import es_shares
 from quantedge.stress.factor import scenario_contributions
 
@@ -52,17 +51,20 @@ with st.container(border=True):
 
 mv = n["model_validity"]
 with st.container(horizontal=True):
-    st.metric("Expected return a year", pct(n["expected_return"], 2), f"required {pct(obj['required_return'], 2)}",
-              delta_color="off", delta_arrow="off", border=True)
+    margin_ok = n["return_margin"] >= 0
+    narrow = margin_ok and n["robustness"].get("ACCEPT", 0) < sum(n["robustness"].values()) / 2 + 1
+    st.metric("Expected return a year", pct(n["expected_return"], 2),
+              f"needs {pct(obj['required_return'], 2)}" + (" · narrow" if narrow else ""),
+              delta_color="orange" if narrow else ("green" if margin_ok else "red"), delta_arrow="off", border=True)
     st.metric("Worst crisis on record", f"−{money(risk['worst_crisis_loss'] * nav)}",
-              f"{risk['worst_crisis']} · budget {money(lim['crisis_budget'] * nav)}", delta_color="off", delta_arrow="off",
-              border=True)
-    st.metric("A very bad day", f"−{money(risk['es99_ttc'] * nav)}", "average of the worst 1 day in 100",
-              delta_color="off", delta_arrow="off", border=True,
+              f"{risk['worst_crisis']} · limit {money(lim['crisis_budget'] * nav)}",
+              delta_color="green" if risk["worst_crisis_loss"] <= lim["crisis_budget"] else "red", delta_arrow="off", border=True)
+    st.metric("A very bad day", f"−{money(risk['es99_ttc'] * nav)}", f"worst 1 day in 100 · limit {money(lim['es99_max'] * nav)}",
+              delta_color="green" if risk["es99_ttc"] <= lim["es99_max"] else "red", delta_arrow="off", border=True,
               help="Measured over 2004–2018, which includes the 2008 crisis, so a calm year does not make it look smaller.")
     st.metric("Risk model tested on new data", "Passed" if mv.get("passes") else "Failed",
-              f"{mv.get('exceptions')} misses vs {mv.get('expected', 0):.1f} expected, 2023–26", delta_color="off",
-              delta_arrow="off", border=True, help="We tested the risk model once on 2023–2026 data it had never seen. "
+              f"{mv.get('exceptions')} misses vs {mv.get('expected', 0):.1f} expected, 2023–26",
+              delta_color="green" if mv.get("passes") else "red", delta_arrow="off", border=True, help="We tested the risk model once on 2023–2026 data it had never seen. "
               "It should miss about 1 day in 100; it missed 9 days against about 10 expected.")
 
 # ---------- explore, one view at a time ----------
@@ -98,7 +100,7 @@ if view == "The mix":
     # Risk budget (booklet p. 8): the same Euler ES shares as the D8 rule, plus each fund's share of the scenario loss.
     st.subheader("Where the risk comes from", divider=False)
     cfg = load_config()
-    past = load_returns("all", cfg).loc[lambda r: r.index < pd.Timestamp(n["decision_date"])]
+    past = returns_to_decision()
     wf = pd.Series(n["weights"]).reindex(past.columns, fill_value=0.0)
     es_sh = es_shares(wf, past)
     hyp = cfg.stress["hypothetical"]

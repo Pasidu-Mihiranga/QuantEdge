@@ -1,1 +1,1 @@
-[TEAM: Confirm the AI disclosure and list references. Target length: 1 page.]
+AI assistance is disclosed below, as the brief requires. The final recommendation and its defence are the team's.

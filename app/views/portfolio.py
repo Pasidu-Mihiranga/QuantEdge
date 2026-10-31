@@ -5,9 +5,8 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from components.ui import artifact, explain, money, need_numbers, pct, say
+from components.ui import artifact, explain, money, need_numbers, pct, returns_to_decision, say
 from quantedge.config import load_config
-from quantedge.data.partition import load_returns
 from quantedge.decision.objective import crisis_loss
 from quantedge.portfolio.capm import capm_regression
 from quantedge.portfolio.metrics import kpi_table
@@ -70,7 +69,7 @@ st.altair_chart(alt.Chart(h).mark_line(strokeWidth=1.6).encode(
     tooltip=[alt.Tooltip("date:T"), "portfolio:N", alt.Tooltip("value:Q", format="$,.0f" if fmt == "$~s" else ".1%")]).properties(height=300),
     alt="History of the recommended strategy and the 60/40 benchmark")
 cfg = load_config()
-past = load_returns("all", cfg).loc[lambda r: r.index < pd.Timestamp(n["decision_date"])]
+past = returns_to_decision()
 bench_crisis = crisis_loss(pd.Series({"SPY": 0.6, "AGG": 0.4}), past, cfg.stress["historical"]).max()
 explain("Every quarter the mix was rebuilt using only the prices known at the time, and trading costs were paid, so "
         "this is what the strategy could really have done. "
@@ -91,7 +90,7 @@ def scorecard(start: str) -> pd.DataFrame:
     T-bill rate lagged one day, as in Step 06."""
     r = perf.dropna().loc[start:]
     rf = artifact("returns_rf.parquet")["rf"]
-    spy = load_returns("all", load_config())["SPY"].reindex(r.index)
+    spy = returns_to_decision()["SPY"].reindex(r.index)
     capm = {c: capm_regression(r[c] - rf.reindex(r.index), spy - rf.reindex(r.index)) for c in r.columns}
     return kpi_table({c: r[c] for c in r.columns}, rf, r["60/40 benchmark"],
                      betas={c: v.beta for c, v in capm.items()}, alphas={c: (v.alpha_ann, v.alpha_t) for c, v in capm.items()})

@@ -65,8 +65,8 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 |---|---|---|---|
 | 1 | Public/judge-accessible GitHub repo, clean code, README on how to run | Repo; README | 🟡 README to refresh; repo visibility to confirm |
 | 2 | App deployed, or runnable locally with one command | `make run` / `.\make.ps1 run` | 🟡 deployment to Streamlit Community Cloud pending (needs the team's account) |
-| 3 | 7–15-page report: methodology, data and cleaning, results, assumptions and limitations | `reports/report.html` generator; `reports/narrative/` | ⬜ narrative written by the team after the freeze |
-| 4 | One-page executive tear sheet | `reports/tearsheet.html` generator | 🟡 final numbers after the freeze |
+| 3 | 7–15-page report: methodology, data and cleaning, results, assumptions and limitations | `reports/report.html` generator; `reports/narrative/` | 🟡 narrative drafted with final numbers; the team reviews and rewrites it |
+| 4 | One-page executive tear sheet | `reports/tearsheet.html`, from `decision_numbers.json` | ✅ final numbers; print to one A4 page |
 | 5 | Finalists: 10–12-minute pitch and deck; Q&A as the committee | — | ⬜ |
 
 ## 7. Technical layers (pp. 6–7)
@@ -85,13 +85,13 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 |---|---|---|
 | Risk budgeting and position sizing with each position's marginal VaR/ES contribution | `risk/contributions.py`; notebook 03 §6; D8 (40% cap); app 'Our recommendation' → 'Where the risk comes from' (money, bad-day ES and scenario shares) | ✅ D8 applied at the decision date |
 | Historical crisis paths (2008, March 2020, 2022) plus one team-designed hypothetical | `stress/historical.py` (window start fixed, G14), `hypothetical.py`; notebook 05 | ✅ (D5 sizes agreed) |
-| One-page plain-English memo: accept / adjust the risk limit / reject | `decision/memo.py`; D10 | ⬜ team-written memo |
+| One-page plain-English memo: accept / adjust the risk limit / reject | `reports/committee_memo_draft.md` (`reports/final.py`); D10 | 🟡 draft with final numbers; the team reviews and rewrites it |
 
 ## 9. Use of AI (pp. 8–9)
 
 | Requirement | Where it is met | Status |
 |---|---|---|
-| Disclose tools, purpose, human validation, material AI components | `AI_DISCLOSURE.md`; `doc/ai_log.md` | 🟡 reviewer sign-offs pending |
+| Disclose tools, purpose, human validation, material AI components | `AI_DISCLOSURE.md` (updated); `doc/ai_log.md` | 🟡 team confirmation and reviewer sign-offs pending |
 | The team can explain any part of the code, method, analysis or recommendation | Notebook owners re-derive their layer (D6) | ⬜ owners to assign |
 | Recommendations developed and defended by the team | inputs_lock signed by the team; human-written memo | 🟡 |
 

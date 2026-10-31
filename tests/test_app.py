@@ -115,3 +115,9 @@ def test_long_text_becomes_points_and_short_text_stays_a_sentence():
     assert points("One. Two.") == "One. Two."
     assert points("It fell 2.5% today. Bonds held. **Gold** rose.").count("\n- ") == 2
     assert points("Lead:\n- a\n- b") == "Lead:\n- a\n- b"
+
+
+def test_pages_do_not_depend_on_the_git_tag():
+    # A hosted clone may carry no tags: the app reads 2023+ returns only through ui.returns_to_decision (frozen=True).
+    for v in [*VIEWS, *(APP / "technical").glob("*.py")]:
+        assert 'load_returns("all"' not in v.read_text(encoding="utf-8"), v.name

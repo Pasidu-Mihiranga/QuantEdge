@@ -372,39 +372,6 @@ def run_risk_snapshot(cfg: Config, wf_result, label: str, evt_threshold_q: float
     return {"snapshot": snapshot, "extras": extra, "contributions": contrib}
 
 
-GOVERNANCE = [
-    "Rebalance quarterly to the target weights (5 bps per side assumed).",
-    "Re-convene the committee if the 250-day Basel traffic light turns yellow or red.",
-    "Re-convene if the portfolio drawdown exceeds 10% from its peak.",
-    "Review the IPS limits and the spending rate annually, and after any limit amendment.",
-    "Any amended limit takes effect only after explicit investment-committee approval.",
-]
-
-
-def write_memo(cfg: Config) -> Path | None:
-    """Step 13 committee memo draft: numbers filled in, judgement left to the team."""
-    from quantedge.decision.evidence import build
-    from quantedge.decision.memo import render_memo
-    from quantedge.paths import ROOT
-
-    b = build(cfg)
-    if b is None:
-        return None
-    extras = json.loads((ARTIFACTS / "risk_extras.json").read_text(encoding="utf-8"))
-    numbers = {"portfolio": b.focus, "weights": b.weights, "expected_return": b.evidence.expected_return,
-               "required_return": b.evidence.required_return, "var99": b.var99, "es99": b.evidence.es99_conditional,
-               "return_level_10y": b.evidence.return_level_10y, "worst_hist_loss": b.worst_hist_loss,
-               "worst_hist_name": b.worst_hist_name, "worst_drawdown_held": float(pd.read_parquet(
-                   ARTIFACTS / "portfolio_scorecard_val.parquet").loc[b.focus, "worst_crisis_drawdown"]),
-               "hypothetical_loss": b.evidence.hypothetical_loss,
-               "champion": b.champion, "champion_reason": b.champion_reason, "governance": GOVERNANCE,
-               **{k: extras.get(k, float("nan")) for k in ("es99_10d", "es99_10d_limit")}}
-    out = ROOT / "reports" / "committee_memo_draft.md"
-    out.parent.mkdir(exist_ok=True)
-    out.write_text(render_memo(b.verdict, numbers, cfg.nav_usd), encoding="utf-8")
-    return out
-
-
 def run_innovation(cfg: Config, wf_result, macro: pd.DataFrame) -> dict:
     """Step 14 on the focus portfolio's point-in-time book, data up to the end of validation."""
     from quantedge.macro.analysis import (
@@ -637,26 +604,19 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
               "analysis_end": str(clean.analysis_end.date()), "config_sha256": cfg.sha256,
               "frozen": Partition.from_config(cfg).frozen()}
     (ARTIFACTS / "status.json").write_text(json.dumps(status, indent=2), encoding="utf-8")
-    memo = write_memo(cfg)
-    print(f"[memo]     draft written to {memo}")
-    from quantedge.decision.evidence import build
-    from quantedge.reports.tearsheet import render
-
-    bundle = build(cfg)
-    if bundle is not None:
-        sheet = memo.parent / "tearsheet.html"
-        sheet.write_text(render(cfg, bundle), encoding="utf-8")
-        print(f"[report]   tear sheet written to {sheet}")
-        from quantedge.reports import report
-
-        (memo.parent / "report.html").write_text(report.render(cfg), encoding="utf-8")
-        print(f"[report]   report draft written to {memo.parent / 'report.html'} (narrative in reports/narrative/)")
     if Partition.from_config(cfg).frozen():
         from quantedge.decision import decision_date
+        from quantedge.paths import ROOT
+        from quantedge.reports import final, report
 
         d = decision_date.run(cfg)["numbers"]
         print(f"[decide]   {d['decision_date']}: {d['verdict']} at {d['advised_equity']:.0%} equity "
               f"(expected {d['expected_return']:.2%} vs required {d['objective']['required_return']:.2%})")
+        reports = ROOT / "reports"
+        (reports / "committee_memo_draft.md").write_text(final.memo(d), encoding="utf-8")
+        (reports / "tearsheet.html").write_text(final.tear_sheet(d), encoding="utf-8")
+        (reports / "report.html").write_text(report.render(cfg), encoding="utf-8")
+        print(f"[report]   memo, tear sheet and report written to {reports}")
     sens = run_verdict_sensitivity(cfg, clean.macro)
     print(f"[sensitiv] outcomes: {sens['outcome'].to_dict()}")
     print(f"[manifest] {write_artifacts_manifest(cfg)}")

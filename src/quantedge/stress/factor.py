@@ -62,30 +62,19 @@ def regime_stress_weeks(daily_index: pd.DatetimeIndex, dtb3: pd.Series,
 
 def scenario_loss(betas: pd.DataFrame, shock: dict[str, float], weights: pd.Series,
                   liquidity_day: dict[str, float] | None = None) -> float:
-    """D5 scenario loss (positive): the factor betas act on log returns, so the portfolio return is
-    expm1(w'(B s)); the liquidity day adds each ETF's one-day gap (e.g. AGG −5%) on top."""
-    f = pd.Series(shock, dtype=float).reindex(FACTORS).fillna(0.0)
-    w = weights.reindex(betas.index, fill_value=0.0)
-    ret = float(np.expm1(w @ (betas[FACTORS] @ f)))
-    ret += sum(v * float(w.get(t, 0.0)) for t, v in (liquidity_day or {}).items())
-    return -ret
+    """D5 scenario loss (positive). The factor betas act on each ETF's log return, x_i = (B s)_i, so each ETF's
+    simple return is expm1(x_i), and simple returns aggregate across assets: R_p = Σ w_i expm1(x_i) (weights set at
+    the start of the episode, buy and hold). The liquidity day adds each ETF's one-day gap (e.g. AGG −5%) on top."""
+    return -float(scenario_contributions(betas, shock, weights, liquidity_day, min_weight=0.0).sum())
 
 
 def scenario_contributions(betas: pd.DataFrame, shock: dict[str, float], weights: pd.Series,
                            liquidity_day: dict[str, float] | None = None, min_weight: float = 1e-4) -> pd.Series:
-    """Each holding's share of the `scenario_loss` return, so the parts add up exactly to the total.
-
-    The factor part expm1(Σ w_i x_i), with x_i = (B s)_i, is split in proportion to w_i x_i; the
-    liquidity day adds one row per ETF ("<ticker> panic day"). Sum = −scenario_loss, up to the dropped holdings
-    below `min_weight` (solver dust).
-    """
+    """Each holding's part of the scenario return: w_i expm1(x_i), plus one "<ticker> panic day" row per liquidity
+    shock. The parts add up exactly to −`scenario_loss`, up to the dropped holdings below `min_weight` (solver dust)."""
     f = pd.Series(shock, dtype=float).reindex(FACTORS).fillna(0.0)
     w = weights.reindex(betas.index, fill_value=0.0)
-    x = betas[FACTORS] @ f
-    wx = w * x
-    total = float(np.expm1(wx.sum()))
-    parts = wx * (total / wx.sum()) if abs(wx.sum()) > 1e-12 else w * np.expm1(x)
-    parts = parts[w > min_weight]
+    parts = (w * np.expm1(betas[FACTORS] @ f))[w > min_weight]
     for t, v in (liquidity_day or {}).items():
         if w.get(t, 0.0) > min_weight:
             parts[f"{t} panic day"] = v * float(w[t])

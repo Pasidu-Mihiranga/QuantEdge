@@ -15,6 +15,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from quantedge.config import load_config
+from quantedge.data.partition import load_returns
 from quantedge.paths import ARTIFACTS
 
 ACCENT, GREY, INK, MUTED = "#1f5fae", "#a3abb5", "#1d2733", "#5b6573"
@@ -29,6 +31,8 @@ CSS = """
 /* More breathing room between sections and inside bordered panels */
 [data-testid="stMain"] [data-testid="stVerticalBlock"] {gap: 1.25rem;}
 [data-testid="stSlider"] {padding: 0 0.6rem;}
+/* KPI cards lift slightly off the page; colour and size carry the meaning */
+[data-testid="stMetric"] {box-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 2px 6px rgba(16, 24, 40, .08);}
 .qe-verdict {border-radius: 10px; padding: 18px 22px; color: #fff; margin: 4px 0 6px 0;}
 .qe-verdict .v {font-size: 1.55rem; font-weight: 700; letter-spacing: .01em;}
 .qe-verdict .s {font-size: 1.05rem; margin-top: 6px; max-width: 75ch; line-height: 1.45;}
@@ -63,6 +67,14 @@ def artifact(name: str) -> pd.DataFrame | None:
 def jsonfile(name: str) -> dict:
     path = ARTIFACTS / name
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
+@st.cache_data
+def returns_to_decision() -> pd.DataFrame:
+    """Daily returns up to the day before the decision date. The app only runs on finished results (the one-shot test
+    is over, its record is in the artifacts), so it does not look for the git tag, which a hosted clone may not carry."""
+    r = load_returns("all", load_config(), frozen=True)
+    return r.loc[r.index < pd.Timestamp(numbers()["decision_date"])]
 
 
 def need_numbers() -> dict:

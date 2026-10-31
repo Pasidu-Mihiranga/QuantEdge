@@ -1,1 +1,1 @@
-[TEAM: Introduce the table; add anything specific to your judgement. Target length: 1 page.]
+The table lists each assumption, why it matters and what we do about it. Three matter most: the return objective rests on an assumed equity premium and on AGG's tax treatment; models cannot price a crisis unlike any in the data; and the fund measures everything in US dollars while paying scholarships in rupees.

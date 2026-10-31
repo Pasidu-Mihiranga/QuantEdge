@@ -5,9 +5,8 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from components.ui import artifact, explain, money, need_numbers, pct, say
+from components.ui import artifact, explain, money, need_numbers, pct, returns_to_decision, say
 from quantedge.config import load_config
-from quantedge.data.partition import load_returns
 from quantedge.stress.factor import (
     episode_plausibility,
     scenario_contributions,
@@ -135,7 +134,7 @@ with st.expander("Every crisis in detail", icon=":material/table:"):
     st.table(pd.DataFrame(rows).set_index("Episode"))
 
 with st.expander("What would it take to lose 25%? (reverse stress)", icon=":material/undo:"):
-    returns = load_returns("all", cfg).loc[lambda r: r.index < pd.Timestamp(n["decision_date"])]
+    returns = returns_to_decision()
     h = int(cfg.stress["reverse"]["horizon_days"])
     calm = most_likely_breach(returns.cov(), w, budget, h)
     crisis = most_likely_breach(stressed_sigma(returns, cfg.stress["historical"]), w, budget, h)

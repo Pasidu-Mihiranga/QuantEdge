@@ -17,7 +17,6 @@ import pandas as pd
 import plotly.express as px
 
 from quantedge.config import Config, load_config
-from quantedge.decision.evidence import build
 from quantedge.paths import ARTIFACTS, ROOT
 from quantedge.reports.limitations import LIMITATIONS
 
@@ -40,7 +39,7 @@ SECTIONS = [
     ("06_stress", "Stress testing", "1.5 pages",
      "Historical crises, the hypothetical scenario, reverse stress and stressed correlation; the 2022 lesson."),
     ("07_recommendation", "Risk budget and recommendation", "1 page",
-     "Euler contributions, decision checks, the verdict, the proposed amendments and governance."),
+     "Euler contributions, the verdict, how close it is, and governance."),
     ("08_limitations", "Assumptions and limitations", "1 page", "Introduce the table; add anything specific to your judgement."),
     ("09_ai_disclosure", "AI disclosure and references", "1 page", "Confirm the AI disclosure and list references."),
 ]
@@ -89,32 +88,30 @@ def _p(name: str) -> pd.DataFrame | None:
 
 
 def generated(cfg: Config) -> dict[str, str]:
-    b = build(cfg)
-    ev, v = b.evidence, b.verdict
     extras = json.loads((ARTIFACTS / "risk_extras.json").read_text(encoding="utf-8"))
-    req = json.loads((ARTIFACTS / "required_return.json").read_text(encoding="utf-8"))
     nav = cfg.nav_usd
     g: dict[str, str] = {}
 
+    n = json.loads((ARTIFACTS / "decision_numbers.json").read_text(encoding="utf-8"))
+    o, r, lm, mv = n["objective"], n["risk"], n["limits"], n["model_validity"]
     g["00_executive_summary"] = (
-        f"<p class='verdict'>Rule-engine outcome: <b>{v.status}</b></p><ul>"
-        + "".join(f"<li>{html.escape(r)}</li>" for r in v.reasons) + "</ul>"
-        + table(pd.DataFrame({"weight": b.weights}).query("weight > 1e-4"), pct=("weight",))
+        f"<p class='verdict'>Decision ({n['decision_date']}): <b>{html.escape(n['verdict'])}</b></p>"
+        + table(pd.DataFrame({"weight": n["weights"]}).query("weight > 1e-4"), pct=("weight",))
         + table(pd.DataFrame({"value": {
-            "Expected return (a year)": f"{ev.expected_return:.2%}", "Required return": f"{ev.required_return:.2%}",
-            f"99% 1-day VaR ({b.champion})": f"${b.var99 * nav:,.0f}", "99% 1-day ES": f"${ev.es99_conditional * nav:,.0f}",
-            "Once-in-10-years daily loss": f"${ev.return_level_10y * nav:,.0f}",
-            "Worst crisis (today's weights)": f"{b.worst_hist_loss:.1%} ({b.worst_hist_name})"}}))
-    )
+            "Expected return (a year)": f"{n['expected_return']:.2%}", "Required return": f"{o['required_return']:.2%}",
+            "Worst historical crisis": f"{r['worst_crisis_loss']:.1%} ({r['worst_crisis']})",
+            "Hormuz stagflation 2027 scenario": f"{r['hypothetical_loss']:.1%}",
+            "99% 1-day ES, through the cycle": f"${r['es99_ttc'] * nav:,.0f}",
+            "One-shot test": f"{mv['exceptions']} breaches vs {mv['expected']:.1f} expected"}})))
 
     lim = cfg.ips["limits"]
-    rows = {k: v for k, v in lim.items() if not isinstance(v, (dict, list))}
-    rows |= {f"cap {t}": x for t, x in lim["asset_caps"].items()} | {f"floor {t}": x for t, x in lim["asset_floors"].items()}
+    caps = {f"cap {t}": x for t, x in lim["asset_caps"].items()}
     g["01_mandate_ips"] = (
-        f"<p>Required return {req['required_return']:.2%} = (1 + spending {req['spending_rate']:.1%}) × (1 + real growth "
-        f"{req['real_growth']:.1%}) × (1 + inflation {req['inflation']:.2%}, {req['inflation_source']}) − 1. "
-        f"For context, 10-year average CPI to {req['cpi_window_end']}: {req['cpi_avg_10y']:.2%}.</p>"
-        + table(pd.DataFrame({"limit": rows}), pct=("limit",)))
+        f"<p>Required return {o['required_return']:.2%} = (1 + {o['spending']:.1%} spending) × (1 + {o['real_growth']:.1%} real "
+        f"growth) × (1 + {o['inflation_breakeven']:.2%} breakeven inflation) − 1, at the decision date.</p>"
+        + table(pd.DataFrame({"limit": {"crisis budget": lm["crisis_budget"], "volatility, through the cycle": lm["vol_max"],
+                                        "99% 1-day ES, through the cycle": lm["es99_max"], "equity": lim["equity_max"],
+                                        "any one fund": lim["single_asset_max"], **caps}}), pct=("limit",)))
     alt = _p("portfolio_scorecard_val_original_agg40.parquet")
     if alt is not None:
         g["01_mandate_ips"] += ("<p>Sensitivity, original IPS (AGG ≤ 40%): candidates passing the IPS = "
@@ -131,8 +128,13 @@ def generated(cfg: Config) -> dict[str, str]:
 
     card = _p("portfolio_scorecard_val.parquet")
     perf = _p("wf_performance_val.parquet")
+    frontier = _p("decision_frontier.parquet")
     g["03_portfolio"] = (
-        table(card[["rank", "ips_pass", "es99_oos", "max_drawdown", "worst_crisis_drawdown", "cagr", "volatility",
+        "<h4>Frontier at the decision date</h4>"
+        + table(frontier[["forward_return", "vol_ttc", "es99_ttc", "d2_loss", "income_yield", "within_limits", "meets_objective"]],
+                pct=("forward_return", "vol_ttc", "es99_ttc", "d2_loss", "income_yield"))
+        + "<h4>Walk-forward candidates on data to 2022 (pre-freeze evidence)</h4>"
+        + table(card[["rank", "ips_pass", "es99_oos", "max_drawdown", "worst_crisis_drawdown", "cagr", "volatility",
                     "calmar", "turnover_ann"]],
               pct=("es99_oos", "max_drawdown", "worst_crisis_drawdown", "cagr", "volatility"),
               dec={"calmar": 2, "turnover_ann": 2})
@@ -155,7 +157,8 @@ def generated(cfg: Config) -> dict[str, str]:
     val = _p("backtest_selection_val_500.parquet")
     crises = _p("backtest_crises_500.parquet")
     cols = ["exceptions", "expected", "kupiec_p", "cc_p", "rolling_red", "z2_zone", "pinball", "passes"]
-    g["05_validation"] = (f"<p>Champion: <b>{html.escape(b.champion)}</b>: {html.escape(b.champion_reason)}.</p>"
+    g["05_validation"] = (f"<p>Chosen model: <b>{html.escape(mv['champion'])}</b>, the lowest 99% pinball loss among the models passing every "
+                          "test on 2019–2022, a rule fixed in advance.</p>"
                           + table(val[cols], dec={"expected": 1, "kupiec_p": 3, "cc_p": 3, "rolling_red": 3, "pinball": 7})
                           + table(crises, dec={"expected": 2, "mean_exceedance": 4, "max_exceedance": 4}, index=False))
     for w in (250, 1000):
@@ -171,7 +174,8 @@ def generated(cfg: Config) -> dict[str, str]:
          if arena is not None else "<p>ML arena not yet computed.</p>")
         + (table(grid, dec={"pinball": 7, "fz0": 4, "kupiec_p": 3, "cc_p": 3, "rolling_red": 3}, index=False)
            if grid is not None else "")
-        + "<p>Final test (2023 onwards): locked until the methodology freeze.</p>")
+        + "<h4>One-shot final test, 2023-01-01 to 2026-10-26</h4>"
+        + table(_p("final_test_scores.parquet"), dec={"pinball": 7, "kupiec_p": 3, "cc_p": 4, "pinball_vs_champion": 3}))
 
     matrix = _p("stress_matrix.parquet")
     g["06_stress"] = table(matrix, pct=tuple(matrix.columns))
@@ -195,17 +199,12 @@ def generated(cfg: Config) -> dict[str, str]:
 
     contrib = _p("risk_contributions.parquet")
     hist = contrib[contrib.method == "historical ES 99%"][["weight", "pct_contribution", "risk_to_capital"]]
-    checks = pd.DataFrame([{"check": c.code, "measure": c.name,
-                            "value": c.value if isinstance(c.value, bool) else f"{c.value:.2%}",
-                            "limit": c.limit if isinstance(c.limit, bool) else f"{c.limit:.2%}",
-                            "result": "pass" if c.passed else "FAIL"} for c in v.checks])
-    sens = _p("verdict_sensitivity.parquet")
+    rob = _p("decision_robustness.parquet")
     g["07_recommendation"] = (table(hist, pct=("weight", "pct_contribution"), dec={"risk_to_capital": 2})
-                              + table(checks, index=False)
-                              + "".join(f"<p>{html.escape(r)}</p>" for r in v.reasons)
-                              + ("<h4>Verdict sensitivity</h4>" + table(
-                                  sens, pct=("forward_return", "volatility", "es99_ttc", "worst_crisis_loss", "return_gap"),
-                                  dec={"max_loosening": 3}) if sens is not None else ""))
+                              + f"<p>Margin: {n['return_margin']:+.2%} a year. ACCEPT is lost below an equity premium of "
+                                f"{n['erp_breakeven']:.2%} or a 10-year real yield of {n['yield_margin']['tips_threshold']:.2%}.</p>"
+                              + "<h4>Verdict over the assumption grid</h4>"
+                              + table(rob, pct=("erp", "agg_spread", "agg_withholding", "best_margin"), index=False))
 
     g["08_limitations"] = "".join(
         f"<h4>{grp}</h4>" + table(pd.DataFrame(items, columns=["Assumption", "Why it matters", "Mitigation"]), index=False)
@@ -239,8 +238,7 @@ h4 {{ margin: 10px 0 4px; }} .budget {{ color: #7a8794; font-size: 8.5pt; }}
 section {{ page-break-inside: auto; }}
 </style></head><body>
 <h1>QuantEdge 1.0: Risk-Aware Portfolio for the Serendib University Endowment</h1>
-<p>Technical report draft · data to {status.get('data_end')} · analysis to {status.get('analysis_end')} ·
-results provisional until the methodology freeze. Orange boxes are for the team to write.</p>
+<p>Technical report · data to {status.get('data_end')} · final results after the methodology freeze of 29 October 2026.</p>
 {''.join(body)}
 </body></html>"""
 

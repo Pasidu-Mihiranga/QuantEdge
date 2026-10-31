@@ -48,7 +48,7 @@
     "vol_ttc": 0.07669869459295509,
     "es99_ttc": 0.020829545028853196,
     "worst_crisis_loss": 0.23899807549095364,
-    "hypothetical_loss": 0.210872729047814,
+    "hypothetical_loss": 0.21043638088909447,
     "d2_loss": 0.23899807549095364,
     "income_yield": 0.03267872369525374,
     "worst_crisis": "GFC 2008"
@@ -70,7 +70,7 @@
       "expected_return_usd": 580661.3630421384,
       "shortfall_usd": 13063.736957863724,
       "worst_crisis_usd": 2193808.9231730374,
-      "hypothetical_usd": 2062089.4514109003,
+      "hypothetical_usd": 2058335.2874275618,
       "es99_ttc_usd": 183506.01523679803,
       "income_usd": 313126.5135500062,
       "within_limits": true,
@@ -81,7 +81,7 @@
       "expected_return_usd": 604434.9312846529,
       "shortfall_usd": -10709.831284650834,
       "worst_crisis_usd": 2389980.7549095363,
-      "hypothetical_usd": 2108727.29047814,
+      "hypothetical_usd": 2104363.808890945,
       "es99_ttc_usd": 208295.45028853195,
       "income_usd": 326787.23695253744,
       "within_limits": true,
@@ -92,7 +92,7 @@
       "expected_return_usd": 612115.7474148822,
       "shortfall_usd": -18390.647414880114,
       "worst_crisis_usd": 2543150.497826103,
-      "hypothetical_usd": 2113468.892834399,
+      "hypothetical_usd": 2108481.544518187,
       "es99_ttc_usd": 232810.26871249583,
       "income_usd": 316088.601394652,
       "within_limits": false,
@@ -125,7 +125,7 @@
   },
   "scenario": {
     "name": "Hormuz stagflation 2027",
-    "loss": 0.210872729047814
+    "loss": 0.21043638088909447
   },
   "crisis_map": {
     "GFC 2008": 0.23899807549095364,
@@ -133,7 +133,7 @@
     "Rate shock 2022": 0.13800263555401449,
     "2025 tariff shock (pre-registered)": 0.05746613031380865,
     "2026 Hormuz shock (pre-registered)": 0.02869632166942737,
-    "Hormuz stagflation 2027 (scenario)": 0.210872729047814
+    "Hormuz stagflation 2027 (scenario)": 0.21043638088909447
   },
   "risk_day": {
     "var99": 0.007571477670609504,

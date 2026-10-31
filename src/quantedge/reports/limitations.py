@@ -40,8 +40,8 @@ LIMITATIONS: dict[str, list[tuple[str, str, str]]] = {
         ("Factor betas are unstable across regimes", "Scenario impacts are estimates", "Stress-week betas (D5), SE bands"),
         ("The hypothetical scenario is one of many", "Shock sizes and horizon are judgement",
          "Anchored on historical extremes; sizes, horizon and credit measure fixed before the freeze (D5)"),
-        ("The scenario adds the funds' factor moves as log returns", "A small error that grows with the shock (about "
-         "$4k at the agreed scenario)", "Disclosed; a correction would change frozen numbers, so it is a team decision"),
+        ("The scenario treats the fund as unrebalanced during the episode", "Each fund's scenario move is applied to its "
+         "starting weight", "Corrected after the freeze so that fund moves are added as simple returns (0.04 points, logged)"),
         ("The bad-day risk budget does not see the stagflation scenario", "Bonds carry little bad-day risk but most of the "
          "scenario loss", "The crisis budget is checked separately, with the scenario included"),
     ],

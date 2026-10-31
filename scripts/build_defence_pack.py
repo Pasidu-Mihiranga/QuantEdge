@@ -280,13 +280,13 @@ def build() -> str:
         "250 bp (2022-size), the VIX rises 25 points, the dollar 8% and credit spreads 150 bp, with one panic day on "
         "AGG. It is the most severe version that is still within history: more extreme than 2022 or the GFC, less than "
         "COVID. The 35% portfolio loses 21.2%; including the scholarships paid during the crisis, the endowment falls to "
-        "about USD 7.65M (−23.5%), inside the 25% budget. We compared it with four alternatives; only this one meets "
+        "about USD 7.66M (−23.4%), inside the 25% budget. We compared it with four alternatives; only this one meets "
         "all six criteria.",
         "p. 8 &ldquo;one hypothetical scenario the team designs itself&rdquo;; p. 9 FRED series for stress-scenario "
         "construction; standard: &ldquo;severe but plausible&rdquo; (BIS) and calibration to past recessions (US "
         "Federal Reserve).",
         "Sizes calibrated on data up to 2022 only; the story uses October 2026 news (flagged). The factor mapping "
-        "reproduces 2022 (17.8% predicted vs 18.8% actual). A version beyond anything on record would cost 25.5%.",
+        "reproduces 2022 (17.8% predicted vs 18.8% actual). A version beyond anything on record would cost 25.3%.",
         [evidence("05_stress_regimes", "alternatives = pd.DataFrame", "Why this scenario: five candidates against six "
                   "criteria."),
          evidence("05_stress_regimes", "hist_chg = ", "How severe each candidate is against every three-quarter "

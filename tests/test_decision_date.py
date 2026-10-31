@@ -15,9 +15,10 @@ def test_scenario_loss_maps_log_betas_and_adds_the_liquidity_day():
     betas = pd.DataFrame([[0.0, 0.1, 0.0, 0.0, 0.0], [-0.0005, 0.0, 0.0, 0.0, 0.0]], index=["XLE", "AGG"], columns=FACTORS)
     shock = {"d_yield10_bp": 200, "dln_oil": 0.3}
     w = pd.Series({"XLE": 0.2, "AGG": 0.8})
-    port_log = 0.2 * 0.1 * 0.3 + 0.8 * (-0.0005 * 200)
-    assert scenario_loss(betas, shock, w) == pytest.approx(-np.expm1(port_log))
-    assert scenario_loss(betas, shock, w, {"AGG": -0.05}) == pytest.approx(-np.expm1(port_log) + 0.8 * 0.05)
+    simple = 0.2 * np.expm1(0.1 * 0.3) + 0.8 * np.expm1(-0.0005 * 200)        # simple returns aggregate across assets
+    assert scenario_loss(betas, shock, w) == pytest.approx(-simple)
+    assert scenario_loss(betas, shock, w, {"AGG": -0.05}) == pytest.approx(-simple + 0.8 * 0.05)
+    assert scenario_loss(betas, shock, w) != pytest.approx(-np.expm1(0.2 * 0.03 + 0.8 * -0.1), abs=1e-5)   # not Σ log
 
 
 def test_regime_stress_weeks_flags_hiking_cycles_and_crisis_quarters():

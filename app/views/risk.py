@@ -6,7 +6,16 @@ import streamlit as st
 
 from components.content import EXCEPTION_CAUSES
 from components.controls import FILES, risk_controls
-from components.ui import artifact, explain, money, need_numbers, pct, per_year, say
+from components.ui import (
+    artifact,
+    explain,
+    money,
+    need_numbers,
+    pct,
+    per_year,
+    returns_to_decision,
+    say,
+)
 from quantedge.backtest import coverage as cv
 from quantedge.config import load_config
 from quantedge.data.partition import load_returns
@@ -80,7 +89,7 @@ if view == "A bad day":
 
     with st.expander("Why the models disagree", icon=":material/psychology_alt:"):
         # Facts about the portfolio's own returns that drive the gaps (booklet: "discuss where and why they disagree").
-        past = load_returns("all", load_config()).loc[lambda r: r.index < pd.Timestamp(n["decision_date"])]
+        past = returns_to_decision()
         port = past @ pd.Series(n["weights"]).reindex(past.columns, fill_value=0.0)
         recent = port.loc[rd["window_start"]:rd["window_end"]]
         vol_now, vol_all = float(port.iloc[-21:].std() * 252 ** 0.5), float(port.std() * 252 ** 0.5)
@@ -117,7 +126,7 @@ elif view == "Diversification":
     dev = load_returns("dev", cfg)[w.index]                     # 2004-2018, as the bad-day limit (through the cycle)
     port_es = sample_es(-(dev @ w).to_numpy(), ctl.alpha)
     alone_es = sum(w[t] * sample_es(-dev[t].to_numpy(), ctl.alpha) for t in w.index)
-    past = load_returns("all", cfg).loc[lambda r: r.index < pd.Timestamp(n["decision_date"])][w.index]
+    past = returns_to_decision()[w.index]
     crises = cfg.stress["historical"]
     together = crisis_loss(w, past, crises)
     alone = sum(w[t] * crisis_loss(pd.Series({t: 1.0}), past, crises) for t in w.index)

@@ -25,23 +25,23 @@
       "vol (through the cycle)": 0.06322743328148848,
       "99% ES (through the cycle)": 0.015219936842304499,
       "worst historical crisis": 0.18447511367165326,
-      "hypothetical + liquidity day": 0.19778592007738874,
-      "D2 loss": 0.19778592007738874
+      "hypothetical + liquidity day": 0.1975421517796124,
+      "D2 loss": 0.1975421517796124
     },
     "25%": {
       "forward return": 0.05547888328653401,
       "vol (through the cycle)": 0.06459725562997641,
       "99% ES (through the cycle)": 0.016331044752357773,
       "worst historical crisis": 0.19980931383761646,
-      "hypothetical + liquidity day": 0.20155878050136805,
-      "D2 loss": 0.20155878050136805
+      "hypothetical + liquidity day": 0.20126704292794453,
+      "D2 loss": 0.20126704292794453
     },
     "30%": {
       "forward return": 0.0580661311544567,
       "vol (through the cycle)": 0.06960661537003449,
       "99% ES (through the cycle)": 0.01835059868576393,
       "worst historical crisis": 0.21938087804637718,
-      "hypothetical + liquidity day": 0.2061922375979645,
+      "hypothetical + liquidity day": 0.20581696925186915,
       "D2 loss": 0.21938087804637718
     },
     "35%": {
@@ -49,7 +49,7 @@
       "vol (through the cycle)": 0.07669868112970805,
       "99% ES (through the cycle)": 0.020829542549582507,
       "worst historical crisis": 0.23899805844100852,
-      "hypothetical + liquidity day": 0.2108553456948118,
+      "hypothetical + liquidity day": 0.21041933268162294,
       "D2 loss": 0.23899805844100852
     },
     "40%": {
@@ -57,7 +57,7 @@
       "vol (through the cycle)": 0.08526801462983762,
       "99% ES (through the cycle)": 0.023280969385384383,
       "worst historical crisis": 0.25431458507106053,
-      "hypothetical + liquidity day": 0.21132808553498864,
+      "hypothetical + liquidity day": 0.21082974992434136,
       "D2 loss": 0.25431458507106053
     },
     "45%": {
@@ -65,7 +65,7 @@
       "vol (through the cycle)": 0.0942509148059422,
       "99% ES (through the cycle)": 0.025745610653147784,
       "worst historical crisis": 0.2703552769663585,
-      "hypothetical + liquidity day": 0.2117900699552477,
+      "hypothetical + liquidity day": 0.21124016722368708,
       "D2 loss": 0.2703552769663585
     },
     "50%": {
@@ -73,7 +73,7 @@
       "vol (through the cycle)": 0.10353979708509328,
       "99% ES (through the cycle)": 0.02827839361833499,
       "worst historical crisis": 0.2997525323558977,
-      "hypothetical + liquidity day": 0.21224133791390984,
+      "hypothetical + liquidity day": 0.21165058462289685,
       "D2 loss": 0.2997525323558977
     }
   },

@@ -56,3 +56,30 @@ Test period 2023-01-01 → 2026-10-26, 955 common days, run once. Scores (99% Va
 | `decision/decision_date.py` and the pipeline's decision stage | Runbook step 5: one production source for every headline number, implementing the locked spec §5 rule exactly as notebook 06 Part B | None: reproduces Part B (verdict, weights, limits, frontier to 1e-4; `tests/test_decision_date.py`) |
 | `stress/factor.py`: regime stress weeks, weekly log returns, scenario loss with the liquidity day | Runbook step 5: the app's scenario uses notebook 05's agreed D5 model (was a different factor model without the liquidity day) | None on the verdict: the scenario binds at no point; it now matches notebook 05 (21.1% at 35% equity) |
 | `config.yaml`: `decision.date`, frontier levels, D8 cap, robustness grid, simulation settings, `stress.hypothetical.liquidity_day` | Values already locked in `inputs_lock.md` and notebook 06, now readable by the production code | None (config hash changes; values are the locked ones) |
+
+## Post-hoc deviation (2026-10-31): scenario returns added as simple returns
+
+**What was wrong.** The frozen `scenario_loss` and notebooks 05 and 06 computed expm1(Σ wᵢ xᵢ), which sums log returns across ETFs and breaks the repo's convention ("never sum log returns across assets"). Found in the app review of 2026-10-29.
+
+**The correction.** Each ETF's log move xᵢ = (B s)ᵢ becomes a simple return, then the simple returns are weighted: R = Σ wᵢ (exp(xᵢ) − 1), plus the liquidity day. This is the exact buy-and-hold result over the episode.
+
+**Result under both versions (decision date):**
+
+| Equity share | Scenario loss, as frozen | Corrected | Difference | Worst historical crisis | Worst of the two decides the budget |
+|---|---|---|---|---|---|
+| 20% | 19.78% | 19.76% | $2,437 | 18.45% | scenario, both versions |
+| 25% | 20.16% | 20.13% | $2,917 | 19.98% | scenario, both versions |
+| 30% | 20.62% | 20.58% | $3,754 | 21.94% | history |
+| **35% (recommended)** | **21.09%** | **21.04%** | **$4,363** | **23.90%** | **history** |
+| 40% | 21.13% | 21.08% | $4,987 | 25.43% | history |
+| 45% | 21.18% | 21.13% | $5,504 | 27.04% | history |
+| 50% | 21.23% | 21.17% | $5,913 | 29.98% | history |
+
+**Effect on decisions: none.** The verdict (ACCEPT at 35% equity), the weights, the expected return, the limits recalibrated at the budget (set where history binds), the final test and the champion are unchanged. The frozen figure overstated the loss slightly, so it erred on the cautious side. Knock-on figures in notebook 05: severe case 25.5% → 25.3%; endowment at the trough after spending USD 7.65M → 7.66M.
+
+**Why corrected after the freeze.** The freeze guards against tuning a method to the test data. This change is not informed by test results, cannot change a decision, and aligns the code with a rule fixed before the freeze. The hashes above identify the frozen files; `git diff methodology-freeze-v1` shows this change.
+
+## Other changes after the tag (2026-10-31), reporting and hosting only
+
+- The memo and tear sheet are written from `decision_numbers.json`; the pre-freeze generators were removed. No number changes.
+- The app reads 2023+ returns without looking for the git tag, because a hosted clone may not carry tags. The guard in `partition.py` is unchanged for all analysis code.
