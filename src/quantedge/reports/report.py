@@ -53,6 +53,7 @@ SECTIONS = [
      "Euler contributions, the verdict, how close it is, and governance."),
     ("08_limitations", "Assumptions and limitations", "1 page", "Introduce the table; add anything specific to your judgement."),
     ("09_references", "References", "0.5 page", "List the references."),
+    ("10_ai_disclosure", "AI disclosure", "1 page", "The disclosure comes from AI_DISCLOSURE.md, unchanged."),
 ]
 
 
@@ -113,6 +114,14 @@ def table(df: pd.DataFrame, pct: tuple[str, ...] = (), dec: dict[str, int] | Non
         elif dec and c in dec:
             d[c] = d[c].map(lambda x, n=dec[c]: f"{x:.{n}f}" if pd.notna(x) else "")
     return d.to_html(index=index, index_names=False, border=0, classes=cls, escape=True)
+
+
+def disclosure_html() -> str:
+    """AI_DISCLOSURE.md word for word."""
+    out = []
+    for block in re.split(r"\n\s*\n", (ROOT / "AI_DISCLOSURE.md").read_text(encoding="utf-8").strip()):
+        out.append(f"<h3>{html.escape(block.lstrip('# '))}</h3>" if block.startswith("#") else md_to_html(block))
+    return "".join(out)
 
 
 def caption(text: str) -> str:
@@ -318,20 +327,22 @@ def generated(cfg: Config) -> dict[str, dict[str, str]]:
     g["08_limitations"] = {"table": "".join(
         f"<h3>{html.escape(grp)}</h3>" + table(pd.DataFrame(items, columns=["Assumption", "Why it matters", "Mitigation"]), index=False, cls="tbl text")
         for grp, items in LIMITATIONS.items())}
+    g["10_ai_disclosure"] = {"disclosure": disclosure_html()}
     g["09_references"] = {"references": "<ul class='refs'>" + "".join(f"<li>{html.escape(r_)}</li>" for r_ in REFERENCES) + "</ul>"}
     return g
 
 
 CSS = """
-@page { size: A4; margin: 17mm 16mm 18mm;
+@page { size: A4; margin: 13mm 15mm 15mm;
         @bottom-left { content: "TEAM"; font: 8.5pt 'Source Sans 3', Helvetica, Arial, sans-serif; color: #7a8794; }
         @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8.5pt 'Source Sans 3', Helvetica, Arial, sans-serif; color: #7a8794; } }
 @page :first { @bottom-left { content: ""; } @bottom-right { content: ""; } }
-body { font-family: FONT; font-size: 10.3pt; line-height: 1.4; color: #1d2733; max-width: 780px; margin: 0 auto; }
+body { font-family: FONT; font-size: 10pt; line-height: 1.34; color: #1d2733; max-width: 780px; margin: 0 auto; }
 h1 { font-size: 23pt; line-height: 1.15; margin: 0 0 8px; color: #16304f; }
-h2 { font-size: 13.5pt; color: #1f5fae; border-bottom: 1px solid #d6dde5; padding-bottom: 3px; margin: 20px 0 7px; break-after: avoid; }
+h2 { font-size: 13.5pt; color: #1f5fae; border-bottom: 1px solid #d6dde5; padding-bottom: 3px; margin: 15px 0 6px; break-after: avoid; }
 h3 { font-size: 10.2pt; margin: 11px 0 3px; break-after: avoid; }
 p { margin: 0 0 6px; } ul { margin: 2px 0 7px 16px; padding: 0; } li { margin-bottom: 2px; }
+p, li, figure { break-inside: avoid; } h2, h3 { break-after: avoid; } p:has(+ .eq) { break-after: avoid; }
 .cover { height: 245mm; display: flex; flex-direction: column; justify-content: center; break-after: page; }
 .cover .sub { font-size: 12.5pt; color: #5b6573; margin-bottom: 26px; }
 .cover .team { background: none; border: 0; padding: 0; font-size: 12.5pt; font-weight: 700; color: #1d2733; }
@@ -339,17 +350,17 @@ p { margin: 0 0 6px; } ul { margin: 2px 0 7px 16px; padding: 0; } li { margin-bo
 .eq { font-family: "Times New Roman", Times, serif; font-size: 10.6pt; margin: 3px 0 4px 14px; }
 .verdict { font-size: 12pt; margin: 2px 0 8px; } .verdict b { color: #0d7a2f; }
 .two { display: grid; grid-template-columns: 2fr 3fr; gap: 16px; align-items: start; }
-.tbl { border-collapse: collapse; margin: 5px 0 3px; font-size: 9pt; width: 100%; break-inside: avoid; font-variant-numeric: tabular-nums; }
-.tbl td, .tbl th { padding: 2px 5px; border-bottom: 1px solid #e3e7ec; text-align: right; font-weight: 400; }
+.tbl { border-collapse: collapse; margin: 5px 0 3px; font-size: 8.7pt; width: 100%; break-inside: avoid; font-variant-numeric: tabular-nums; }
+.tbl td, .tbl th { padding: 1px 5px; border-bottom: 1px solid #e3e7ec; text-align: right; font-weight: 400; }
 .tbl thead th { background: #f3f6f9; font-weight: 600; vertical-align: bottom; }
 .tbl tbody th, .tbl td:first-child, .tbl thead th:first-child { text-align: left; }
 .tbl.text { font-size: 8.4pt; line-height: 1.28; } .tbl.text td, .tbl.text th { text-align: left; vertical-align: top; } .tbl.text tr { break-inside: avoid; }
 .tbl.last-left td:last-child, .tbl.last-left th:last-child { text-align: left; padding-left: 22px; }
 code { font-family: Menlo, Consolas, monospace; font-size: 8.8pt; background: #f3f6f9; padding: 0 2px; border-radius: 2px; }
 .cap { color: #5b6573; font-size: 8.8pt; margin: 2px 0 9px; }
-figure { margin: 7px 0 8px; break-inside: avoid; } figure svg { width: 100%; height: auto; display: block; }
+figure { margin: 7px 0 8px; break-inside: avoid; } figure svg { width: 86%; height: auto; display: block; margin: 0 auto; }
 .team { background: #fff4e5; border-left: 3px solid #e0a040; padding: 4px 8px; }
-section:last-of-type { break-before: page; }
+section:nth-last-of-type(2) { break-before: page; }
 .refs { font-size: 9pt; columns: 2; column-gap: 18px; } .refs li { list-style: none; margin: 0 0 3px -16px; break-inside: avoid; }
 """
 

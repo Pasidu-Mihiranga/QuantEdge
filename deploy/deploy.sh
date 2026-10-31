@@ -15,4 +15,4 @@ cd "$(git rev-parse --show-toplevel)"
 "${SSH[@]}" 'rm -rf ~/quantedge-release && mkdir ~/quantedge-release'
 git ls-files -z --cached --others --exclude-standard | COPYFILE_DISABLE=1 tar --no-xattrs --null -T - -czf - | "${SSH[@]}" 'tar -xzf - -C ~/quantedge-release'
 "${SSH[@]}" 'sudo bash ~/quantedge-release/deploy/setup_server.sh && rm -rf ~/quantedge-release'
-echo "Open http://$HOST"
+echo "Open https://quantedge.gmora.dev"

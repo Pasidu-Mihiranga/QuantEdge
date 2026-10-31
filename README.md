@@ -14,16 +14,16 @@ A Python and Streamlit application that takes seven ETFs from raw market data to
 
 ![The recommendation page](doc/screenshots/01_recommendation.png)
 
-**Live app: <http://3.234.207.173>**
+**Live app: <https://quantedge.gmora.dev>**
 
 ## Read this first
 
 | Deliverable | Where |
 |---|---|
-| Technical report and investment memo (15 pages) | [QuantEdge_Technical_Report.pdf](reports/QuantEdge_Technical_Report.pdf) |
+| Technical report and investment memo (13 pages) | [QuantEdge_Technical_Report.pdf](reports/QuantEdge_Technical_Report.pdf) |
 | One-page investment committee memo | [Investment_Committee_Memo.pdf](reports/Investment_Committee_Memo.pdf) |
 | One-page executive tear sheet | [Executive_Tear_Sheet.pdf](reports/Executive_Tear_Sheet.pdf) |
-| Streamlit application | [Live app](http://3.234.207.173), or [run it with one command](#run-the-app) |
+| Streamlit application | [Live app](https://quantedge.gmora.dev), or [run it with one command](#run-the-app) |
 | AI disclosure | [AI_DISCLOSURE.md](AI_DISCLOSURE.md) |
 | Every booklet requirement and where it is met | [doc/brief_traceability.md](doc/brief_traceability.md) |
 

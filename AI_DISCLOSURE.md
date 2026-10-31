@@ -1,4 +1,4 @@
-## AI Usage Disclosure (§8.7)
+## AI Usage Disclosure
 
 **AI Tool Used:** Claude (Anthropic), through Claude Code.
 

@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
-# Runs on the server, from the unpacked release folder: installs the app as a service behind nginx on port 80.
+# Runs on the server, from the unpacked release folder: installs the app as a service behind nginx with HTTPS.
 # Works on Ubuntu/Debian and Amazon Linux. Safe to run again for every new release.
 set -euo pipefail
 
 RELEASE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HOME_DIR=/opt/quantedge
+DOMAIN=quantedge.gmora.dev
 export UV_PYTHON_INSTALL_DIR="$HOME_DIR/python" UV_CACHE_DIR="$HOME_DIR/.uv-cache"
 
 echo "==> System packages"
 if command -v apt-get >/dev/null; then
     export DEBIAN_FRONTEND=noninteractive
     apt-get update -qq
-    apt-get install -y -qq nginx curl tar
+    apt-get install -y -qq nginx curl tar certbot python3-certbot-nginx
     SITE=/etc/nginx/sites-enabled/quantedge.conf
     rm -f /etc/nginx/sites-enabled/default
 elif command -v dnf >/dev/null; then
@@ -59,10 +60,13 @@ systemctl enable --now nginx quantedge
 systemctl restart quantedge
 systemctl reload nginx
 
+echo "==> HTTPS (issues the certificate once, then reinstalls it into the fresh nginx site on every release)"
+certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect --keep-until-expiring
+
 echo "==> Health check"
 for _ in $(seq 1 30); do
-    if curl -fs http://127.0.0.1/_stcore/health >/dev/null; then
-        echo "App is up on port 80"
+    if curl -fs "https://$DOMAIN/_stcore/health" >/dev/null; then
+        echo "App is up behind nginx"
         exit 0
     fi
     sleep 2

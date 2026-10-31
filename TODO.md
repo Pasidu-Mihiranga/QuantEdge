@@ -137,10 +137,10 @@ Plan: `My reserch/specs/01_problem_spec.md` (v2) and `02_gap_register.md` (v2); 
 - [x] Scenario maths corrected 2026-10-31 (simple returns across ETFs; 21.09% → 21.04% at 35% equity, verdict unchanged), both values in `doc/decisions/methodology_freeze.md`
 
 ## Submission package (2026-10-31)
-- [x] Report rebuilt on the final weights: 15 pages, 5 figures, 16 tables, references; PDFs of the report, memo and tear sheet (`make pdf`); page limits enforced by a test
+- [x] Report rebuilt on the final weights: 13 pages, 5 figures, 16 tables, references; PDFs of the report, memo and tear sheet (`make pdf`); page limits enforced by a test
 - [x] README written for judges, with 8 screenshots; one-command run on a fresh machine with or without uv
 - [x] `deploy/` server kit for EC2 (systemd + nginx), tested on clean Ubuntu 24.04 and Amazon Linux 2023 containers
-- [x] Live on EC2 at http://3.234.207.173 (systemd + nginx); every page checked in a browser. The previous app on the server is stopped, not deleted
+- [x] Live on EC2 at https://quantedge.gmora.dev (systemd, nginx, Let's Encrypt); every page checked in a browser. The previous app on the server is stopped, not deleted
 - [x] Side feature: MiroFish comparison page, three saved English runs (crowd 17.6% against 21.0%), 8 tests; not yet deployed
 - [ ] Team: rewrite the memo and report narrative, reviewer names in the AI log, pitch deck, Q&A rehearsal
 

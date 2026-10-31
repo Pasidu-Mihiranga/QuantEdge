@@ -112,6 +112,18 @@ def test_judge_facing_documents_name_no_internal_records():
 
     n = json.loads((ARTIFACTS / "decision_numbers.json").read_text(encoding="utf-8"))
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    for text in (report.render(load_config()), final.memo(n), final.tear_sheet(n), readme):
+    body = report.render(load_config()).split("AI disclosure</h2>")[0]      # only the disclosure section may name them
+    for text in (body, final.memo(n), final.tear_sheet(n), readme):
         assert "inputs_lock" not in text and "ai_log" not in text
-    assert "AI disclosure" not in report.render(load_config())   # disclosed separately, in AI_DISCLOSURE.md
+
+
+def test_report_carries_the_ai_disclosure_word_for_word():
+    import html
+    import re
+
+    from quantedge.paths import ROOT
+    from quantedge.reports import report
+
+    source = (ROOT / "AI_DISCLOSURE.md").read_text(encoding="utf-8")
+    words = lambda t: " ".join(re.sub(r"[*#]", "", t).split())  # noqa: E731
+    assert words(source) == words(html.unescape(re.sub(r"<[^>]+>", " ", report.disclosure_html()))).replace(" :", ":")

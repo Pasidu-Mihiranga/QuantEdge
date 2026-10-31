@@ -64,8 +64,8 @@ Gap ids (G..) refer to the team's gap register; D.. to the team's numbered decis
 | # | Requirement | Where it is met | Status |
 |---|---|---|---|
 | 1 | Public/judge-accessible GitHub repo, clean code, README on how to run | README written for judges, with screenshots | 🟡 README done; work must be pushed to the public repository |
-| 2 | App deployed, or runnable locally with one command | `make run` / `.\make.ps1 run` build the environment on first use; `deploy/` installs it on a server | ✅ one command; ✅ live at http://3.234.207.173 |
-| 3 | 7–15-page report: methodology, data and cleaning, results, assumptions and limitations | `reports/QuantEdge_Technical_Report.pdf` (15 pages, a test enforces the limit) | 🟡 complete draft; the team reviews and rewrites it |
+| 2 | App deployed, or runnable locally with one command | `make run` / `.\make.ps1 run` build the environment on first use; `deploy/` installs it on a server | ✅ one command; ✅ live at https://quantedge.gmora.dev |
+| 3 | 7–15-page report: methodology, data and cleaning, results, assumptions and limitations | `reports/QuantEdge_Technical_Report.pdf` (13 pages, a test enforces the limit) | 🟡 complete draft; the team reviews and rewrites it |
 | 4 | One-page executive tear sheet | `reports/Executive_Tear_Sheet.pdf`, from `decision_numbers.json` | ✅ one A4 page, a test enforces it |
 | 5 | Finalists: 10–12-minute pitch and deck; Q&A as the committee | — | ⬜ |
 
