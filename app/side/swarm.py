@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+from components.palette import palette
 from components.ui import explain, money, need_numbers, pct, say
 from quantedge.paths import ARTIFACTS
 
@@ -14,7 +15,8 @@ n = need_numbers()
 nav, budget = n["nav_usd"], n["limits"]["crisis_budget"]
 s = json.loads((ARTIFACTS / "swarm_comparison.json").read_text(encoding="utf-8"))
 team, runs = s["team"], s["runs"]
-ACCENT, GREY = "#1F5FAE", "#A3ABB5"
+P = palette()
+ACCENT, GREY = P.accent, P.grey
 TEAM, SWARM = "Our scenario", "Simulated crowd"
 
 st.title("Crowd simulation")

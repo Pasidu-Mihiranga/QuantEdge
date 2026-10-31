@@ -6,15 +6,18 @@ import streamlit as st
 
 from components.content import EXCEPTION_CAUSES
 from components.controls import FILES, risk_controls
+from components.palette import palette
 from components.ui import (
     artifact,
     explain,
+    header,
     money,
     need_numbers,
     pct,
     per_year,
     returns_to_decision,
     say,
+    step_footer,
 )
 from quantedge.backtest import coverage as cv
 from quantedge.config import load_config
@@ -24,10 +27,11 @@ from quantedge.risk.es import sample_es
 
 n = need_numbers()
 nav, rd, mv = n["nav_usd"], n["risk_day"], n["model_validity"]
-ACCENT, GREY, CRIT, GOOD, WARN = "#1F5FAE", "#A3ABB5", "#B42318", "#0D7A2F", "#A15C00"
-TAIL = ["#9EC1EA", "#4F86C6", "#1F3F73"]
+P = palette()
+ACCENT, GREY, CRIT, GOOD, WARN = P.accent, P.grey, P.crit, P.good, P.warn
+TAIL = list(P.tail)
 
-st.title("Risk, and how sure we are")
+header("Risk, and how sure we are", page="views/risk.py")
 say("How much can the fund lose on a bad day, and can we trust that number? Use the Risk controls in the sidebar to "
     "change how cautious the estimate is, which model makes it, and which years you look at.")
 VIEWS = {"A bad day": ":material/trending_down:", "Diversification": ":material/hub:", "Is the model right?": ":material/fact_check:"}
@@ -62,7 +66,7 @@ if view == "A bad day":
         y=alt.Y("loss:Q", title="One-day loss (USD)", axis=alt.Axis(format="$~s"), scale=alt.Scale(domain=[0, max(df.loss) * 1.25])),
         color=alt.Color("measure:N", scale=alt.Scale(domain=["VaR", "ES", "EVT"], range=TAIL), legend=None),
         tooltip=["measure:N", alt.Tooltip("loss:Q", format="$,.0f")])
-    st.altair_chart((bars + bars.mark_text(dy=-10, fontSize=13).encode(text="label:N", color=alt.value("#1D2733"))).properties(height=300),
+    st.altair_chart((bars + bars.mark_text(color=P.ink, dy=-10, fontSize=13).encode(text="label:N", color=alt.value(P.ink))).properties(height=300),
                     alt=f"VaR, ES and EVT at {ctl.alpha:.0%}")
     explain(f"Three ways of measuring a bad day, in dollars. VaR is the line a bad day crosses; ES is the average loss once "
             f"it does; EVT looks only at the most extreme days in history. The percentages show how much worse ES and EVT are "
@@ -149,7 +153,7 @@ elif view == "Diversification":
         color=alt.Color("how:N", sort=order_h, scale=alt.Scale(domain=order_h, range=[GREY, ACCENT]),
                         legend=alt.Legend(title=None, orient="bottom")),
         tooltip=["crisis:N", "how:N", alt.Tooltip("loss:Q", format="$,.0f")])
-        + base_d.mark_text(align="left", dx=5, fontSize=11).encode(x="loss:Q", text="label:N")).properties(height=alt.Step(16)),
+        + base_d.mark_text(color=P.ink, align="left", dx=5, fontSize=11).encode(x="loss:Q", text="label:N")).properties(height=alt.Step(16)),
         alt="Crisis loss with and without diversification")
     saved = "; ".join(f"{money((alone[c] - together[c]) * nav)} in {c}" for c in crises)
     win = lambda c: past.loc[(past.index > pd.Timestamp(crises[c][0])) & (past.index <= pd.Timestamp(crises[c][1]))]  # noqa: E731
@@ -166,10 +170,10 @@ elif view == "Diversification":
     cm = r.corr().stack().rename("corr").rename_axis(["a", "b"]).reset_index()
     funds = list(w.index)
     heat = alt.Chart(cm).encode(x=alt.X("a:N", sort=funds, title=None), y=alt.Y("b:N", sort=funds, title=None))
-    st.altair_chart((heat.mark_rect().encode(color=alt.Color("corr:Q", scale=alt.Scale(domain=[-1, 0, 1], range=[ACCENT, "#F4F6F8", CRIT]),
+    st.altair_chart((heat.mark_rect().encode(color=alt.Color("corr:Q", scale=alt.Scale(domain=[-1, 0, 1], range=[ACCENT, P.neutral, CRIT]),
                                                              legend=alt.Legend(title="correlation")),
                                              tooltip=["a:N", "b:N", alt.Tooltip("corr:Q", format=".2f")])
-                     + heat.mark_text(fontSize=13).encode(text=alt.Text("corr:Q", format=".2f")))
+                     + heat.mark_text(color=P.ink, fontSize=13).encode(text=alt.Text("corr:Q", format=".2f")))
                     .properties(height=260, width=360), alt=f"Correlations, {period}")
     if "AGG" in funds and "SPY" in funds:
         say(f"US stocks and bonds (SPY and AGG) had a correlation of **{r['SPY'].corr(r['AGG']):+.2f}** in this period "
@@ -237,7 +241,7 @@ else:
              + base.mark_line(color=ACCENT, strokeWidth=1.4).encode(y="var_usd:Q")
              + alt.Chart(d[d[f"hit_{alpha}"] == 1]).mark_circle(color=CRIT, size=36).encode(
                  x="date:T", y="loss_usd:Q", tooltip=[alt.Tooltip("date:T"), alt.Tooltip("loss_usd:Q", format="$,.0f", title="loss")])
-             + alt.Chart(pd.DataFrame({"date": [pd.Timestamp("2023-01-01")]})).mark_rule(strokeDash=[4, 4], color="#1D2733").encode(x="date:T"))
+             + alt.Chart(pd.DataFrame({"date": [pd.Timestamp("2023-01-01")]})).mark_rule(strokeDash=[4, 4], color=P.ink).encode(x="date:T"))
     st.altair_chart(chart.properties(height=320).interactive(bind_y=False), alt="Daily loss, VaR forecast and breaches")
     explain("Grey: what the fund lost each day (below zero means it gained). Blue: the model's forecast of a bad day. Red "
             "dots: days that were worse than the forecast. Right of the dashed line is the 2023–2026 test. Scroll on the chart "
@@ -271,3 +275,5 @@ else:
                      height=35 * (len(log) + 1) + 3, alt="Breaches with their causes")
         say("Each one matches a real market event. Six were the first days of a new crisis, before any model could react; "
             "that is why the fund also has a crisis limit and stress tests, not just a daily risk number.")
+
+step_footer("views/risk.py")
