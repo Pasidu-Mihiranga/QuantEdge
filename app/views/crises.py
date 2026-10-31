@@ -5,7 +5,18 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from components.ui import artifact, explain, money, need_numbers, pct, returns_to_decision, say
+from components.palette import palette
+from components.ui import (
+    artifact,
+    explain,
+    header,
+    money,
+    need_numbers,
+    pct,
+    returns_to_decision,
+    say,
+    step_footer,
+)
 from quantedge.config import load_config
 from quantedge.stress.factor import (
     episode_plausibility,
@@ -20,7 +31,8 @@ cfg = load_config()
 nav, budget = n["nav_usd"], n["limits"]["crisis_budget"]
 w = pd.Series(n["weights"])
 hyp = cfg.stress["hypothetical"]
-ACCENT, GREY, CRIT = "#1F5FAE", "#A3ABB5", "#B42318"
+P = palette()
+ACCENT, GREY, CRIT = P.accent, P.grey, P.crit
 
 KIND = {"GFC 2008": ("Deflationary crash", "Stocks fell about 55%; Treasuries rallied, so bonds cushioned the fall."),
         "COVID crash 2020": ("Liquidity panic", "Everything was sold for cash for a few days, bonds included; oil collapsed."),
@@ -31,7 +43,7 @@ KIND = {"GFC 2008": ("Deflationary crash", "Stocks fell about 55%; Treasuries ra
                                      "plus one panic day on AGG.")}
 cm = pd.Series(n["crisis_map"]).sort_values(ascending=False)
 
-st.title("What can go wrong?")
+header("What can go wrong?", page="views/crises.py")
 say(f"The portfolio is built to lose **less than {pct(budget, 0)} ({money(budget * nav)})** in every kind of crisis we can "
     "measure, while still paying the scholarships.")
 
@@ -56,7 +68,7 @@ bars = alt.Chart(df).mark_bar(cornerRadiusEnd=4, height=24).encode(
     color=alt.Color("type:N", scale=alt.Scale(domain=["happened", "our scenario"], range=[GREY, ACCENT]),
                     legend=alt.Legend(title=None, orient="bottom")),
     tooltip=["crisis:N", "kind:N", alt.Tooltip("loss:Q", format="$,.0f")])
-text = alt.Chart(df).mark_text(align="left", dx=8).encode(y=alt.Y("crisis:N", sort=None), x=alt.datum(budget * nav), text="label:N")  # right of the budget line
+text = alt.Chart(df).mark_text(color=P.ink, align="left", dx=8).encode(y=alt.Y("crisis:N", sort=None), x=alt.datum(budget * nav), text="label:N")  # right of the budget line
 rule = alt.Chart(pd.DataFrame({"x": [budget * nav]})).mark_rule(color=CRIT, strokeWidth=2).encode(x="x:Q")
 st.altair_chart((bars + text + rule).properties(height=330), alt="Every crisis against the 25% budget")
 explain("Each grey bar shows what today's portfolio would have lost if it had lived through that crisis. The blue bar "
@@ -66,26 +78,34 @@ explain("Each grey bar shows what today's portfolio would have lost if it had li
         "protect the fund in a crash like 2008, but not when inflation pushes rates up (2022), which is why the limit is "
         "set as a maximum loss rather than relying on bonds alone.")
 
-st.subheader("Try a crisis yourself", divider=False)
+st.subheader("Try a crisis yourself", divider=False, anchor=False)
 say("Move the sliders to create your own crisis and see what the fund would lose. They start at the crisis we designed.")
 betas = artifact("decision_scenario_betas.parquet")
-base = hyp["shock"]
-panel = st.container(border=True)
-c = panel.columns(5, gap="medium")
-shock = {"d_yield10_bp": c[0].slider("10-year yield (bp)", -150, 400, int(base["d_yield10_bp"]), 10, key="s_y"),
-         "dln_oil": float(np.log1p(c[1].slider("Oil (%)", -60, 100, round((np.exp(base["dln_oil"]) - 1) * 100), 5, key="s_o") / 100)),
-         "d_vix": c[2].slider("VIX (points)", -10, 60, int(base["d_vix"]), 1, key="s_v"),
-         "dln_usd": float(np.log1p(c[3].slider("Dollar (%)", -15, 20, round((np.exp(base["dln_usd"]) - 1) * 100), 1, key="s_d") / 100)),
-         "d_credit_bp": c[4].slider("Credit spread (bp)", -50, 500, int(base["d_credit_bp"]), 10, key="s_c")}
-liq = panel.toggle("Add a panic day on bonds (AGG −5%)", value=True, key="s_l")
-liq_day = hyp.get("liquidity_day") if liq else None
-loss = scenario_loss(betas, shock, w, liq_day)
-inside = loss <= budget
-with st.container(horizontal=True, vertical_alignment="center", gap="medium"):
-    st.metric("Portfolio loss" if loss >= 0 else "Portfolio gain", money(-loss * nav, signed=True),
-              f"{pct(abs(loss))} of the endowment", delta_color="off", delta_arrow="off", border=True, width="content")
-    st.badge("Inside the budget" if inside else "Breaks the budget", icon=":material/check_circle:" if inside else ":material/error:",
-             color="green" if inside else "red")
+SHOCK = hyp["shock"]
+START = {"s_y": int(SHOCK["d_yield10_bp"]), "s_o": round((np.exp(SHOCK["dln_oil"]) - 1) * 100), "s_v": int(SHOCK["d_vix"]),
+         "s_d": round((np.exp(SHOCK["dln_usd"]) - 1) * 100), "s_c": int(SHOCK["d_credit_bp"]), "s_l": True}
+NAMES_F = {"d_yield10_bp": "yield", "dln_oil": "oil", "d_vix": "VIX", "dln_usd": "dollar", "d_credit_bp": "credit spread"}
+
+
+def back_to_our_scenario() -> None:
+    st.session_state.update(START)
+
+
+@st.fragment
+def crisis_builder() -> None:
+    """Five market moves in, the fund's loss out. A fragment, so a slider reruns only this panel."""
+    controls, result = st.columns([2, 3], gap="large")
+    with controls.container(border=True):
+        shock = {"d_yield10_bp": st.slider("10-year yield (bp)", -150, 400, START["s_y"], 10, key="s_y"),
+                 "dln_oil": float(np.log1p(st.slider("Oil (%)", -60, 100, START["s_o"], 5, key="s_o") / 100)),
+                 "d_vix": st.slider("VIX (points)", -10, 60, START["s_v"], 1, key="s_v"),
+                 "dln_usd": float(np.log1p(st.slider("Dollar (%)", -15, 20, START["s_d"], 1, key="s_d") / 100)),
+                 "d_credit_bp": st.slider("Credit spread (bp)", -50, 500, START["s_c"], 10, key="s_c")}
+        liq = st.toggle("Add a panic day on bonds (AGG −5%)", value=True, key="s_l")
+        st.button("Back to our scenario", icon=":material/restart_alt:", type="tertiary", on_click=back_to_our_scenario)
+    liq_day = hyp.get("liquidity_day") if liq else None
+    loss = scenario_loss(betas, shock, w, liq_day)
+    inside = loss <= budget
     # Plausibility (booklet p. 8): how often history produced a three-quarter episode at least this extreme.
     macro = artifact("clean_macro.parquet").loc[lambda m: m.index < pd.Timestamp(n["decision_date"])]
     pl = episode_plausibility(weekly_factors(macro), shock)
@@ -93,37 +113,46 @@ with st.container(horizontal=True, vertical_alignment="center", gap="medium"):
     label, colour = (("Seen often in history", "green") if share >= 0.05 else ("Severe but seen before", "orange")
                      if share >= 0.01 else ("Extreme: rarer than 1 in 100", "red") if share > 0 else
                      ("Beyond anything since " + str(pl.start.year), "red"))
-    st.badge(label, icon=":material/history:", color=colour,
-             help=f"Of the {pl.n_episodes:,} three-quarter periods since {pl.start.year}, {share:.1%} were more extreme "
-                  "once all five moves are taken together (Mahalanobis distance). Overlapping periods, so read it as a "
-                  "frequency, not a probability.")
-NAMES_F = {"d_yield10_bp": "yield", "dln_oil": "oil", "d_vix": "VIX", "dln_usd": "dollar", "d_credit_bp": "credit spread"}
-st.caption("How often history went at least this far in three quarters since " + str(pl.start.year) + ": "
-           + ", ".join(f"{NAMES_F[f]} {'never' if v == 0 else f'{v:.1%} of periods' if v < 0.01 else f'{v:.0%} of periods'}" for f, v in pl.per_factor.items())
-           + f"; all five together, {share:.1%}.")
-# Losses are positive (the page's convention); the bars add up exactly to the card, panic day included.
-parts = scenario_contributions(betas, shock, w, liq_day)
-cd = pd.DataFrame({"fund": parts.index, "loss": -parts.values * nav})
-cd["label"] = [money(v) if v >= 0 else f"helps {money(-v)}" for v in cd["loss"]]
-cd["effect"] = np.where(cd["loss"] >= 0, "loses money", "helps")
-lo, hi = min(0.0, cd["loss"].min()), max(0.0, cd["loss"].max())
-pad = (hi - lo) * 0.18
-order = cd.sort_values("loss", ascending=False)["fund"].tolist()
-base = alt.Chart(cd).encode(y=alt.Y("fund:N", sort=order, title=None, axis=alt.Axis(labelFontSize=13)))
-bars = base.mark_bar(cornerRadiusEnd=3, height=22).encode(
-    x=alt.X("loss:Q", title="Share of the loss (USD)", scale=alt.Scale(domain=[lo - (pad if lo < 0 else 0), hi + pad]),
-            axis=alt.Axis(format="$~s", tickCount=6)),
-    color=alt.Color("effect:N", scale=alt.Scale(domain=["loses money", "helps"], range=[CRIT, "#0D7A2F"]),
-                    legend=alt.Legend(title=None, orient="bottom")),
-    tooltip=["fund:N", alt.Tooltip("loss:Q", title="loss (USD)", format="$,.0f")])
-# Labels sit past the end of each bar: right of a loss, left of a gain (blank text on the other side).
-gain_right = base.mark_text(dx=6, align="left").encode(x="loss:Q", text=alt.condition("datum.loss >= 0", "label:N", alt.value("")))
-gain_left = base.mark_text(dx=-6, align="right").encode(x="loss:Q", text=alt.condition("datum.loss < 0", "label:N", alt.value("")))
-st.altair_chart((bars + gain_right + gain_left).properties(height=alt.Step(38)), alt="Where the scenario loss comes from")
-explain("Each fund's move is based on how it reacted to these kinds of market moves in past stressful periods. The bars "
-        "add up to the loss on the card: red bars lose money in your crisis, green bars help. The panic day has its own "
-        "row: a one-day 5% drop in the bond fund, like the one on 10 October 2008 when bond-fund prices fell below the "
-        "value of their bonds.")
+    with result:
+        with st.container(horizontal=True, vertical_alignment="center", gap="medium"):
+            st.metric("Portfolio loss" if loss >= 0 else "Portfolio gain", money(-loss * nav, signed=True),
+                      f"{pct(abs(loss))} of the endowment", delta_color="off", delta_arrow="off", border=True, width="content")
+            with st.container(gap="small"):
+                st.badge("Inside the budget" if inside else "Breaks the budget",
+                         icon=":material/check_circle:" if inside else ":material/error:", color="green" if inside else "red")
+                st.badge(label, icon=":material/history:", color=colour,
+                         help=f"Of the {pl.n_episodes:,} three-quarter periods since {pl.start.year}, {share:.1%} were more "
+                              "extreme once all five moves are taken together (Mahalanobis distance). Overlapping periods, so "
+                              "read it as a frequency, not a probability.")
+        # Losses are positive (the page's convention); the bars add up exactly to the card, panic day included.
+        parts = scenario_contributions(betas, shock, w, liq_day)
+        cd = pd.DataFrame({"fund": parts.index, "loss": -parts.values * nav})
+        cd["label"] = [money(v) if v >= 0 else f"helps {money(-v)}" for v in cd["loss"]]
+        cd["effect"] = np.where(cd["loss"] >= 0, "loses money", "helps")
+        lo, hi = min(0.0, cd["loss"].min()), max(0.0, cd["loss"].max())
+        pad = (hi - lo) * 0.22
+        order = cd.sort_values("loss", ascending=False)["fund"].tolist()
+        base = alt.Chart(cd).encode(y=alt.Y("fund:N", sort=order, title=None, axis=alt.Axis(labelFontSize=13)))
+        bars = base.mark_bar(cornerRadiusEnd=3, height=22).encode(
+            x=alt.X("loss:Q", title="Share of the loss (USD)", scale=alt.Scale(domain=[lo - (pad if lo < 0 else 0), hi + pad]),
+                    axis=alt.Axis(format="$~s", tickCount=6)),
+            color=alt.Color("effect:N", scale=alt.Scale(domain=["loses money", "helps"], range=[CRIT, P.good]),
+                            legend=alt.Legend(title=None, orient="bottom")),
+            tooltip=["fund:N", alt.Tooltip("loss:Q", title="loss (USD)", format="$,.0f")])
+        # Labels sit past the end of each bar: right of a loss, left of a gain (blank text on the other side).
+        gain_right = base.mark_text(color=P.ink, dx=6, align="left").encode(x="loss:Q", text=alt.condition("datum.loss >= 0", "label:N", alt.value("")))
+        gain_left = base.mark_text(color=P.ink, dx=-6, align="right").encode(x="loss:Q", text=alt.condition("datum.loss < 0", "label:N", alt.value("")))
+        st.altair_chart((bars + gain_right + gain_left).properties(height=alt.Step(34)), alt="Where the scenario loss comes from")
+    st.caption("How often history went at least this far in three quarters since " + str(pl.start.year) + ": "
+               + ", ".join(f"{NAMES_F[f]} {'never' if v == 0 else f'{v:.1%} of periods' if v < 0.01 else f'{v:.0%} of periods'}" for f, v in pl.per_factor.items())
+               + f"; all five together, {share:.1%}.")
+    explain("Each fund's move is based on how it reacted to these kinds of market moves in past stressful periods. The bars "
+            "add up to the loss on the card: red bars lose money in your crisis, green bars help. The panic day has its own "
+            "row: a one-day 5% drop in the bond fund, like the one on 10 October 2008 when bond-fund prices fell below the "
+            "value of their bonds.")
+
+
+crisis_builder()
 
 with st.expander("Every crisis in detail", icon=":material/table:"):
     years = {k: (pd.Timestamp(b) - pd.Timestamp(a)).days / 365.25
@@ -144,3 +173,5 @@ with st.expander("What would it take to lose 25%? (reverse stress)", icon=":mate
         f"stock crash with bonds not helping. A simple bell-curve model calls this "
         f"{rarity_text(calm.years_between, crisis.years_between)}. Read the direction, not the odds: real crises are more "
         "frequent than simple models suggest.")
+
+step_footer("views/crises.py")

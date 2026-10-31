@@ -1,5 +1,5 @@
 """Assumptions & Limitations (booklet item 6, graded): what we promised, what the model does not capture, and a pointer
-to the technical pages in the sidebar."""
+to the technical pages."""
 
 
 import json
@@ -9,7 +9,7 @@ import pandas as pd
 import streamlit as st
 
 from components.content import DECISIONS, NOT_CAPTURED
-from components.ui import artifact, money, need_numbers, pct, say
+from components.ui import artifact, header, money, need_numbers, pct, say, step_footer
 from quantedge.config import load_config
 from quantedge.paths import ARTIFACTS
 from quantedge.reports.limitations import LIMITATIONS
@@ -17,7 +17,7 @@ from quantedge.reports.limitations import LIMITATIONS
 n = need_numbers()
 obj, lim, nav = n["objective"], n["limits"], n["nav_usd"]
 
-st.title("Assumptions & Limitations")
+header("Assumptions & Limitations", page="views/assumptions.py")
 say("What the fund promised, what our analysis cannot see, and the choices behind every number, in plain language.")
 
 st.subheader("What we promised")
@@ -128,6 +128,14 @@ with st.expander("How the numbers were made", icon=":material/construction:"):
         "- **Checked twice:** every result was computed by two separately written programs, which agree.")
 
 st.subheader("Technical details")
-say("The full technical detail has its own pages under **Technical detail** in the sidebar: data and quality checks, every "
-    "risk model, tail-risk diagnostics, our innovation work (regimes, a risk overlay, a copula and the currency view) and "
-    "the methodology.")
+say("The full technical detail has its own pages, also under **Technical detail** in the top bar.")
+with st.container(horizontal=True, gap="small"):
+    for path, label, icon in (("technical/data_quality.py", "Data and quality checks", "dataset"),
+                              ("technical/models.py", "Every risk model", "leaderboard"),
+                              ("technical/tail_evt.py", "Tail risk (EVT)", "show_chart"),
+                              ("technical/innovation.py", "Regimes, overlay, copula, FX", "lightbulb"),
+                              ("technical/methodology.py", "Methodology", "menu_book")):
+        with st.container(border=True, width="content"):
+            st.page_link(path, label=label, icon=f":material/{icon}:")
+
+step_footer("views/assumptions.py")

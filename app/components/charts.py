@@ -10,7 +10,7 @@ COLORS = {"var": "#2f6db5", "es": "#e07b22", "evt": "#c0392b", "loss": "#8c8c8c"
           "portfolio": "#178a85", "benchmark": "#5b6773"}
 ZONE = {"green": "#2e9d57", "yellow": "#e3b505", "red": "#c0392b"}
 LAYOUT = dict(margin=dict(l=10, r=10, t=40, b=10), legend=dict(orientation="h", y=-0.15),
-              font=dict(size=13), template="plotly_white")
+              font=dict(size=13))  # no template: Streamlit's light or dark theme applies
 
 
 def donut(weights: pd.Series, title: str) -> go.Figure:
