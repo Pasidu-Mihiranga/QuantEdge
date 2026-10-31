@@ -4,4 +4,3 @@
 *.jsonl text eol=lf
 *.md   text eol=lf
 *.parquet binary
-*.txt  text eol=lf

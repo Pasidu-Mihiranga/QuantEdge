@@ -3,7 +3,6 @@ import pandas as pd
 import pytest
 
 from quantedge.ml.quantile_models import (
-    LGBMQuantile,
     LinearQR,
     monotonicity_violations,
     ratio_es,
@@ -75,39 +74,9 @@ def test_linear_qr_coverage_on_heteroskedastic_data(hetero):
         assert abs(out[f"hit_{a}"].mean() - (1 - a)) < 0.03
 
 
-@pytest.mark.slow
-def test_lgbm_coverage_monotone_and_es(hetero):
+def test_monotonicity_diagnostic_on_linear_qr(hetero):
     X, y = hetero
-    make = lambda lv: LGBMQuantile(lv, params={"n_estimators": 200})  # noqa: E731
-    out = walk_forward_ml(make, X, y, levels=(0.95,), retrain_every=200, min_train=1000,
-                          es_levels={0.95: (0.95, 0.97, 0.99)})
-    assert abs(out["hit_0.95"].mean() - 0.05) < 0.03
-    assert (out["es_0.95"] >= out["var_0.95"]).all()
-    model = LGBMQuantile((0.95,), params={"n_estimators": 200}).fit(X.iloc[:1500], y.iloc[:1500])
+    model = LinearQR((0.95,)).fit(X.iloc[:1500], y.iloc[:1500])
     low, high = model.predict(pd.DataFrame({"sigma": [0.005, 0.03], "noise": [0.0, 0.0]}))[:, 0]
     assert high > low                                # higher volatility -> higher VaR
-    assert 0.0 <= monotonicity_violations(model, X.iloc[1500:1530], "sigma", 0.95) <= 1.0
-    shap = model.contributions(X.iloc[1500:1510], 0.95)
-    np.testing.assert_allclose(shap.sum(axis=1), model.predict(X.iloc[1500:1510])[:, 0], rtol=1e-6)
-
-
-def test_ice_curves_and_monotonicity_on_known_models():
-    from quantedge.ml.quantile_models import ice_curves
-
-    class Fake:
-        levels = (0.99,)
-
-        def __init__(self, f):
-            self.f = f
-
-        def predict(self, Z):
-            return np.column_stack([self.f(Z)])
-
-    X = pd.DataFrame({"vol": np.linspace(0.1, 0.5, 40), "other": np.linspace(-1, 1, 40)})
-    up = Fake(lambda Z: 2 * Z["vol"].to_numpy() + Z["other"].to_numpy())
-    curves = ice_curves(up, X, "vol", 0.99, n_grid=5)
-    assert curves.shape == (40, 5) and np.allclose(curves[:, -1] - curves[:, 0], curves[0, -1] - curves[0, 0])
-    assert monotonicity_violations(up, X, "vol", 0.99, n_grid=5) == 0.0
-    assert monotonicity_violations(Fake(lambda Z: -Z["vol"].to_numpy()), X, "vol", 0.99) == 1.0
-    dip = Fake(lambda Z: Z["vol"].to_numpy() - 0.5 * ((Z["vol"].to_numpy() > 0.3) & (Z["other"].to_numpy() > 0)))
-    assert monotonicity_violations(dip, X, "vol", 0.99, n_grid=9) == pytest.approx(0.5)
+    assert monotonicity_violations(model, X.iloc[1500:1530], "sigma", 0.95) == 0.0   # linear in sigma

@@ -1,0 +1,159 @@
+{
+  "decision_date": "2026-10-26",
+  "data_end": "2026-10-23",
+  "nav_usd": 10000000.0,
+  "verdict": "ACCEPT",
+  "recommended_equity": 0.35,
+  "advised_equity": 0.35,
+  "weights": {
+    "SPY": 0.15573491749904725,
+    "EFA": 0.09426485872793323,
+    "EEM": 2.3679754182076625e-07,
+    "AGG": 0.6499999470441239,
+    "GLD": 5.2955879220909394e-08,
+    "XLE": 0.09999997912593266,
+    "XLK": 7.849541973552656e-09
+  },
+  "weights_before_d8": {
+    "SPY": 0.15573491749904725,
+    "EFA": 0.09426485872793323,
+    "EEM": 2.3679754182076625e-07,
+    "AGG": 0.6499999470441239,
+    "GLD": 5.2955879220909394e-08,
+    "XLE": 0.09999997912593266,
+    "XLK": 7.849541973552656e-09
+  },
+  "d8_moved_to_spy": 0.0,
+  "largest_es_share": 0.33146566579803366,
+  "largest_es_share_etf": "SPY",
+  "objective": {
+    "spending": 0.03,
+    "real_growth": 0.005,
+    "inflation_breakeven": 0.023399999999999997,
+    "required_return": 0.05937251000000021,
+    "y10": 0.05,
+    "tips": 0.026600000000000002
+  },
+  "expected_return": 0.060443493128465295,
+  "return_margin": 0.0010709831284650834,
+  "return_margin_usd": 10709.831284650834,
+  "sustainable_spending": 0.031041288698645975,
+  "limits": {
+    "crisis_budget": 0.25,
+    "vol_max": 0.0828541033038514,
+    "es99_max": 0.02259040312339438,
+    "equity_at_budget": 0.38591415739020735
+  },
+  "risk": {
+    "vol_ttc": 0.07669869459295509,
+    "es99_ttc": 0.020829545028853196,
+    "worst_crisis_loss": 0.23899807549095364,
+    "hypothetical_loss": 0.21043638088909447,
+    "d2_loss": 0.23899807549095364,
+    "income_yield": 0.03267872369525374,
+    "worst_crisis": "GFC 2008"
+  },
+  "yield_margin": {
+    "direction": "ACCEPT is lost if the real yield falls by",
+    "pp": 0.0015,
+    "tips_threshold": 0.0251
+  },
+  "erp_breakeven": 0.0415,
+  "robustness": {
+    "REJECT": 7,
+    "ACCEPT": 7,
+    "ADJUST": 4
+  },
+  "alternatives": {
+    "lower_risk": {
+      "equity_share": 0.3,
+      "expected_return_usd": 580661.3630421384,
+      "shortfall_usd": 13063.736957863724,
+      "worst_crisis_usd": 2193808.9231730374,
+      "hypothetical_usd": 2058335.2874275618,
+      "es99_ttc_usd": 183506.01523679803,
+      "income_usd": 313126.5135500062,
+      "within_limits": true,
+      "meets_objective": false
+    },
+    "recommended": {
+      "equity_share": 0.35,
+      "expected_return_usd": 604434.9312846529,
+      "shortfall_usd": -10709.831284650834,
+      "worst_crisis_usd": 2389980.7549095363,
+      "hypothetical_usd": 2104363.808890945,
+      "es99_ttc_usd": 208295.45028853195,
+      "income_usd": 326787.23695253744,
+      "within_limits": true,
+      "meets_objective": true
+    },
+    "higher_return": {
+      "equity_share": 0.4,
+      "expected_return_usd": 612115.7474148822,
+      "shortfall_usd": -18390.647414880114,
+      "worst_crisis_usd": 2543150.497826103,
+      "hypothetical_usd": 2108481.544518187,
+      "es99_ttc_usd": 232810.26871249583,
+      "income_usd": 316088.601394652,
+      "within_limits": false,
+      "meets_objective": true
+    }
+  },
+  "ten_year": {
+    "p_objective": 0.4896,
+    "median_real_return": 0.03467279203654405,
+    "p_real_value_below_80": 0.0806,
+    "paths": 5000
+  },
+  "model_validity": {
+    "champion": "GJR conditional EVT",
+    "test_start": "2023-01-01",
+    "test_end": "2026-10-26",
+    "days": 955,
+    "exceptions": 9,
+    "expected": 9.55,
+    "kupiec_p": 0.8566703801331924,
+    "cc_p": 0.18926227979887228,
+    "passes": true,
+    "limits_model": "GJR conditional EVT",
+    "models_passing": [
+      "GJR-FHS",
+      "GJR conditional EVT",
+      "Linear QR"
+    ],
+    "challenger_adopted": false
+  },
+  "scenario": {
+    "name": "Hormuz stagflation 2027",
+    "loss": 0.21043638088909447
+  },
+  "crisis_map": {
+    "GFC 2008": 0.23899807549095364,
+    "COVID crash 2020": 0.18847031879845855,
+    "Rate shock 2022": 0.13800263555401449,
+    "2025 tariff shock (pre-registered)": 0.05746613031380865,
+    "2026 Hormuz shock (pre-registered)": 0.02869632166942737,
+    "Hormuz stagflation 2027 (scenario)": 0.21043638088909447
+  },
+  "risk_day": {
+    "var99": 0.007571477670609504,
+    "es99": 0.010087708605763704,
+    "evt_es99": 0.018089071753563255,
+    "model": "GJR conditional EVT",
+    "window_start": "2024-10-25",
+    "window_end": "2026-10-23",
+    "once_in_10y_champion": 0.016210443937151424,
+    "once_in_10y_evt": 0.03837044773188179,
+    "var99_10d": 0.028181739886921298,
+    "es99_10d": 0.03958335423623799
+  },
+  "risk_day_usd": {
+    "var99": 75714.77670609504,
+    "es99": 100877.08605763703,
+    "evt_es99": 180890.71753563255,
+    "once_in_10y_champion": 162104.43937151425,
+    "once_in_10y_evt": 383704.4773188179,
+    "var99_10d": 281817.39886921295,
+    "es99_10d": 395833.5423623799
+  }
+}

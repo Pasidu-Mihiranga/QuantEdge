@@ -37,13 +37,13 @@ def run_portfolio_selection(cfg: Config, macro: pd.DataFrame, variant: str | Non
         returns = add_cash_asset(returns, rf)
         tickers.append(CASH)
     limits = IPSLimits.from_config(cfg.ips, variant)
-    req = required_return(macro["CPIAUCSL"], cfg.ips["spending_rate"], cfg.ips["cost_drag"],
-                          cfg.ips["cpi_years"], as_of=end)
+    req = required_return(macro["CPIAUCSL"], cfg.ips["spending_rate"], cfg.ips["real_growth"],
+                          macro["T10YIE"], cfg.ips["cpi_years"], as_of=end)
     strategies, _ = candidate_strategies(cfg, limits, tickers, mrp=mrp)
     results = {name: walk_forward(returns, s, rf, window=cfg.portfolio.estimation_window_days,
                                   cost_bps=cfg.portfolio.cost_bps_per_side, name=name)
                for name, s in strategies.items()}
-    card = scorecard(results, limits, req["required_return"], cfg.stress["historical"], end)
+    card = scorecard(results, limits, req["required_return"], cfg.stress["historical"], end, rf)
     tag = tag or variant
     if tag is not None:
         card.to_parquet(ARTIFACTS / f"portfolio_scorecard_val_{tag}.parquet")
@@ -58,20 +58,20 @@ def run_portfolio_selection(cfg: Config, macro: pd.DataFrame, variant: str | Non
 
 
 def run_ips_feasibility(cfg: Config, macro: pd.DataFrame) -> dict:
-    """Step 05 feasibility study across the frontier for the IPS and each `ips.variants` case
-    (dev + validation only; rf as at the end of validation)."""
+    """Feasibility study across the mean-variance frontier for the IPS and each `ips.variants` case (data to 2022)."""
     from quantedge.decision.feasibility import frontier_feasibility, summarise
 
     end = Partition.from_config(cfg).val[1]
     returns = load_returns("dev+val", cfg)
     rf = pd.read_parquet(ARTIFACTS / "returns_rf.parquet")["rf"].reindex(returns.index).dropna()
     rf_annual = float((1.0 + rf.iloc[-1]) ** 252 - 1.0)
-    req = required_return(macro["CPIAUCSL"], cfg.ips["spending_rate"], cfg.ips["cost_drag"],
+    req = required_return(macro["CPIAUCSL"], cfg.ips["spending_rate"], cfg.ips["real_growth"], macro["T10YIE"],
                           cfg.ips["cpi_years"], as_of=end)["required_return"]
     tables, summaries = [], {}
     for case in (None, *cfg.ips.get("variants", {})):
         limits = IPSLimits.from_config(cfg.ips, case)
-        tab = frontier_feasibility(returns, rf_annual, limits, req, cfg.stress["historical"], market=cfg.market_proxy)
+        tab = frontier_feasibility(returns, rf_annual, limits, req, cfg.stress["historical"], market=cfg.market_proxy,
+                                   mrp=cfg.ips["forward"]["erp"])
         name = case or "adopted"
         summaries[name] = {**summarise(tab, limits, req), "rf_annual": rf_annual,
                            "sample": [str(returns.index.min().date()), str(returns.index.max().date())]}
@@ -102,7 +102,7 @@ def run_evt(cfg: Config, wf_result, label: str) -> dict:
 
 
 def backtest_specs(cfg: Config, evt_threshold_q: float = 0.90) -> list:
-    """The eight conventional models with their refit cadence (Step 11 §3.1)."""
+    """The eight conventional models plus the two GJR variants, with their refit cadence (Step 11 §3.1)."""
     from quantedge.backtest.engine import ModelSpec
     from quantedge.risk.evt import ConditionalEVTModel, EVTModel
     from quantedge.risk.garch import GarchFHSModel
@@ -119,6 +119,8 @@ def backtest_specs(cfg: Config, evt_threshold_q: float = 0.90) -> list:
         ModelSpec("Monte Carlo", lambda: MonteCarloModel(n_sims=20_000, rng=rng), cfg.backtest.refit_every),
         ModelSpec("GARCH-FHS", GarchFHSModel, cfg.backtest.refit_every),
         ModelSpec("Conditional EVT", ConditionalEVTModel, cfg.backtest.refit_every),
+        ModelSpec("GJR-FHS", lambda: GarchFHSModel(o=1), cfg.backtest.refit_every),
+        ModelSpec("GJR conditional EVT", lambda: ConditionalEVTModel(o=1), cfg.backtest.refit_every),
     ]
 
 
@@ -139,14 +141,20 @@ def run_backtests(cfg: Config, wf_result, label: str, window: int | None = None)
     tables = {split: selection_table(results, 0.99, *part.bounds(split)) for split in ("dev", "val")}
     tables["val"].to_parquet(ARTIFACTS / f"backtest_selection_val_{window}.parquet")
     tables["dev"].to_parquet(ARTIFACTS / f"backtest_selection_dev_{window}.parquet")
-    champion, reason = choose_champion(tables["val"], cfg.backtest.champion_rule)
+    rule_choice, reason = choose_champion(tables["val"], cfg.backtest.champion_rule)
+    champion = cfg.backtest.champion or rule_choice
+    if champion != rule_choice:
+        reason = f"locked in config; the rule on this run picks {rule_choice}"
+        print(f"[backtest] WARNING: the locked champion {champion} differs from the rule's choice {rule_choice}")
     crises = crisis_breakdown(results, cfg.stress["historical"])
     crises.to_parquet(ARTIFACTS / f"backtest_crises_{window}.parquet")
     if window == cfg.risk.default_window:   # other windows are sensitivity runs, never the official choice
         (ARTIFACTS / "champion.json").write_text(
-            json.dumps({"portfolio": label, "window": window, "champion": champion, "reason": reason}, indent=2),
+            json.dumps({"portfolio": label, "window": window, "champion": champion, "rule_choice": rule_choice,
+                        "reason": reason}, indent=2),
             encoding="utf-8")
-    return {"results": results, "tables": tables, "champion": champion, "reason": reason, "crises": crises}
+    return {"results": results, "tables": tables, "champion": champion, "rule_choice": rule_choice, "reason": reason,
+            "crises": crises}
 
 
 def run_stress(cfg: Config, results: dict, macro: pd.DataFrame, focus: str) -> dict:
@@ -185,6 +193,85 @@ def run_stress(cfg: Config, results: dict, macro: pd.DataFrame, focus: str) -> d
             "replays": focus_replays, "agg_duration_check": duration_check(hyp["shock"]["d_yield10_bp"])}
 
 
+FRONTIER_LEVELS = [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]
+
+
+def decision_measures(cfg: Config, weights: dict[str, pd.Series], hypothetical: dict[str, float],
+                      macro: pd.DataFrame, as_of: pd.Timestamp, raw=None) -> pd.DataFrame:
+    """D2 risk evidence and the D4 forward return for each portfolio, today's weights held fixed
+    (notebooks 03 §4 and 06 A2): one row per portfolio, columns named as `rules.MEASURE_LIMIT`."""
+    from quantedge.data.load import load_raw
+    from quantedge.decision.objective import (
+        crisis_loss,
+        forward_asset_returns,
+        forward_inputs,
+        forward_portfolio_return,
+        through_the_cycle,
+    )
+
+    raw = raw if raw is not None else load_raw()
+    part = Partition.from_config(cfg)
+    returns = load_returns("dev+val", cfg).loc[:as_of]
+    fwd = cfg.ips["forward"]
+    mkt = forward_inputs(returns, raw.close, raw.dividends, macro, as_of, fwd["beta_window"])
+    net = forward_asset_returns(mkt["y10"], mkt["inflation"], mkt["beta"], mkt["div_yield"], fwd)
+    rows = {}
+    for name, w in weights.items():
+        w = w.reindex(returns.columns, fill_value=0.0)
+        ttc = through_the_cycle(w, returns.loc[: part.dev[1]])
+        crises = crisis_loss(w, returns, cfg.stress["historical"])
+        rows[name] = {"vol_ann": ttc["vol_ann"], "worst_hist_drawdown": float(crises.max()),
+                      "worst_hist_name": str(crises.idxmax()), "hypothetical_loss": hypothetical.get(name, float("nan")),
+                      "es99_1d": ttc["es99_1d"], "forward_return": forward_portfolio_return(w, net, mkt["cov_long"]),
+                      "equity_share": float(w.reindex(cfg.ips["limits"]["equity_group"]).sum())}
+    return pd.DataFrame(rows).T.astype({k: float for k in ("vol_ann", "worst_hist_drawdown", "hypothetical_loss",
+                                                           "es99_1d", "forward_return", "equity_share")})
+
+
+def run_decision_evidence(cfg: Config, results: dict, stress_out: dict, macro: pd.DataFrame) -> dict:
+    """Write the D1/D2 decision evidence (`decision_measures.parquet`) and the D2 limit calibration
+    along the 20-50% equity frontier (`limit_calibration.parquet`, `.json`)."""
+    from sklearn.covariance import LedoitWolf
+
+    from quantedge.data.load import load_raw
+    from quantedge.decision.ips import constraints_for_optimizer
+    from quantedge.decision.objective import calibrate_limits
+    from quantedge.portfolio import optimize as opt
+
+    part = Partition.from_config(cfg)
+    as_of = part.val[1]
+    raw = load_raw()
+    hyp_name = cfg.stress["hypothetical"]["name"]
+    hyp = {n: -float(stress_out["matrix"].loc[n, hyp_name]) for n in stress_out["matrix"].index}
+    weights = {n: r.weights_history.iloc[-1] for n, r in results.items()}
+    measures = decision_measures(cfg, weights, hyp, macro, as_of, raw)
+    measures.to_parquet(ARTIFACTS / "decision_measures.parquet")
+
+    returns = load_returns("dev+val", cfg).loc[:as_of]
+    limits = IPSLimits.from_config(cfg.ips)
+    tickers = list(cfg.universe)
+    est = returns.iloc[-cfg.ips["forward"]["beta_window"]:]
+    sigma = pd.DataFrame(LedoitWolf().fit(est.to_numpy()).covariance_ * 252, index=tickers, columns=tickers)
+    cons = constraints_for_optimizer(limits, tickers)
+    equity = list(cfg.ips["limits"]["equity_group"])
+    frontier = {x: opt.min_var_at_equity(sigma, cons, equity, x).weights for x in FRONTIER_LEVELS}
+    table, derived = calibrate_limits(frontier, returns.loc[: part.dev[1]], returns, cfg.stress["historical"],
+                                      cfg.ips["crisis_budget"])
+    betas = pd.read_parquet(ARTIFACTS / "stress_betas_full.parquet")
+    shock = pd.Series(cfg.stress["hypothetical"]["shock"], dtype=float)
+    r_star = betas[shock.index] @ shock
+    fm = decision_measures(cfg, {f"{x:.0%}": w for x, w in frontier.items()},
+                           {f"{x:.0%}": -float(w.reindex(r_star.index, fill_value=0.0) @ r_star)
+                            for x, w in frontier.items()}, macro, as_of, raw)
+    table["forward_return"] = fm["forward_return"].to_numpy()
+    table["hypothetical_loss"] = fm["hypothetical_loss"].to_numpy()
+    table.to_parquet(ARTIFACTS / "limit_calibration.parquet")
+    derived |= {"as_of": str(as_of.date()), "config_vol_ann_max": limits.vol_ann_max,
+                "config_es99_1d_max": limits.es99_1d_max}
+    (ARTIFACTS / "limit_calibration.json").write_text(json.dumps(derived, indent=2), encoding="utf-8")
+    return {"measures": measures, "calibration": table, "derived": derived}
+
+
 def ml_inputs(cfg: Config, wf_result, macro: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     """Feature matrix and next-day loss target at point-in-time weights (dev + val only)."""
     from quantedge.ml.features import build_features, garch_sigma_path
@@ -197,30 +284,25 @@ def ml_inputs(cfg: Config, wf_result, macro: pd.DataFrame) -> tuple[pd.DataFrame
     part = Partition.from_config(cfg)
     returns = load_returns("dev+val", cfg)
     wpath = point_in_time_weights(wf_result.weights_history, returns.index, cfg.partition.warmup_weights)
-    sigma = garch_sigma_path(pit_risk_returns(returns, wpath), refit_every=cfg.ml["lgbm"]["retrain_every"])
+    sigma = garch_sigma_path(pit_risk_returns(returns, wpath), refit_every=cfg.ml["retrain_every"])
     X = build_features(returns, macro.loc[: part.val[1]], wpath, sigma)
     return X, pit_loss_target(returns, wpath)
 
 
-def run_ml_arena(cfg: Config, wf_result, backtests: dict, champion: str, macro: pd.DataFrame,
-                 fast: bool = False) -> dict:
-    """Step 22 M3–M4: linear QR and LightGBM challengers vs the champion, scored on validation."""
-    from quantedge.ml.quantile_models import LGBMQuantile, LinearQR, ratio_es, walk_forward_ml
+def run_ml_arena(cfg: Config, wf_result, backtests: dict, champion: str, macro: pd.DataFrame) -> dict:
+    """Step 22 M3–M4: the linear QR challenger vs the champion, scored on validation.
+
+    LightGBM and the LSTM were evaluated and rejected (both failed coverage in every configuration;
+    doc/decisions/ml_selection.md) and are archived at the git tag archive/mirofish-ml."""
+    from quantedge.ml.quantile_models import LinearQR, ratio_es, walk_forward_ml
 
     part = Partition.from_config(cfg)
     X, y = ml_inputs(cfg, wf_result, macro)
     levels = (0.95, 0.975, 0.99)
     es_levels = {0.975: tuple(cfg.ml["es_integral_levels"]), 0.99: (0.99, 0.9925, 0.995, 0.9975)}
-    lg = cfg.ml["lgbm"]
-    lgbm_params = {"num_leaves": lg["grid"]["num_leaves"][0], "min_data_in_leaf": lg["grid"]["min_data_in_leaf"][0],
-                   "learning_rate": lg["learning_rate"], "n_estimators": 100 if fast else lg["n_estimators"],
-                   "feature_fraction": lg["feature_fraction"]}
-    kw = dict(retrain_every=lg["retrain_every"], start=cfg.backtest.oos_start, end=part.val[1],
+    kw = dict(retrain_every=cfg.ml["retrain_every"], start=cfg.backtest.oos_start, end=part.val[1],
               es_levels=es_levels, min_train=750)
-    out = {
-        "Linear QR": walk_forward_ml(lambda lv: LinearQR(lv), X, y, levels, **kw),
-        "LightGBM": walk_forward_ml(lambda lv: LGBMQuantile(lv, lgbm_params, seed=cfg.seed), X, y, levels, **kw),
-    }
+    out = {"Linear QR": walk_forward_ml(lambda lv: LinearQR(lv), X, y, levels, **kw)}
     # ES variant (a): ratio hybrid with the conditional-EVT ES/VaR ratio of the same day.
     cevt = backtests["Conditional EVT"]
     for name in list(out):
@@ -280,6 +362,7 @@ def run_risk_snapshot(cfg: Config, wf_result, label: str, evt_threshold_q: float
         "Cornish-Fisher": CornishFisherModel(), "EVT": EVTModel(evt_threshold_q),
         "Monte Carlo": MonteCarloModel(n_sims=cfg.risk.mc_sims, rng=cfg.rng(stream=12)),
         "GARCH-FHS": GarchFHSModel(), "Conditional EVT": ConditionalEVTModel(),
+        "GJR conditional EVT": ConditionalEVTModel(o=1),
     }
     for m in models.values():
         m.fit(port)
@@ -311,38 +394,6 @@ def run_risk_snapshot(cfg: Config, wf_result, label: str, evt_threshold_q: float
                                                             "window_end": str(window.index[-1].date())},
                                                            indent=2), encoding="utf-8")
     return {"snapshot": snapshot, "extras": extra, "contributions": contrib}
-
-
-GOVERNANCE = [
-    "Rebalance quarterly to the target weights (5 bps per side assumed).",
-    "Re-convene the committee if the 250-day Basel traffic light turns yellow or red.",
-    "Re-convene if the portfolio drawdown exceeds 10% from its peak.",
-    "Review the IPS limits and the spending rate annually, and after any limit amendment.",
-    "Any amended limit takes effect only after explicit investment-committee approval.",
-]
-
-
-def write_memo(cfg: Config) -> Path | None:
-    """Step 13 committee memo draft: numbers filled in, judgement left to the team."""
-    from quantedge.decision.evidence import build
-    from quantedge.decision.memo import render_memo
-    from quantedge.paths import ROOT
-
-    b = build(cfg)
-    if b is None:
-        return None
-    extras = json.loads((ARTIFACTS / "risk_extras.json").read_text(encoding="utf-8"))
-    numbers = {"portfolio": b.focus, "weights": b.weights, "expected_return": b.evidence.expected_return,
-               "required_return": b.evidence.required_return, "var99": b.var99, "es99": b.evidence.es99_1d,
-               "return_level_10y": b.evidence.return_level_10y, "worst_hist_loss": b.worst_hist_loss,
-               "worst_hist_name": b.worst_hist_name, "worst_drawdown_held": b.evidence.worst_hist_drawdown,
-               "hypothetical_loss": b.evidence.hypothetical_loss,
-               "champion": b.champion, "champion_reason": b.champion_reason, "governance": GOVERNANCE,
-               **{k: extras.get(k, float("nan")) for k in ("es99_10d", "es99_10d_limit")}}
-    out = ROOT / "reports" / "committee_memo_draft.md"
-    out.parent.mkdir(exist_ok=True)
-    out.write_text(render_memo(b.verdict, numbers, cfg.nav_usd), encoding="utf-8")
-    return out
 
 
 def run_innovation(cfg: Config, wf_result, macro: pd.DataFrame) -> dict:
@@ -434,6 +485,7 @@ def run_innovation(cfg: Config, wf_result, macro: pd.DataFrame) -> dict:
 
 SENSITIVITY_CASES = {
     "base": {},
+    "ips_v1_limits": {"variant": "v1_limits"},
     "mrp_4pct": {"mrp": 0.04},
     "mrp_6pct": {"mrp": 0.06},
     "cash_allowed": {"allow_cash": True},
@@ -444,35 +496,44 @@ SENSITIVITY_CASES = {
 def run_verdict_sensitivity(cfg: Config, macro: pd.DataFrame) -> pd.DataFrame:
     """Step 13 §3.4: does the outcome change under other assumptions?
 
-    Every case reruns the walk-forward selection and evaluates the IPS checks with the minimum
-    relaxation, using out-of-sample 99% ES for every case so the cases are comparable."""
-    from quantedge.decision.rules import minimum_relaxation
+    Every case reruns the walk-forward selection and evaluates the focus portfolio with the same
+    D1/D2 evidence as the verdict (`decision_measures`): risk limits by minimum relaxation across
+    IPS-compliant candidates, the return objective against the forward expected return."""
+    from quantedge.data.load import load_raw
+    from quantedge.decision.evidence import _objective_loss
+    from quantedge.decision.rules import MEASURE_LIMIT, minimum_relaxation
 
     betas = pd.read_parquet(ARTIFACTS / "stress_betas_full.parquet")
     shock = pd.Series(cfg.stress["hypothetical"]["shock"], dtype=float)
     r_star = betas[shock.index] @ shock
+    as_of = Partition.from_config(cfg).val[1]
+    raw = load_raw()
     rows = []
     for name, kw in SENSITIVITY_CASES.items():
         sel = run_portfolio_selection(cfg, macro, tag=f"sens_{name}", **kw)
         card = sel["scorecard"]
         limits = IPSLimits.from_config(cfg.ips, kw.get("variant"))
-        eligible = card[card["weights_within_ips"]]
-        hyp = {c: -float(sel["results"][c].weights_history.iloc[-1].reindex(r_star.index, fill_value=0.0) @ r_star)
-               for c in eligible.index}
-        cands = pd.DataFrame({"vol_oos": eligible["volatility"], "worst_hist_drawdown": eligible["worst_crisis_drawdown"],
-                              "hypothetical_loss": pd.Series(hyp), "es99_1d": eligible["es99_oos"]})
-        top = str(card.index[0])
+        weights = {c: sel["results"][c].weights_history.iloc[-1] for c in card.index}
+        hyp = {c: -float(w.reindex(r_star.index, fill_value=0.0) @ r_star) for c, w in weights.items()}
+        meas = decision_measures(cfg, {c: w.drop("CASH", errors="ignore") for c, w in weights.items()},
+                                 hyp, macro, as_of, raw)
+        cands = meas.loc[card.index[card["weights_within_ips"]], list(MEASURE_LIMIT)]
+        top = cfg.portfolio.focus if cfg.portfolio.focus in card.index else str(card.index[0])
         relax = minimum_relaxation(cands, limits) if len(cands) else None
-        gap = sel["required_return"]["required_return"] - float(card.loc[top, "cagr"])
+        gap = sel["required_return"]["required_return"] - float(meas.loc[top, "forward_return"])
+        obj = _objective_loss(ARTIFACTS, sel["required_return"]["required_return"])   # base-case frontier (spec §5)
         if relax is None or relax.max_relative > cfg.decision["max_limit_relaxation"]:
             outcome = "REJECT"
-        elif relax.max_relative == 0 and gap < cfg.decision["return_gap_tolerance"]:
+        elif relax.max_relative == 0 and gap <= cfg.decision["return_gap_tolerance"]:
             outcome = "ACCEPT"
+        elif gap > cfg.decision["return_gap_tolerance"] and obj is not None and not (
+                obj <= limits.stress_drawdown_max + cfg.decision["max_budget_loosening"] + 1e-12):
+            outcome = "REJECT"
         else:
             outcome = "ADJUST RISK LIMIT"
-        rows.append({"case": name, "top_candidate": top, "cagr": float(card.loc[top, "cagr"]),
-                     "volatility": float(card.loc[top, "volatility"]), "es99_oos": float(card.loc[top, "es99_oos"]),
-                     "worst_crisis_drawdown": float(card.loc[top, "worst_crisis_drawdown"]),
+        rows.append({"case": name, "top_candidate": top, "forward_return": float(meas.loc[top, "forward_return"]),
+                     "volatility": float(meas.loc[top, "vol_ann"]), "es99_ttc": float(meas.loc[top, "es99_1d"]),
+                     "worst_crisis_loss": float(meas.loc[top, "worst_hist_drawdown"]),
                      "least_amended": relax.candidate if relax else None,
                      "max_loosening": relax.max_relative if relax else float("nan"),
                      "return_gap": gap, "outcome": outcome})
@@ -520,12 +581,12 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
         alt = run_portfolio_selection(cfg, clean.macro, variant)
         print(f"[select]   sensitivity '{variant}': top candidate {alt['scorecard'].index[0]}, "
               f"IPS passes: {int(alt['scorecard']['ips_pass'].sum())}")
-    feas = run_ips_feasibility(cfg, clean.macro)
-    for case, s in feas.items():
-        print(f"[ips]      feasibility ({case}): {s['finding']}")
-    focus = str(sel["scorecard"].index[0])
+    focus = cfg.portfolio.focus or str(sel["scorecard"].index[0])
     wf = sel["results"][focus]
     print(f"[select]   required return {sel['required_return']['required_return']:.2%}; focus: {focus} (provisional)")
+
+    for case, s in run_ips_feasibility(cfg, clean.macro).items():
+        print(f"[ips]      feasibility ({case}): {s['finding']}")
 
     evt_out = run_evt(cfg, wf, f"{focus} (provisional)")
     rule_a = evt_out["choices"][0]
@@ -534,6 +595,11 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
     print("[risk]     snapshot, contributions, disagreement written")
     out["stress"] = run_stress(cfg, sel["results"], clean.macro, focus)
     print("[stress]   matrix, betas written")
+    out["decision"] = run_decision_evidence(cfg, sel["results"], out["stress"], clean.macro)
+    d = out["decision"]["derived"]
+    print(f"[decision] D2 calibration: {d['crisis_budget']:.0%} budget -> {d['equity_share']:.1%} equity, "
+          f"vol <= {d['vol_ann_max']:.2%}, ES <= {d['es99_1d_max']:.2%} (config {d['config_vol_ann_max']:.2%} / "
+          f"{d['config_es99_1d_max']:.2%})")
     out["innovation"] = run_innovation(cfg, wf, clean.macro)
     print(f"[innov]    regimes, overlay, copula, macro written (ES t vs Gaussian copula: "
           f"{out['innovation']['copula']['es_uplift_t_vs_gauss']:+.1%})")
@@ -543,33 +609,42 @@ def run(cfg: Config, force_backtests: bool = False, with_ml: bool = False) -> di
     else:
         print("[backtest] cached artifacts reused (pass --force-backtests to recompute)")
     if with_ml:
-        print("[ml]       use scripts/run_ml_arena.py (slow)")
+        champion = json.loads((ARTIFACTS / "champion.json").read_text(encoding="utf-8"))["champion"]
+        backtests = (out.get("backtests") or {}).get("results") or {
+            name: pd.read_parquet(ARTIFACTS / f"backtest_{name.lower().replace(' ', '_').replace('-', '_')}_"
+                                              f"{cfg.risk.default_window}.parquet")
+            for name in {champion, "Conditional EVT"}}
+        out["ml"] = run_ml_arena(cfg, wf, backtests, champion, clean.macro)
+        print("[ml]       linear QR arena written (ml_arena_val.parquet)")
 
-    passes = bool(sel["scorecard"].loc[focus, "ips_pass"])
-    status = {"focus_portfolio": focus, "provisional": True,
+    m = out["decision"]["measures"].loc[focus]
+    passes = all(c.passed for c in IPSLimits.from_config(cfg.ips).check(
+        {"vol_ann": m.vol_ann, "stress_drawdown": max(m.worst_hist_drawdown, m.hypothetical_loss),
+         "es99_1d": m.es99_1d, "weights": wf.weights_history.iloc[-1]}))
+    status = {"focus_portfolio": focus, "provisional": not Partition.from_config(cfg).frozen(),
               "provisional_reason": ("methodology not yet frozen; the champion and the ML adoption are "
                                      "confirmed only after the final test" if passes else
-                                     "the top-ranked candidate does not meet every IPS limit"),
+                                     "the focus portfolio does not meet every IPS limit"),
               "weights": {k: float(v) for k, v in wf.weights_history.iloc[-1].items()},
               "weights_as_of": str(wf.weights_history.index[-1].date()),
               "data_end": str(clean.prices.index.max().date()),
               "analysis_end": str(clean.analysis_end.date()), "config_sha256": cfg.sha256,
               "frozen": Partition.from_config(cfg).frozen()}
     (ARTIFACTS / "status.json").write_text(json.dumps(status, indent=2), encoding="utf-8")
-    memo = write_memo(cfg)
-    print(f"[memo]     draft written to {memo}")
-    from quantedge.decision.evidence import build
-    from quantedge.reports.tearsheet import render
+    if Partition.from_config(cfg).frozen():
+        from quantedge.decision import decision_date
+        from quantedge.paths import ROOT
+        from quantedge.reports import final, report
 
-    bundle = build(cfg)
-    if bundle is not None:
-        sheet = memo.parent / "tearsheet.html"
-        sheet.write_text(render(cfg, bundle), encoding="utf-8")
-        print(f"[report]   tear sheet written to {sheet}")
-        from quantedge.reports import report
-
-        (memo.parent / "report.html").write_text(report.render(cfg), encoding="utf-8")
-        print(f"[report]   report draft written to {memo.parent / 'report.html'} (narrative in reports/narrative/)")
+        d = decision_date.run(cfg)["numbers"]
+        print(f"[decide]   {d['decision_date']}: {d['verdict']} at {d['advised_equity']:.0%} equity "
+              f"(expected {d['expected_return']:.2%} vs required {d['objective']['required_return']:.2%})")
+        reports = ROOT / "reports"
+        (reports / "committee_memo_draft.md").write_text(final.memo(d), encoding="utf-8")
+        (reports / "memo.html").write_text(final.memo_page(d), encoding="utf-8")
+        (reports / "tearsheet.html").write_text(final.tear_sheet(d), encoding="utf-8")
+        (reports / "report.html").write_text(report.render(cfg), encoding="utf-8")
+        print(f"[report]   memo, tear sheet and report written to {reports}")
     sens = run_verdict_sensitivity(cfg, clean.macro)
     print(f"[sensitiv] outcomes: {sens['outcome'].to_dict()}")
     print(f"[manifest] {write_artifacts_manifest(cfg)}")
@@ -582,5 +657,6 @@ if __name__ == "__main__":
 
     ap = argparse.ArgumentParser(description="QuantEdge precompute pipeline")
     ap.add_argument("--force-backtests", action="store_true")
+    ap.add_argument("--with-ml", action="store_true", help="rerun the linear QR challenger arena (slow)")
     args = ap.parse_args()
-    run(load_config(), force_backtests=args.force_backtests)
+    run(load_config(), force_backtests=args.force_backtests, with_ml=args.with_ml)

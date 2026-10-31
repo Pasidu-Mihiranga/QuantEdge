@@ -61,7 +61,7 @@ def cumulative(perf: pd.DataFrame, title: str) -> go.Figure:
 def underwater(perf: pd.DataFrame, title: str) -> go.Figure:
     wealth = (1 + perf.fillna(0)).cumprod()
     dd = wealth / wealth.cummax() - 1
-    fig = px.area(dd, title=title)
+    fig = px.line(dd, title=title)        # one line per series: stacked areas would add the drawdowns up
     fig.update_yaxes(tickformat=".0%", title="Drawdown")
     return fig.update_layout(**LAYOUT)
 
@@ -78,41 +78,3 @@ def capital_vs_risk(contrib: pd.DataFrame, title: str) -> go.Figure:
     fig.add_bar(x=contrib.index, y=contrib["pct_contribution"], name="Share of 99% ES", marker_color=COLORS["es"])
     fig.update_yaxes(tickformat=".0%")
     return fig.update_layout(barmode="group", title=title, **LAYOUT)
-
-
-def feasibility_frontier(tab: pd.DataFrame, required: float, es_limit: float, title: str) -> go.Figure:
-    """IPS frontier: 99% ES vs expected return; filled markers meet every risk limit, hollow ones do not."""
-    front = tab[tab.index.str.startswith("frontier")]
-    hover = ("%{customdata[0]}<br>expected return %{y:.2%}<br>99% 1-day ES %{x:.2%}<br>"
-             "volatility %{customdata[1]:.2%}<br>stress drawdown %{customdata[2]:.1%}<br>AGG %{customdata[3]:.0%}<extra></extra>")
-
-    def data(df):
-        return df.reset_index()[["point", "volatility", "stress_drawdown", "AGG"]].to_numpy()
-
-    fig = go.Figure()
-    fig.add_scatter(x=front["es99_1d"], y=front["expected_return"], mode="lines", showlegend=False, hoverinfo="skip",
-                    line=dict(color=COLORS["portfolio"], width=2))
-    for ok, name in ((True, "meets every risk limit"), (False, "breaches a risk limit")):
-        pts = tab[tab["risk_ok"] == ok]
-        if len(pts):
-            symbols = ["diamond" if p.startswith("Min ES") else "circle" for p in pts.index]
-            fig.add_scatter(x=pts["es99_1d"], y=pts["expected_return"], mode="markers", name=name, customdata=data(pts),
-                            hovertemplate=hover,
-                            marker=dict(size=10, symbol=[s if ok else f"{s}-open" for s in symbols],
-                                        color=COLORS["portfolio"], line=dict(width=2, color=COLORS["portfolio"])))
-    fig.add_hline(y=required, line=dict(color=COLORS["benchmark"], dash="dash", width=1),
-                  annotation_text=f"required return {required:.2%}", annotation_position="top left")
-    fig.add_vline(x=es_limit, line=dict(color=COLORS["benchmark"], dash="dash", width=1),
-                  annotation_text=f"ES limit {es_limit:.1%}", annotation_position="top right")
-    fig.update_xaxes(title="99% 1-day ES (2004–2022)", tickformat=".1%", rangemode="tozero")
-    fig.update_yaxes(title="Expected return (CAPM prior)", tickformat=".1%")
-    return fig.update_layout(title=title, **LAYOUT)
-
-
-def importance_bars(imp: pd.Series, title: str, top: int = 10) -> go.Figure:
-    """Horizontal bars of mean |SHAP| (one series; largest at the top)."""
-    s = imp.sort_values(ascending=False).head(top)[::-1]
-    fig = go.Figure(go.Bar(x=s.to_numpy() * 1e4, y=s.index, orientation="h", marker_color=COLORS["portfolio"],
-                           hovertemplate="%{y}: %{x:.2f} bp<extra></extra>"))
-    fig.update_xaxes(title="Mean |SHAP| on the 99% VaR forecast (bp of NAV)")
-    return fig.update_layout(title=title, showlegend=False, **LAYOUT)

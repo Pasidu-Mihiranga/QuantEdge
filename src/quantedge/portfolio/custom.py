@@ -1,4 +1,4 @@
-"""Live risk check for any portfolio (Step 15 §3.2 "live versus precomputed", task 6).
+"""Live risk check for any portfolio.
 
 The app's precomputed artifacts cover the recommended portfolio. For another candidate or custom
 weights the cheap layers are recomputed live on data up to the analysis end (never the locked test

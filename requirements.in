@@ -7,7 +7,6 @@ statsmodels
 arch
 cvxpy
 scikit-learn
-lightgbm
 yfinance
 plotly
 streamlit

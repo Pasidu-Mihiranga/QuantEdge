@@ -1,73 +1,38 @@
-"""QuantEdge 1.0: Executive summary (Home)."""
+"""Serendib University Endowment: the committee app (entry point and navigation).
 
-import pandas as pd
+Run with `make run` (or `.venv/bin/python -m streamlit run app/Home.py`). The app reads data/artifacts only: no
+downloads, no model fitting. Five committee pages, then five technical pages in their own sidebar section.
+"""
+
 import streamlit as st
 
-from components import charts
-from components.data import config, jsonfile, parquet, require, status
-from components.evidence import verdict
-from components.sidebar import pct, provisional_banner, sidebar, usd
+st.set_page_config(page_title="Serendib Endowment", page_icon=":material/account_balance:", layout="wide")
 
-st.set_page_config(page_title="QuantEdge: Serendib Endowment", layout="wide")
-ctl = sidebar()
-cfg = config()
-s = status()
+from components.ui import style  # noqa: E402  (after set_page_config)
+from quantedge.paths import ARTIFACTS  # noqa: E402
 
-st.title("Serendib University Endowment: Risk-Aware Portfolio")
-st.caption("USD 10M conservative endowment · 7 ETFs · every number is 1-day unless stated, losses are positive")
-provisional_banner()
-
-v, info = verdict()
-if not require(v, "The decision evidence"):
-    st.stop()
-
-colors = {"ACCEPT": "#2e9d57", "ADJUST RISK LIMIT": "#e3b505", "REJECT": "#c0392b"}
-st.markdown(
-    f"<div style='background:{colors[v.status]};color:white;padding:0.9rem 1.2rem;border-radius:8px;"
-    f"font-size:1.35rem;font-weight:700'>Rule-engine outcome: {v.status}</div>", unsafe_allow_html=True)
-st.caption("The rule engine summarises the evidence. The final recommendation and its wording are the team's own judgement.")
-for r in v.reasons:
-    st.write(f"- {r}")
-
-ev = info["evidence"]
-scale = ctl.nav
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Expected return (OOS, a year)", pct(ev.expected_return), f"{ev.expected_return - ev.required_return:+.2%} vs required")
-c2.metric(f"99% 1-day ES ({info['champion']})", usd(ev.es99_1d * scale), pct(ev.es99_1d), delta_color="off")
-c3.metric("Worst historical stress", usd(-info["worst_hist_loss"] * scale), pct(-info["worst_hist_loss"], 1), delta_color="off")
-val = parquet("backtest_selection_val_500.parquet")
-zone = "green" if val is not None and val.loc[info["champion"], "rolling_red"] == 0 else "check"
-c4.metric("Backtest (2019–2022)", "passes" if ev.champion_valid else "fails", f"rolling Basel: {zone}", delta_color="off")
-
-left, right = st.columns([1, 1.3])
-with left:
-    w = pd.Series(s.get("weights", {}))
-    st.plotly_chart(charts.donut(w, f"Allocation: {s.get('focus_portfolio')}"), width="stretch")
-    st.dataframe(pd.DataFrame({"weight": w.map(lambda x: f"{x:.1%}"), "USD": (w * scale).map(usd)}),
-                 width="stretch")
-with right:
-    st.subheader("Five committee questions")
-    extras = jsonfile("risk_extras.json")
-    snap = parquet("risk_snapshot.parquet")
-    var99 = float(snap[(snap.model == info["champion"]) & (snap.alpha == 0.99)]["var"].iloc[0])
-    st.markdown(f"""
-1. **How much could we lose on a bad day?** On about 1 day in 100 the model expects a loss above
-   {usd(var99 * scale)} (99% VaR); on those days the average loss is {usd(ev.es99_1d * scale)} (99% ES).
-2. **What about a once-in-a-decade day?** EVT puts the 1-in-10-years daily loss at about
-   {usd(extras.get('return_level_10y_evt', float('nan')) * scale)}.
-3. **What happens in a crisis like 2008, 2020 or 2022?** The worst replayed crisis loses {pct(-info['worst_hist_loss'], 1)}.
-4. **Can we trust the risk model?** {info['champion']} passed every pre-declared backtest on 2019–2022.
-5. **Does it meet the return objective?** Expected {pct(ev.expected_return)} against a required {pct(ev.required_return)}.
-""")
-    st.caption("Draft wording generated from the numbers; the team writes the final committee memo.")
-
-sens = parquet("verdict_sensitivity.parquet")
-if sens is not None:
-    with st.expander("Does the outcome change under other assumptions? (verdict sensitivity)"):
-        st.dataframe(sens.style.format({c: "{:.2%}" for c in ("cagr", "volatility", "es99_oos",
-                                                             "worst_crisis_drawdown", "return_gap")}
-                                       | {"max_loosening": "{:+.0%}"}), width="stretch")
-        st.caption("Every case reruns the walk-forward selection; ES is the out-of-sample 99% ES for comparability.")
-
-with st.expander("All decision checks"):
-    st.dataframe(pd.DataFrame([c.__dict__ for c in v.checks]), width="stretch")
+style()
+pages = {
+    "For the committee": [
+        st.Page("views/recommendation.py", title="Our recommendation", icon=":material/verified:", default=True),
+        st.Page("views/crises.py", title="What can go wrong", icon=":material/thunderstorm:", url_path="crises"),
+        st.Page("views/risk.py", title="Risk and confidence", icon=":material/monitoring:", url_path="risk"),
+        st.Page("views/portfolio.py", title="Compare portfolios", icon=":material/compare_arrows:", url_path="portfolio"),
+        st.Page("views/assumptions.py", title="Assumptions & Limitations", icon=":material/info:", url_path="assumptions"),
+    ],
+    "Technical detail": [
+        st.Page("technical/data_quality.py", title="Data and quality checks", icon=":material/dataset:", url_path="data"),
+        st.Page("technical/models.py", title="All risk models, 2008–2022", icon=":material/leaderboard:", url_path="models"),
+        st.Page("technical/tail_evt.py", title="Tail risk (EVT)", icon=":material/show_chart:", url_path="evt"),
+        st.Page("technical/innovation.py", title="Regimes, overlay, copula, FX", icon=":material/lightbulb:",
+                url_path="innovation"),
+        st.Page("technical/methodology.py", title="Methodology", icon=":material/menu_book:",
+                url_path="methodology"),
+    ],
+}
+pages["Explore"] = [st.Page("side/custom.py", title="Try your own portfolio", icon=":material/tune:", url_path="custom")]
+if (ARTIFACTS / "swarm_comparison.json").exists():         # appears once real simulation runs exist
+    pages["Explore"].append(st.Page("side/swarm.py", title="Crowd simulation", icon=":material/groups:", url_path="crowd"))
+page = st.navigation(pages, position="sidebar")
+st.sidebar.caption("Team Gmora · QuantEdge 1.0")
+page.run()

@@ -1,23 +1,23 @@
 {
   "adopted": {
-    "required_return": 0.06678631695415438,
-    "max_expected_return_on_frontier": 0.07220753424649011,
+    "required_return": 0.058958449999999996,
+    "max_expected_return_on_frontier": 0.06931483687588796,
     "points": 26,
-    "points_meeting_risk_limits": 1,
-    "points_meeting_everything": 0,
-    "best_risk_compliant_point": "Min ES (full sample)",
-    "best_risk_compliant_expected_return": 0.05267350033055557,
-    "return_gap": 0.014112816623598812,
-    "min_volatility": 0.0607474784131378,
-    "min_es99_1d": 0.014980776835914502,
-    "min_stress_drawdown": 0.15191572041564183,
+    "points_meeting_risk_limits": 13,
+    "points_meeting_everything": 3,
+    "best_risk_compliant_point": "frontier 12",
+    "best_risk_compliant_expected_return": 0.06080756473512786,
+    "return_gap": -0.0018491147351278672,
+    "min_volatility": 0.061015707775094186,
+    "min_es99_1d": 0.015410093955694428,
+    "min_stress_drawdown": 0.16452758351794794,
     "fail_share": {
-      "vol_ok": 0.46153846153846156,
-      "es_ok": 0.9615384615384616,
-      "stress_ok": 0.6153846153846154,
-      "return_ok": 0.7307692307692308
+      "vol_ok": 0.42307692307692313,
+      "es_ok": 0.5,
+      "stress_ok": 0.3076923076923077,
+      "return_ok": 0.3846153846153846
     },
-    "finding": "conflict: the risk limits allow at most 5.27% expected return against 6.68% required",
+    "finding": "feasible: at least one portfolio meets the return objective and every risk limit",
     "rf_annual": 0.04449086730932694,
     "sample": [
       "2004-11-19",
@@ -25,25 +25,52 @@
     ]
   },
   "original_agg40": {
-    "required_return": 0.06678631695415438,
-    "max_expected_return_on_frontier": 0.07220753465097272,
+    "required_return": 0.058958449999999996,
+    "max_expected_return_on_frontier": 0.06931483674034963,
     "points": 26,
     "points_meeting_risk_limits": 0,
     "points_meeting_everything": 0,
     "best_risk_compliant_point": null,
     "best_risk_compliant_expected_return": null,
     "return_gap": null,
-    "min_volatility": 0.09103232010478568,
-    "min_es99_1d": 0.023871065125567387,
-    "min_stress_drawdown": 0.24366957854562465,
+    "min_volatility": 0.09650043966271811,
+    "min_es99_1d": 0.025676755637255525,
+    "min_stress_drawdown": 0.2612571929259321,
     "fail_share": {
       "vol_ok": 1.0,
       "es_ok": 1.0,
       "stress_ok": 1.0,
-      "return_ok": 0.3076923076923077
+      "return_ok": 0.0
     },
     "closest_point": "Min ES (full sample)",
-    "closest_point_worst_ratio": 1.5914043417044925,
+    "closest_point_worst_ratio": 1.1570102453805313,
+    "finding": "infeasible: no IPS-compliant portfolio meets every risk limit, even in-sample",
+    "rf_annual": 0.04449086730932694,
+    "sample": [
+      "2004-11-19",
+      "2022-12-30"
+    ]
+  },
+  "v1_limits": {
+    "required_return": 0.058958449999999996,
+    "max_expected_return_on_frontier": 0.06931483687588796,
+    "points": 26,
+    "points_meeting_risk_limits": 0,
+    "points_meeting_everything": 0,
+    "best_risk_compliant_point": null,
+    "best_risk_compliant_expected_return": null,
+    "return_gap": null,
+    "min_volatility": 0.061015707775094186,
+    "min_es99_1d": 0.015410093955694428,
+    "min_stress_drawdown": 0.16452758351794794,
+    "fail_share": {
+      "vol_ok": 0.5,
+      "es_ok": 1.0,
+      "stress_ok": 0.6538461538461539,
+      "return_ok": 0.3846153846153846
+    },
+    "closest_point": "Min ES (full sample)",
+    "closest_point_worst_ratio": 1.0273395970462953,
     "finding": "infeasible: no IPS-compliant portfolio meets every risk limit, even in-sample",
     "rf_annual": 0.04449086730932694,
     "sample": [

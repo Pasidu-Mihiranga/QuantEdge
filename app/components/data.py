@@ -1,4 +1,4 @@
-"""Cached artifact loaders. The app reads data/artifacts only (no downloads); models are refitted live only for the Risk dashboard's portfolio check."""
+"""Cached artifact loaders. The app reads data/artifacts only: no downloads, no model fitting."""
 
 from __future__ import annotations
 
@@ -14,10 +14,9 @@ BACKTEST_FILES = {
     "Historical": "historical", "Normal": "normal", "Student-t": "student_t",
     "Cornish-Fisher": "cornish_fisher", "EVT": "evt", "Monte Carlo": "monte_carlo",
     "GARCH-FHS": "garch_fhs", "Conditional EVT": "conditional_evt",
+    "GJR-FHS": "gjr_fhs", "GJR conditional EVT": "gjr_conditional_evt",
 }
-ML_FILES = {"Linear QR": "ml_linear_qr", "LightGBM": "ml_lightgbm",
-            "Linear QR (ratio ES)": "ml_linear_qr_ratio_es", "LightGBM (ratio ES)": "ml_lightgbm_ratio_es",
-            "LSTM": "ml_lstm"}
+ML_FILES = {"Linear QR": "ml_linear_qr", "Linear QR (ratio ES)": "ml_linear_qr_ratio_es"}
 
 
 @st.cache_resource
@@ -60,27 +59,3 @@ def require(df, what: str) -> bool:
         st.warning(f"{what} is not available yet. Run `python -m quantedge.pipeline` first.")
         return False
     return True
-
-
-def slug(name: str) -> str:
-    """Artifact file name of a candidate (same rule as the pipeline)."""
-    return name.lower().replace(" ", "_").replace("/", "").replace("(", "").replace(")", "")
-
-
-def candidates() -> list[str]:
-    card = parquet("portfolio_scorecard_val.parquet")
-    return [] if card is None else list(card.index)
-
-
-def candidate_weights(name: str) -> pd.Series | None:
-    """Latest walk-forward target weights of a candidate (as of the last rebalance before 2023)."""
-    wh = parquet(f"wf_weights_{slug(name)}.parquet")
-    return None if wh is None else wh.iloc[-1]
-
-
-@st.cache_data
-def analysis_returns() -> pd.DataFrame | None:
-    """Daily simple returns up to the analysis end; the final-test period stays locked."""
-    r = parquet("returns_simple.parquet")
-    end = status().get("analysis_end")
-    return None if r is None or end is None else r.loc[:end]

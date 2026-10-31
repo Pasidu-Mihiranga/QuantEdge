@@ -1,0 +1,62 @@
+{
+  "factors": {
+    "rates_10y": {
+      "direction": "+",
+      "intensity": "high",
+      "confidence": "high"
+    },
+    "oil": {
+      "direction": "+",
+      "intensity": "extreme",
+      "confidence": "high"
+    },
+    "vix": {
+      "direction": "+",
+      "intensity": "high",
+      "confidence": "high"
+    },
+    "usd": {
+      "direction": "+",
+      "intensity": "medium",
+      "confidence": "high"
+    },
+    "credit_spread": {
+      "direction": "+",
+      "intensity": "medium",
+      "confidence": "high"
+    }
+  },
+  "behaviour": {
+    "panic_selling": 3,
+    "flight_to_safety": [
+      "GLD",
+      "AGG",
+      "cash"
+    ],
+    "contagion_breadth": 3,
+    "herding": 3,
+    "investor_disagreement": 2,
+    "duration": "months"
+  },
+  "asset_directions": {
+    "SPY": "-",
+    "EFA": "-",
+    "EEM": "-",
+    "AGG": "-",
+    "GLD": "+",
+    "XLE": "0",
+    "XLK": "-"
+  },
+  "narrative_summary": "The market enters a period of high volatility and pervasive risk-off sentiment, triggered by an oil supply shock causing inflation and central bank rate hikes. Individual investors engage in rapid panic selling and fund outflows, driven by headlines and recent losses, while capital-preservation entities seek safety in gold, high-quality bonds, and cash.",
+  "key_mechanisms": [
+    "Oil supply shock causes oil prices to rise 40% and inflation to re-accelerate.",
+    "Central bank resumes hiking, pushing long-term yields higher.",
+    "Individual investors exhibit trend-following, headline-sensitive panic selling and fund outflows, leading to herding.",
+    "Capital-preservation entities (pension funds, endowments) prioritize safety, seeking gold, high-quality bonds, and cash.",
+    "Hedge funds and leveraged traders are forced to de-lever when volatility and margins rise.",
+    "Widening credit spreads and strengthening US dollar reflect systemic stress."
+  ],
+  "stated_limitations": [
+    "The report does not explicitly state its own limitations, but the prompt's constraints imply not inventing verified prices, returns, or unsupported probabilities."
+  ]
+}

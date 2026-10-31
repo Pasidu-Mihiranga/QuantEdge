@@ -8,8 +8,15 @@ market_proxy: SPY
 data:
   start: "2004-11-18"          # GLD inception, the binding constraint
   end: "2026-10-26"            # last complete trading day of the snapshot (downloaded 2026-10-27 intraday)
-  fred_series: [DTB3, DGS10, VIXCLS, CPIAUCSL, DCOILWTICO, BAMLH0A0HYM2, BAA10Y, DTWEXBGS]
-  fx: ["LKR=X"]                # Sri Lankan rupees per USD: memo context only (Step 14 D)  # BAMLH0A0HYM2: FRED keeps only 3 years; BAA10Y is the long-history credit spread
+  fred_series: [DTB3, DGS10, VIXCLS, CPIAUCSL, DCOILWTICO, BAMLH0A0HYM2, BAA10Y, DTWEXBGS, DGS2, DFII10, T10YIE]
+  # DGS2: expected policy path (regime test); DFII10: real yield; T10YIE: breakeven inflation (pi in the required return)
+  # BAMLH0A0HYM2: FRED keeps only 3 years and nothing uses it; BAA10Y is the long-history credit spread
+  fx: ["LKR=X"]                # Sri Lankan rupees per USD: memo context only (Step 14 D)
+  context_series: [FPCPITOTLZGLKA]   # Sri Lanka CPI inflation, annual (World Bank via FRED): memo context only
+  extended_history:            # out-of-sample validation only (notebook 05 regime test); never used by the pipeline
+    tickers: ["^GSPC"]         # S&P 500 price index (no dividends): long history before SPY's 2004 start in our sample
+    start: "1989-01-01"
+    end: "2004-11-17"          # stops the day before data.start, so it never overlaps the modelling sample
 
 cleaning: {stale_run: 5, jump_sigma: 6, jump_window: 60, ffill_limit_fred: 3, large_negative: -0.20, adj_break: 0.02}
 
@@ -18,6 +25,8 @@ portfolio:
   rebalance: quarterly
   cost_bps_per_side: 5
   estimation_window_days: 756
+  frontier_equity: 0.35        # pre-registered test portfolio (inputs_lock, option C): min variance at 35% equity
+  focus: Frontier 35% equity   # the pipeline's focus portfolio (was: top of the scorecard)
 
 risk:
   confidence_levels: [0.90, 0.95, 0.99]
@@ -30,60 +39,74 @@ backtest:
   oos_start: "2008-01-01"
   refit_every: 5
   champion_rule: lowest_pinball_passing   # decision 2026-10-28 (was: simplest_passing)
-ips:                           # Step 05: v1 limits from the client's tolerance, not from results
-  spending_rate: 0.04
-  cost_drag: 0.002
-  cpi_years: 10
+  champion: GJR conditional EVT          # locked champion (notebook 04, inputs_lock); final_test runs it
+ips:                           # IPS v2 = the team's input lock (doc/decisions/inputs_lock.md, agreed 2026-10-28)
+  spending_rate: 0.03          # D1: 3.0% of the 12-quarter average value (range 2.5-3.5%)
+  real_growth: 0.005           # D1: objective = CPI + 3.5% = (1 + 3%)(1 + 0.5%)(1 + breakeven inflation) - 1
+  cpi_years: 10                # context only: 10-year average CPI is reported next to the breakeven
+  crisis_budget: 0.25          # D2: worst peak-to-trough loss, max(historical replays, hypothetical)
+  forward:                     # D4 (disclosed assumptions) and spec §3.1 costs; notebook 06 A2
+    erp: 0.045                 # arithmetic equity risk premium (range 3.5-5.5%)
+    agg_spread: 0.005          # AGG over the 10-year Treasury (range 0.3-0.9%)
+    trading_cost: 0.0001       # a year
+    beta_window: 756           # trading days for the betas to SPY
+    expense_ratios: {SPY: 0.000945, EFA: 0.0033, EEM: 0.0070, AGG: 0.0003, GLD: 0.0040, XLE: 0.0009, XLK: 0.0009}
+    withholding: {SPY: 0.15, EFA: 0.15, EEM: 0.15, XLE: 0.15, XLK: 0.15}   # on dividends; AGG assumed exempt
   limits:
-    vol_ann_max: 0.08          # annualised volatility
-    stress_drawdown_max: 0.20  # max drawdown in historical stress windows
-    es99_1d_max: 0.015         # 99% 1-day ES as a fraction of NAV ($150k)
+    vol_ann_max: 0.084         # D2-derived: through-the-cycle volatility of the frontier point at the 25% budget (notebook 03 §4)
+    stress_drawdown_max: 0.25  # D2 crisis budget: worst historical replay and the hypothetical, today's weights
+    es99_1d_max: 0.0223        # D2-derived: 99% 1-day ES on development data incl. the GFC ($223k)
     es99_10d_max: 0.05         # reported only
     single_asset_max: 0.40
-    asset_caps: {XLE: 0.10, XLK: 0.10, EEM: 0.10, GLD: 0.20, AGG: 0.65}   # asset caps replace the single-asset cap (decision 2026-10-28)
-    asset_floors: {AGG: 0.25}
+    asset_caps: {XLE: 0.10, XLK: 0.10, EEM: 0.10, GLD: 0.15, AGG: 0.65}   # D3 (agreed 2026-10-28); SPY and EFA keep the 40% single-asset cap
+    asset_floors: {}           # D3: no AGG floor (the equity share sets the bond weight)
     equity_group: [SPY, EFA, EEM, XLE, XLK]
     equity_max: 0.50
     cash_max: 0.10
   variants:                    # sensitivity cases, never used for selection
     original_agg40:            # IPS v1 before the 2026-10-28 calibration (AGG under the 40% single-asset cap)
       asset_caps: {AGG: 0.40}
+    v1_limits:                 # IPS v1 risk limits (8% / 20% / 1.5%), kept to show the change log (G26)
+      vol_ann_max: 0.08
+      stress_drawdown_max: 0.20
+      es99_1d_max: 0.015
 stress:                        # Step 12 (historical windows are also used by the Step 07 scorecard)
   historical:
     GFC 2008: ["2007-10-09", "2009-03-09"]
     COVID crash 2020: ["2020-02-19", "2020-03-23"]
     Rate shock 2022: ["2022-01-03", "2022-10-12"]
   hypothetical:                # "Stagflation and correlation breakdown" (team-designed; factor shocks, Step 12 §3.2)
-    name: Stagflation and correlation breakdown
-    status: initial assumptions (decision 2026-10-28)
-    horizon: null              # OPEN, blocks the freeze: state the shock horizon (instantaneous / 1 month / 1 quarter)
-    credit_measure: BAA10Y     # OPEN, blocks the freeze: justify +150 bp on the BAA10Y scale (originally HY +300 bp)
+    name: Hormuz stagflation 2027
+    status: "agreed 2026-10-28 (D5), central case at 2022-size rates, the most severe candidate within history (notebook 05 §4b)"
+    horizon: episode_3q        # D5: cumulative peak-to-trough episode of about three quarters (agreed 2026-10-28)
+    liquidity_day: {AGG: -0.05}   # D5: one panic day on AGG on top of the factor shock (notebook 05 §4)
+    credit_measure: BAA10Y     # long history (since 1986); +150 bp lies between 2022 (+43 bp) and the GFC (about +330 bp)
     shock:
-      d_yield10_bp: 150        # 2022 saw about +240 bp in the 10-year yield
+      d_yield10_bp: 250        # 2022-size (2022 saw +248 bp); 98.9th percentile of 39-week changes since 1962 (original design: +150 bp)
       dln_oil: 0.3365          # oil +40% = ln(1.40)
       d_vix: 25                # VIX to about 45
       dln_usd: 0.0770          # USD +8% = ln(1.08)
       d_credit_bp: 150         # Baa-Treasury spread; about half its 2008 widening (+330 bp). Provisional, team to confirm
+  preregistered:               # notebook 05 §6: fixed before the freeze, computed once after it
+    2025 tariff shock: ["2025-02-19", "2025-04-08"]
+    2026 Hormuz shock: ["2026-02-27", "2026-03-30"]
   reverse:
-    loss: 0.20                 # IPS stress drawdown limit
+    loss: 0.25                 # D2 crisis budget (agreed 2026-10-28)
     horizon_days: 21
 
 decision:                      # Step 13 rule engine (every threshold displayed in the app)
   evt_tolerance: 1.25          # C5a: EVT 99% ES may exceed the ES budget by at most 25%
   return_level_limit: 0.05     # C5b: once-in-10-years daily loss vs the 10-day ES budget (5% NAV)
-  max_risk_to_capital: 2.0     # C7
+  max_risk_to_capital: 2.0     # reported only; C7 removed (unreachable, audit G15). ES-share sizing rule pending decision D8
   rc_flag: 1.5                 # sizing flag (reported, not a verdict check)
-  return_gap_tolerance: 0.01   # C8: gaps below 1% are disclosed, not failed
+  return_gap_tolerance: 0.0    # C8 (D10): ACCEPT only if the objective is met; any gap is ADJUST, with its cost
   max_limit_relaxation: 0.50   # ADJUST vs REJECT: largest acceptable loosening of a named limit
-
-behavioral:                    # Steps 19–20 (MiroFish)
-  enabled: true                # set false if the Week-2 feasibility gate fails
-  mirofish_commit: 7657031ac01184afe2cb220f5ee3545573b5e843   # 666ghj/MiroFish, cloned 2026-10-28 into mirofish-service/ (unmodified)
-  mirofish_image: ghcr.io/666ghj/mirofish@sha256:d236402eb35c5abfd68da63be9d19202d619da8803e173e8e34b97731180944a   # the version actually run (built 2026-03-07)
-  llm: "gemini-2.5-flash via Vertex AI (local proxy: python -m quantedge.behavioral.vertex_proxy)"
-  replicates: 5
-  max_rounds: 40
-  scenarios_file: data/behavioral/scenarios.yaml
+  max_budget_loosening: 0.05   # spec §5: ADJUST if a frontier point meets the objective with the crisis budget loosened by <= 5 pp
+  date: "2026-10-26"           # D7 decision date; decision-date numbers use data before it (t − 1), only after the freeze tag
+  frontier_levels: [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]   # the caps force at least 20% equity
+  es_share_cap: 0.40          # D8: no ETF may carry more than 40% of the 99% ES
+  robustness: {erp: [0.035, 0.045, 0.055], agg_spread: [0.003, 0.005, 0.009], agg_withholding: [0.0, 0.15]}   # notebook 06 B5
+  simulation: {paths: 5000, months: 120, block: 12, seed: 20261029}   # notebook 06 B6 (context only)
 
 partition:                     # Step 22: decisions use dev + val only; test locked until the tag
   dev: ["2004-11-18", "2018-12-31"]
@@ -92,21 +115,10 @@ partition:                     # Step 22: decisions use dev + val only; test loc
   freeze_tag: methodology-freeze-v1
   warmup_weights: {SPY: 0.60, AGG: 0.40}
 
-ml:                            # Steps 22–23
+ml:                            # Step 22: linear QR challenger (LightGBM and LSTM archived at tag archive/mirofish-ml)
   quantiles: [0.90, 0.95, 0.99]
   primary_metric: pinball_99
   noninferiority_margin: 0.02
+  retrain_every: 21            # linear QR refit and GARCH-sigma feature refit cadence (trading days)
   es_ratio: {eps: 1.0e-4, clip: [1.0, 2.5]}
   es_integral_levels: [0.975, 0.98, 0.985, 0.99, 0.9925, 0.995, 0.9975]
-  lgbm:
-    retrain_every: 21
-    grid: {num_leaves: [7, 15], min_data_in_leaf: [50, 100]}
-    learning_rate: 0.03
-    n_estimators: 500
-    feature_fraction: 0.8
-  lstm:
-    retrain_every: 63
-    grid: {seq_len: [20, 60], hidden: [16, 32], weight_decay: [1.0e-4, 1.0e-3]}
-    dropout: 0.2
-    fz0_weight: 1.0
-    seeds: [11, 22, 33, 44, 55]

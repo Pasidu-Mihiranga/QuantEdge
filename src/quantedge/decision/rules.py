@@ -20,7 +20,7 @@ import pandas as pd
 from quantedge.decision.ips import IPSLimits
 
 # measure -> the IPS limit it is checked against (C2 and C3 share the stress drawdown limit)
-MEASURE_LIMIT = {"vol_oos": "vol_ann_max", "worst_hist_drawdown": "stress_drawdown_max",
+MEASURE_LIMIT = {"vol_ann": "vol_ann_max", "worst_hist_drawdown": "stress_drawdown_max",
                  "hypothetical_loss": "stress_drawdown_max", "es99_1d": "es99_1d_max"}
 
 
@@ -60,20 +60,23 @@ def minimum_relaxation(candidates: pd.DataFrame, lim: IPSLimits) -> Relaxation:
 
 @dataclass(frozen=True)
 class Evidence:
-    vol_oos: float                  # C1 annualised volatility (walk-forward OOS)
-    worst_hist_drawdown: float      # C2 worst historical stress drawdown (positive)
+    vol_ann: float                  # C1 annualised volatility through the cycle (dev data, today's weights; D2)
+    worst_hist_drawdown: float      # C2 worst historical crisis loss, today's weights (positive; D2)
     hypothetical_loss: float        # C3 hypothetical scenario loss (positive)
-    es99_1d: float                  # C4 99% 1-day ES from the selected model
+    es99_1d: float                  # C4 99% 1-day ES through the cycle (dev data incl. the GFC; D2)
     evt_es99: float                 # C5 EVT 99% ES
     return_level_10y: float         # C5 once-in-10-years daily loss
     champion_valid: bool            # C6 selected model passes Kupiec, CC and Basel
     any_model_valid: bool           # C6 for REJECT: at least one model is valid
-    max_risk_to_capital: float      # C7 concentration
-    expected_return: float          # C8
-    required_return: float          # C8
-    resized_passes: bool = False    # a re-sized portfolio exists that passes C1–C5 and C7
+    max_risk_to_capital: float      # reported for sizing, not a verdict check (C7 removed, audit G15)
+    expected_return: float          # C8 forward expected return, net of costs (D4)
+    required_return: float          # C8 CPI + spending + real growth (D1)
+    resized_passes: bool = False    # a re-sized portfolio exists that passes C1–C5
     resized_weights: dict | None = None
     relaxation: Relaxation | None = None   # minimum relaxation across candidates (preferred when given)
+    es99_conditional: float = float("nan")  # champion's current conditional ES: a D9 monitoring alert, not a check
+    objective_loss: float | None = None     # spec §5: D2 loss of the lowest-risk frontier point that meets the
+                                            # required return (nan: no point does); None: not evaluated
 
 
 @dataclass(frozen=True)
@@ -101,14 +104,13 @@ def _max_check(code, name, value, limit, tol=1e-12) -> Check:
 def run_checks(ev: Evidence, lim: IPSLimits, dcfg: dict) -> list[Check]:
     tol = dcfg["evt_tolerance"]
     return [
-        _max_check("C1", "Volatility (OOS, annualised)", ev.vol_oos, lim.vol_ann_max),
-        _max_check("C2", "Worst historical stress drawdown", ev.worst_hist_drawdown, lim.stress_drawdown_max),
+        _max_check("C1", "Volatility (through the cycle)", ev.vol_ann, lim.vol_ann_max),
+        _max_check("C2", "Worst historical crisis loss", ev.worst_hist_drawdown, lim.stress_drawdown_max),
         _max_check("C3", "Hypothetical scenario loss", ev.hypothetical_loss, lim.stress_drawdown_max),
-        _max_check("C4", "99% 1-day ES (selected model)", ev.es99_1d, lim.es99_1d_max),
+        _max_check("C4", "99% 1-day ES (through the cycle)", ev.es99_1d, lim.es99_1d_max),
         _max_check("C5a", "EVT 99% ES", ev.evt_es99, lim.es99_1d_max * tol),
         _max_check("C5b", "Once-in-10-years daily loss (EVT)", ev.return_level_10y, dcfg["return_level_limit"]),
         Check("C6", "Backtest validity of the selected model", ev.champion_valid, True, ev.champion_valid),
-        _max_check("C7", "Max risk-to-capital ratio", ev.max_risk_to_capital, dcfg["max_risk_to_capital"]),
         Check("C8", "Expected return vs required", ev.expected_return, ev.required_return,
               ev.expected_return >= ev.required_return, ev.expected_return - ev.required_return),
     ]
@@ -123,7 +125,7 @@ def evaluate(ev: Evidence, lim: IPSLimits, dcfg: dict) -> Verdict:
     if not ev.any_model_valid:
         return Verdict("REJECT", checks, ["No risk model passes the backtests: risk cannot be measured reliably."])
 
-    risk_fail = [c for c in checks if c.code in ("C1", "C2", "C3", "C4", "C5a", "C5b", "C7") and not c.passed]
+    risk_fail = [c for c in checks if c.code in ("C1", "C2", "C3", "C4", "C5a", "C5b") and not c.passed]
     gap = ev.required_return - ev.expected_return
     reasons, adjustments = [], {}
 
@@ -137,7 +139,7 @@ def evaluate(ev: Evidence, lim: IPSLimits, dcfg: dict) -> Verdict:
             adjustments["resized_weights"] = ev.resized_weights
         else:
             relax = ev.relaxation or minimum_relaxation(pd.DataFrame([{
-                "vol_oos": ev.vol_oos, "worst_hist_drawdown": ev.worst_hist_drawdown,
+                "vol_ann": ev.vol_ann, "worst_hist_drawdown": ev.worst_hist_drawdown,
                 "hypothetical_loss": ev.hypothetical_loss, "es99_1d": ev.es99_1d}], index=["evaluated"]), lim)
             if relax.max_relative > dcfg["max_limit_relaxation"]:
                 worst = max(relax.relative, key=relax.relative.get)
@@ -160,7 +162,26 @@ def evaluate(ev: Evidence, lim: IPSLimits, dcfg: dict) -> Verdict:
     if not by["C6"].passed:
         reasons.append("The selected model fails its backtest: use the most conservative valid model for limits.")
     if gap >= dcfg["return_gap_tolerance"]:
+        adjustments["return_gap"] = gap
+        if ev.objective_loss is not None:
+            # Spec §5: ADJUST only if some frontier point meets the objective with the crisis budget loosened by at
+            # most `max_budget_loosening`; otherwise REJECT, with any spending change given as advice.
+            budget, room = lim.stress_drawdown_max, dcfg["max_budget_loosening"]
+            if ev.objective_loss == ev.objective_loss and ev.objective_loss <= budget + room + 1e-12:
+                loosen = adjustments.setdefault("loosen_limits_to", {})
+                loosen["stress_drawdown_max"] = max(loosen.get("stress_drawdown_max", budget), ev.objective_loss)
+                adjustments["client_approval_required"] = True
+                reasons += [f"Expected return is {gap:.2%} below the required return. A frontier point meets it if the "
+                            f"crisis budget is loosened to {ev.objective_loss:.1%} (at most +{room:.0%} allowed).",
+                            "Amended limits require explicit approval by the investment committee (client) before "
+                            "implementation."]
+                return Verdict("ADJUST RISK LIMIT", checks, reasons, adjustments)
+            return Verdict("REJECT", checks, [
+                f"Expected return is {gap:.2%} below the required return, and no frontier point reaches it even with "
+                f"the crisis budget loosened by {room:.0%}: the objective is not achievable within the client's risk "
+                "tolerance at today's market levels.",
+                "Advice (not a verdict branch): a lower spending rate, or a decision-date real yield high enough to "
+                "close the gap (notebook 06 B4)."], adjustments)
         reasons.append(f"Expected return is {gap:.2%} below the required return: lower the return objective, "
                        "review the spending rate, or loosen a named risk limit.")
-        adjustments["return_gap"] = gap
     return Verdict("ADJUST RISK LIMIT", checks, reasons, adjustments)

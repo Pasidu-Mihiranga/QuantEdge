@@ -27,6 +27,8 @@ class DataCfg:
     end: pd.Timestamp | None
     fred_series: tuple[str, ...]
     fx: tuple[str, ...] = ()
+    context_series: tuple[str, ...] = ()          # FRED, saved as ctx_*.parquet; never in the daily panel
+    extended_history: dict[str, Any] = field(default_factory=dict)   # ext_*.parquet; validation only
 
 
 @dataclass(frozen=True)
@@ -45,6 +47,8 @@ class PortfolioCfg:
     rebalance: str
     cost_bps_per_side: float
     estimation_window_days: int
+    frontier_equity: float | None = None   # pre-registered test portfolio: min variance at this equity share
+    focus: str | None = None               # the pipeline's focus portfolio; None = top of the scorecard
 
 
 @dataclass(frozen=True)
@@ -66,6 +70,7 @@ class BacktestCfg:
     oos_start: pd.Timestamp
     refit_every: int
     champion_rule: str = "lowest_pinball_passing"
+    champion: str | None = None            # locked champion; None = chosen by the rule
 
 
 @dataclass(frozen=True)
@@ -93,7 +98,6 @@ class Config:
     partition: PartitionCfg
     ips: dict[str, Any] = field(default_factory=dict)
     stress: dict[str, Any] = field(default_factory=dict)
-    behavioral: dict[str, Any] = field(default_factory=dict)
     ml: dict[str, Any] = field(default_factory=dict)
     decision: dict[str, Any] = field(default_factory=dict)
     sha256: str = ""
@@ -159,6 +163,8 @@ def load_config(path: Path | str = CONFIG_FILE) -> Config:
             end=_ts(raw["data"].get("end")),
             fred_series=tuple(raw["data"]["fred_series"]),
             fx=tuple(raw["data"].get("fx", ())),
+            context_series=tuple(raw["data"].get("context_series", ())),
+            extended_history=dict(raw["data"].get("extended_history") or {}),
         ),
         cleaning=CleaningCfg(**raw["cleaning"]),
         portfolio=PortfolioCfg(**raw["portfolio"]),
@@ -176,6 +182,7 @@ def load_config(path: Path | str = CONFIG_FILE) -> Config:
             oos_start=pd.Timestamp(raw["backtest"]["oos_start"]),
             refit_every=int(raw["backtest"]["refit_every"]),
             champion_rule=raw["backtest"].get("champion_rule", "lowest_pinball_passing"),
+            champion=raw["backtest"].get("champion"),
         ),
         partition=PartitionCfg(
             dev=(pd.Timestamp(part["dev"][0]), pd.Timestamp(part["dev"][1])),
@@ -186,7 +193,6 @@ def load_config(path: Path | str = CONFIG_FILE) -> Config:
         ),
         ips=raw.get("ips") or {},
         stress=raw.get("stress") or {},
-        behavioral=raw.get("behavioral") or {},
         ml=raw.get("ml") or {},
         decision=raw.get("decision") or {},
         sha256=hashlib.sha256(raw_bytes).hexdigest(),

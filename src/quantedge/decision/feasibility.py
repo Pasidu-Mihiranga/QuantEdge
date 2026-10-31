@@ -1,4 +1,4 @@
-"""Step 05 §4 task 6: IPS feasibility study across the frontier (data <= 2022-12-31 only).
+"""IPS feasibility study across the frontier (data <= 2022-12-31 only).
 
 Can any IPS-compliant portfolio meet both the return objective and the risk limits? For each point
 on the IPS-constrained mean-variance frontier, plus the full-sample minimum-ES portfolio:
@@ -36,7 +36,7 @@ def evaluate(weights: pd.Series, returns: pd.DataFrame, windows: dict[str, tuple
 
 
 def frontier_feasibility(returns: pd.DataFrame, rf_annual: float, limits: IPSLimits, required_return: float,
-                         windows: dict[str, tuple[str, str]], market: str = "SPY", mrp: float = 0.05,
+                         windows: dict[str, tuple[str, str]], market: str = "SPY", mrp: float = 0.045,
                          n: int = 25) -> pd.DataFrame:
     """One row per frontier point (and the minimum-ES portfolio) with every IPS check."""
     tickers = list(returns.columns)

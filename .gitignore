@@ -1,6 +1,7 @@
 # Competition source material (kept local, not redistributed)
 *.pdf
 *.pptx
+!reports/*.pdf
 
 # Python / tooling
 .venv/
@@ -9,8 +10,6 @@ __pycache__/
 .pytest_cache/
 .env
 
-# MiroFish service lives outside the repo (AGPL, separate clone)
-mirofish-service/
 *.egg-info/
 build/
 .ruff_cache/
@@ -23,3 +22,9 @@ build/
 *.key
 secrets/
 .secrets/
+
+# Local files
+.DS_Store
+
+# Private working notes (internal reviews and audit); the two specs the repo cites are in doc/specs/
+My reserch/

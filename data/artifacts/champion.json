@@ -1,6 +1,7 @@
 {
-  "portfolio": "Min CVaR (provisional)",
+  "portfolio": "Frontier 35% equity (provisional)",
   "window": 500,
-  "champion": "Conditional EVT",
+  "champion": "GJR conditional EVT",
+  "rule_choice": "GJR conditional EVT",
   "reason": "lowest 99% pinball loss among adequately validated models (provisional until the final test)"
 }

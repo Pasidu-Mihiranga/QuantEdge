@@ -361,16 +361,16 @@ class EVTModel:
 
 
 class ConditionalEVTModel:
-    """McNeil-Frey (2000): GARCH(1,1)-t filter, then a GPD on the standardised losses -z.
+    """McNeil-Frey (2000): GARCH(1,1)-t filter (GJR-GARCH with o = 1), then a GPD on the
+    standardised losses -z.
 
     VaR_{t+1} = -mu + sigma_{t+1} VaR_z,  ES_{t+1} = -mu + sigma_{t+1} ES_z.
     """
 
-    name = "Conditional EVT"
-
-    def __init__(self, threshold_q: float = 0.90):
+    def __init__(self, threshold_q: float = 0.90, o: int = 0):
         self.threshold_q = threshold_q
-        self.garch = GarchFHSModel()
+        self.garch = GarchFHSModel(o=o)
+        self.name = "GJR conditional EVT" if o else "Conditional EVT"
 
     def fit(self, returns, weights=None):
         self.garch.fit(returns, weights)

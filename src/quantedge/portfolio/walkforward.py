@@ -82,7 +82,8 @@ def walk_forward(returns: pd.DataFrame, strategy: Strategy, rf_daily: pd.Series,
 
 def candidate_strategies(cfg: Config, limits: IPSLimits, tickers: list[str], mrp: float = 0.05
                          ) -> tuple[dict[str, Strategy], OptimizerConstraints]:
-    """The seven Step 07 candidates as walk-forward strategies (`mrp`: CAPM market risk premium)."""
+    """The seven Step 07 candidates plus the pre-registered frontier point (`portfolio.frontier_equity`)
+    as walk-forward strategies (`mrp`: CAPM market risk premium)."""
     cons = constraints_for_optimizer(limits, tickers)
     market = cfg.market_proxy
 
@@ -100,7 +101,23 @@ def candidate_strategies(cfg: Config, limits: IPSLimits, tickers: list[str], mrp
             *inputs(est, rf), est, cons, es_budget=limits.es99_1d_max,
             vol_max=limits.vol_ann_max, alpha=0.99),
     }
+    x = cfg.portfolio.frontier_equity
+    if x is not None and frontier_feasible(limits, tickers, x):   # e.g. not under the AGG <= 40% sensitivity
+        strategies[frontier_name(x)] = lambda est, rf: opt.min_var_at_equity(
+            inputs(est, rf)[1], cons, list(limits.equity_group), x)
     return strategies, cons
+
+
+def frontier_feasible(limits: IPSLimits, tickers: list[str], equity_share: float) -> bool:
+    """Can the caps hold exactly `equity_share` in equities and the rest outside them?"""
+    eq = [t for t in tickers if t in limits.equity_group]
+    rest = [t for t in tickers if t not in limits.equity_group]
+    return (equity_share <= min(limits.equity_max, sum(limits.cap(t) for t in eq)) + 1e-12
+            and 1.0 - equity_share <= sum(limits.cap(t) for t in rest) + 1e-12)
+
+
+def frontier_name(equity_share: float) -> str:
+    return f"Frontier {equity_share:.0%} equity"
 
 
 def historical_es(r: pd.Series, alpha: float = 0.99) -> float:
@@ -114,7 +131,7 @@ def worst_window_drawdown(r: pd.Series, windows: dict[str, tuple[str, str]]) -> 
     """Deepest max drawdown (positive) inside any crisis window covered by `r`."""
     worst, which = 0.0, "none covered"
     for name, (start, end) in windows.items():
-        seg = r.loc[start:end]
+        seg = r.loc[(r.index > pd.Timestamp(start)) & (r.index <= pd.Timestamp(end))]  # path after the peak close
         if len(seg) < 5:
             continue
         dd = -metrics.max_drawdown(seg)
@@ -124,7 +141,8 @@ def worst_window_drawdown(r: pd.Series, windows: dict[str, tuple[str, str]]) -> 
 
 
 def scorecard(results: dict[str, WFResult], limits: IPSLimits, required_return: float,
-              crisis_windows: dict[str, tuple[str, str]], end: pd.Timestamp) -> pd.DataFrame:
+              crisis_windows: dict[str, tuple[str, str]], end: pd.Timestamp,
+              rf: pd.Series | float) -> pd.DataFrame:
     """Pre-declared selection scorecard on out-of-sample results up to `end`.
 
     Order: IPS pass/fail first, then the average rank of OOS 99% ES and max drawdown (capital
@@ -149,7 +167,7 @@ def scorecard(results: dict[str, WFResult], limits: IPSLimits, required_return: 
             "worst_crisis_drawdown": crisis_dd, "worst_crisis": crisis_name,
             "turnover_ann": float(res.turnover.loc[:end].iloc[1:].sum() / years),
             "cagr": metrics.cagr(r), "vs_required": metrics.cagr(r) - required_return,
-            "volatility": vol, "sharpe": metrics.sharpe(r), "weights_within_ips": weights_ok,
+            "volatility": vol, "sharpe": metrics.sharpe(r, rf), "weights_within_ips": weights_ok,
             "ips_pass": ips_pass,
         })
     card = pd.DataFrame(rows).set_index("candidate")

@@ -1,0 +1,63 @@
+{
+  "factors": {
+    "rates_10y": {
+      "direction": "+",
+      "intensity": "high",
+      "confidence": "high"
+    },
+    "oil": {
+      "direction": "+",
+      "intensity": "high",
+      "confidence": "high"
+    },
+    "vix": {
+      "direction": "+",
+      "intensity": "high",
+      "confidence": "high"
+    },
+    "usd": {
+      "direction": "+",
+      "intensity": "high",
+      "confidence": "high"
+    },
+    "credit_spread": {
+      "direction": "+",
+      "intensity": "high",
+      "confidence": "high"
+    }
+  },
+  "behaviour": {
+    "panic_selling": 3,
+    "flight_to_safety": [
+      "GLD",
+      "AGG",
+      "cash"
+    ],
+    "contagion_breadth": 3,
+    "herding": 3,
+    "investor_disagreement": 0,
+    "duration": "months"
+  },
+  "asset_directions": {
+    "SPY": "-",
+    "EFA": "-",
+    "EEM": "-",
+    "AGG": "+",
+    "GLD": "+",
+    "XLE": "+",
+    "XLK": "-"
+  },
+  "narrative_summary": "The simulation forecasts a market dominated by risk aversion, characterized by widespread panic selling from retail investors and forced de-leveraging by institutions. Capital flows significantly towards safe-haven assets like gold and high-quality bonds, exacerbated by an oil supply shock, renewed inflation, and central bank tightening, leading to prolonged market fragility.",
+  "key_mechanisms": [
+    "Retail investor panic selling and herding behavior.",
+    "Hedge fund and leveraged trader de-leveraging due to rising volatility and margin calls.",
+    "Mechanical rebalancing by pension funds and endowments when risk limits are breached.",
+    "Capital flight to traditional safe havens (gold, high-quality bonds, cash).",
+    "Strengthening of the US dollar as a global safe haven.",
+    "Oil supply shock causing re-accelerated inflation.",
+    "Central bank resuming monetary tightening, leading to rising long-term yields.",
+    "Deteriorating growth forecasts and widening corporate credit spreads.",
+    "Protracted risk aversion leading to slow re-entry into risk assets."
+  ],
+  "stated_limitations": []
+}

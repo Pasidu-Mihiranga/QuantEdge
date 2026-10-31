@@ -9,9 +9,8 @@ were read from its backend route definitions (commit pinned in config.yaml -> be
     POST /api/simulation/create         {project_id}                          -> simulation_id
     POST /api/simulation/prepare        {simulation_id}                       -> task_id
     POST /api/simulation/prepare/status {task_id, simulation_id}
-    POST /api/simulation/start          {simulation_id, max_rounds, enable_graph_memory_update}
+    POST /api/simulation/start          {simulation_id, max_rounds}
     GET  /api/simulation/<id>/run-status  runner_status: ... | completed | stopped | failed
-    POST /api/simulation/close-env      {simulation_id, timeout}  (after both platforms finish)
     POST /api/report/generate           {simulation_id}                       -> task_id / report_id
     POST /api/report/generate/status    {task_id, simulation_id}
     GET  /api/report/by-simulation/<id> markdown_content
@@ -32,11 +31,9 @@ import requests
 from quantedge.behavioral.schema import QUESTIONNAIRE, SchemaError, parse_json_answer
 from quantedge.behavioral.seed import write_manifest
 
-# MiroFish picks the prompt and report language from this header (exact match, default 'zh');
-# English output is needed for the human coders and the report.
-HEADERS = {"Accept-Language": "en"}
 DONE = {"completed", "ready"}
 FAILED = {"failed", "stopped", "error"}
+ENGLISH = {"Accept-Language": "en"}             # MiroFish answers in Chinese otherwise
 
 
 class MiroFishError(RuntimeError):
@@ -44,10 +41,9 @@ class MiroFishError(RuntimeError):
 
 
 class MiroFishClient:
-    def __init__(self, base_url: str = "http://localhost:5001", timeout_s: int = 45 * 60, poll_s: float = 10.0):
+    def __init__(self, base_url: str = "http://localhost:5001", timeout_s: int = 75 * 60, poll_s: float = 10.0):
         self.base, self.deadline_s, self.poll_s = base_url.rstrip("/"), timeout_s, poll_s
         self.t0 = time.monotonic()
-        self._closed: dict[str, bool] = {}
 
     # --- helpers -------------------------------------------------------------------------------
     def _check_time(self, stage: str) -> None:
@@ -65,11 +61,11 @@ class MiroFishClient:
 
     def post(self, path: str, stage: str, **kw) -> dict:
         self._check_time(stage)
-        return self._json(requests.post(self.base + path, timeout=600, headers=HEADERS, **kw), stage)
+        return self._json(requests.post(self.base + path, timeout=600, headers=ENGLISH, **kw), stage)
 
     def get(self, path: str, stage: str) -> dict:
         self._check_time(stage)
-        return self._json(requests.get(self.base + path, timeout=120, headers=HEADERS), stage)
+        return self._json(requests.get(self.base + path, timeout=120, headers=ENGLISH), stage)
 
     def wait(self, stage: str, poll) -> dict:
         while True:
@@ -81,19 +77,6 @@ class MiroFishClient:
                 raise MiroFishError(f"{stage} failed: {data.get('error') or data.get('message') or status}")
             self._check_time(stage)
             time.sleep(self.poll_s)
-
-    def run_status(self, sim_id: str) -> dict:
-        """Run status; once both platforms finish, close the environment.
-
-        The simulation process stays alive in "wait for commands" mode after its last round, and
-        MiroFish publishes `completed` (required before a report) only after the process exits and
-        the Zep graph writes have drained, so the client sends close-env once.
-        """
-        data = self.get(f"/api/simulation/{sim_id}/run-status", "simulation run")
-        if data.get("twitter_completed") and data.get("reddit_completed") and not self._closed.get(sim_id):
-            self.post("/api/simulation/close-env", "simulation close", json={"simulation_id": sim_id, "timeout": 60})
-            self._closed[sim_id] = True
-        return data
 
     # --- pipeline ------------------------------------------------------------------------------
     def run(self, run_dir: Path, seed_text: str, prompt: str, name: str, max_rounds: int = 40) -> dict:
@@ -117,11 +100,32 @@ class MiroFishClient:
             "/api/simulation/prepare/status", "simulation prepare",
             json={"task_id": prep.get("task_id"), "simulation_id": sim_id}))
         mark("prepare")
-        # As MiroFish's own frontend does: agent activity is written to the Zep graph the report agent reads.
-        self.post("/api/simulation/start", "simulation start",
-                  json={"simulation_id": sim_id, "max_rounds": max_rounds, "enable_graph_memory_update": True})
-        self.wait("simulation run", lambda: self.run_status(sim_id))
+        self.post("/api/simulation/start", "simulation start", json={"simulation_id": sim_id, "max_rounds": max_rounds})
         mark("simulate")
+        return self.finish(run_dir, sim_id, {"project_id": project_id, "max_rounds": max_rounds}, timings)
+
+    def close(self, sim_id: str) -> None:
+        """Wait for both platforms, then close the environment: MiroFish keeps it open for interviews until told to
+        stop, and refuses a report while it is open or the graph is still being written."""
+        def status() -> dict:
+            return self.get(f"/api/simulation/{sim_id}/run-status", "simulation run")
+
+        while not (status().get("twitter_completed") and status().get("reddit_completed")):
+            time.sleep(self.poll_s)
+            self._check_time("simulation run")
+        self.post("/api/simulation/close-env", "close environment", json={"simulation_id": sim_id, "timeout": 60})
+        while str(status().get("runner_status", "")).lower() not in DONE | FAILED:
+            time.sleep(self.poll_s)
+            self._check_time("close environment")
+
+    def finish(self, run_dir: Path, sim_id: str, info: dict | None = None, timings: dict | None = None) -> dict:
+        """Report and questionnaire for a finished simulation; also resumes a run stopped after the simulation."""
+        timings = timings if timings is not None else {}
+
+        def mark(stage):
+            timings[stage] = round(time.monotonic() - self.t0, 1)
+
+        self.close(sim_id)
         rep = self.post("/api/report/generate", "report", json={"simulation_id": sim_id})
         self.wait("report", lambda: self.post("/api/report/generate/status", "report",
                                               json={"task_id": rep.get("task_id"), "simulation_id": sim_id}))
@@ -143,8 +147,7 @@ class MiroFishClient:
                 attempts.append(False)
         (run_dir / "report_agent_answers.json").write_text(answer_text, encoding="utf-8")
         mark("questionnaire")
-        info = {"project_id": project_id, "simulation_id": sim_id, "max_rounds": max_rounds,
-                "timings_s": timings, "questionnaire_attempts": attempts,
+        info = {**(info or {}), "simulation_id": sim_id, "timings_s": timings, "questionnaire_attempts": attempts,
                 "finished_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")}
         cfg_path = run_dir / "run_config.json"
         base = json.loads(cfg_path.read_text(encoding="utf-8")) if cfg_path.exists() else {}

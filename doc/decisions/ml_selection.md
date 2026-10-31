@@ -1,6 +1,6 @@
 # Decision record: ML challenger configurations and validation result (Steps 22–23)
 
-**Date:** 2026-10-28 · **Status:** chosen on validation only; adoption pending the final test
+**Date:** 2026-10-28 · **Status:** chosen on validation only. **Updated 2026-10-28 (option C):** on the recommended portfolio against the locked champion, Linear QR fails conditions 1 and 2 and is not adopted (see the last section)
 
 ## Configurations chosen on validation (2019-01-01 → 2022-12-31)
 
@@ -14,7 +14,7 @@ The rule (`scripts/run_ml_grid.py`): the lowest 99% pinball among configurations
 
 Every configuration's result is in `data/artifacts/ml_grid_val.parquet`; the choice is in `data/artifacts/ml_selected_configs.json`.
 
-## Arena on validation (portfolio: Min CVaR; champion: Conditional EVT)
+## Arena on validation (portfolio: Min CVaR; champion: Conditional EVT) — superseded, kept for the record
 
 | Model | Exceptions | 99% pinball vs champion | FZ0 vs champion | DM (Holm p) | 90% MCS | Coverage |
 |---|---|---|---|---|---|---|
@@ -30,14 +30,15 @@ Every configuration's result is in `data/artifacts/ml_grid_val.parquet`; the cho
 - **LightGBM and LSTM** fail condition 2: their 99% VaR is systematically too low on validation in every configuration tried. They are reported, not adopted.
 - **Interpretation for the report and Paper B:** on about 1,000 validation days, the nonlinear models did not improve calibrated tail forecasts over a linear quantile regression on the same features.
 
-## Explainability (LightGBM, 99% VaR)
+## Re-run on the recommended portfolio (option C, 2026-10-28)
 
-`scripts/run_ml_explain.py` fits one model with the selected configuration. It trains on development data only (forecast origins 2006-11-14 → 2018-12-28) and explains its validation forecasts. This is a representative fit; the arena retrains every 21 days.
+The pipeline now carries the pre-registered 35%-equity frontier portfolio and the locked champion (GJR conditional EVT). The same arena, with no retuning (`data/artifacts/ml_arena_val.parquet`):
 
-- **SHAP importance:** the latest day's return (`ret_lag0`) is the largest driver, at 15% of mean |SHAP|. Next come the distance from the 252-day high (8%), EWMA volatility (8%), the previous day's return (7%) and 5- and 60-day realised volatility (7% each).
-- **Crisis day:** the highest validation forecast is for the day after 2020-03-11 (99% VaR 3.64% against a model average of 0.75%). It is driven by that day's −1.9% return, the −1.5% return two days earlier, the 5-day VIX jump (+10.5 points) and short-horizon volatility.
-- **Monotonicity:** LightGBM 4.x cannot impose monotone constraints with the quantile objective, so monotonicity is measured with ICE curves on 250 validation days.
-  - The forecast dips somewhere for almost every day and every volatility feature, as is typical of tree ensembles.
-  - For most features the largest dip is small: median 0.5–1.5 bp against a total rise of 3–25 bp.
-  - **The exception is 60-day realised volatility:** the median largest dip is 17 bp against a 20 bp rise. So the model often forecasts a lower VaR when longer-run volatility is higher, which is economically implausible. 5-day volatility shows the same pattern more mildly (6 bp dip against a 12 bp rise).
-  - This supports the decision not to adopt LightGBM.
+| Model | Exceptions | Kupiec p | Red rolling windows | 99% pinball vs champion | FZ0 vs champion | DM (Holm p) | 90% MCS |
+|---|---|---|---|---|---|---|---|
+| GJR conditional EVT (champion) | 14 | 0.24 | 0% | 0 | 0 | — | in |
+| Linear QR | 19 | **0.012** | 1.8% | +4.4% | +5.1% | 0.64 (1.0) | in |
+
+- **Linear QR now fails condition 1** (its pinball is higher than the champion's) **and condition 2** (Kupiec rejected at 5%, a red rolling window). It is **not adopted**; the final test still scores it, as a reported challenger.
+- **Why the earlier result changed:** that arena used a different portfolio (Min CVaR) and a weaker champion (plain conditional EVT). A challenger's advantage that disappears when the portfolio changes is not robust, which supports keeping the volatility-filtered EVT model.
+- **For the report and Paper B:** no ML model improved calibrated 99% tail forecasts over the GJR-GARCH conditional EVT on the recommended portfolio.

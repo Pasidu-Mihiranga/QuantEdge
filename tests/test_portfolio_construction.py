@@ -4,6 +4,7 @@ import pytest
 
 from quantedge.config import load_config
 from quantedge.decision.ips import IPSLimits, OptimizerConstraints, constraints_for_optimizer
+from quantedge.portfolio import metrics
 from quantedge.portfolio import optimize as opt
 from quantedge.portfolio.walkforward import (
     bootstrap_weights,
@@ -48,6 +49,26 @@ def market():
     returns = pd.DataFrame(r, index=idx, columns=TICKERS)
     rf = pd.Series(0.0001, index=idx)
     return returns, rf
+
+
+def test_frontier_point_hits_the_equity_share_and_matches_an_independent_solver(market):
+    from scipy import optimize
+
+    from quantedge.portfolio.walkforward import frontier_name
+
+    returns, _ = market
+    sigma = returns.cov() * 252
+    cons = constraints_for_optimizer(LIMITS, TICKERS)
+    eq = np.array([t in LIMITS.equity_group for t in TICKERS], float)
+    w = opt.min_var_at_equity(sigma, cons, list(LIMITS.equity_group), 0.35).weights.to_numpy()
+    assert eq @ w == pytest.approx(0.35, abs=1e-6)
+    S = sigma.to_numpy()
+    ref = optimize.minimize(lambda x: x @ S @ x, np.full(7, 1 / 7), method="SLSQP",
+                            bounds=list(zip(cons.lower, cons.upper, strict=True)), options={"ftol": 1e-14},
+                            constraints=[{"type": "eq", "fun": lambda x: x.sum() - 1},
+                                         {"type": "eq", "fun": lambda x: eq @ x - 0.35}])
+    assert w @ S @ w == pytest.approx(ref.fun, rel=1e-5)
+    assert frontier_name(0.35) == CFG.portfolio.focus == "Frontier 35% equity"
 
 
 def test_gmv_matches_closed_form_without_bounds():
@@ -133,9 +154,13 @@ def test_scorecard_ranks_and_flags_ips(market):
     strategies, _ = candidate_strategies(CFG, LIMITS, TICKERS)
     picked = {k: strategies[k] for k in ("Equal weight", "60/40 benchmark", "Global min variance")}
     results = {k: walk_forward(returns, s, rf, name=k) for k, s in picked.items()}
-    card = scorecard(results, LIMITS, 0.065, CFG.stress["historical"], pd.Timestamp("2012-12-31"))
+    card = scorecard(results, LIMITS, 0.065, CFG.stress["historical"], pd.Timestamp("2012-12-31"), rf)
     assert not card.loc["Equal weight", "weights_within_ips"]  # EEM/XLE/XLK above 10%
     assert list(card["rank"]) == [1, 2, 3]
+    # Sharpe is on excess returns over the risk-free rate (audit gap G6), not on raw returns
+    r = results["Global min variance"].perf.loc[:"2012-12-31"]
+    assert card.loc["Global min variance", "sharpe"] == pytest.approx(metrics.sharpe(r, rf))
+    assert card.loc["Global min variance", "sharpe"] != pytest.approx(metrics.sharpe(r))
 
 
 def test_weight_path_ignores_the_future_and_uses_warmup(market):

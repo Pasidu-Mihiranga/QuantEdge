@@ -1,1 +1,1 @@
-"""Behavioural Stress Lab (Steps 19-20): MiroFish integration, translation layer and evaluation."""
+"""Side feature: a MiroFish agent simulation compared with the team's scenario. Never used in the recommendation."""

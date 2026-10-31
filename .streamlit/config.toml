@@ -1,11 +1,51 @@
+# Committee app theme: calm and friendly; Google Sans for text and headings, IBM Plex Mono for code.
+# Colours: one accent blue for the recommendation; status colours only for ACCEPT / ADJUST / REJECT.
+
 [theme]
 base = "light"
-primaryColor = "#178a85"
-textColor = "#1d2733"
-font = "sans serif"
+primaryColor = "#1F5FAE"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F6F9"
+textColor = "#1D2733"
+linkColor = "#1F5FAE"
+borderColor = "#DDE1E7"
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "8px"
+buttonRadius = "8px"
+
+font = "'Google Sans':https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&display=swap"
+headingFont = "'Google Sans':https://fonts.googleapis.com/css2?family=Google+Sans:wght@500;600;700&display=swap"
+codeFont = "'IBM Plex Mono':https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
+baseFontSize = 15
+baseFontWeight = 400
+headingFontSizes = ["30px", "21px", "17px", "15px", "14px", "13px"]
+headingFontWeights = [600, 600, 600, 600, 500, 500]
+metricValueFontSize = "30px"
+metricValueFontWeight = 600
+linkUnderline = false
+
+greenColor = "#0D7A2F"
+redColor = "#B42318"
+orangeColor = "#A15C00"
+yellowColor = "#B7791F"
+blueColor = "#1F5FAE"
+grayColor = "#5B6573"
+
+chartCategoricalColors = ["#1F5FAE", "#A3ABB5", "#0D7A2F", "#B42318", "#A15C00", "#6B4FA3", "#2E8B8B"]
+chartSequentialColors = ["#E8EFF9", "#C9DAF0", "#9EC1EA", "#6FA0DB", "#4F86C6", "#2F6BB0", "#1F5FAE", "#1A4E91", "#163F75", "#112F58"]
+
+dataframeHeaderBackgroundColor = "#F4F6F9"
+
+[theme.sidebar]
+backgroundColor = "#F4F6F9"
+secondaryBackgroundColor = "#FFFFFF"
 
 [server]
 headless = true
 
 [browser]
 gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"

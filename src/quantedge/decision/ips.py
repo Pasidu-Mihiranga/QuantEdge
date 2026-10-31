@@ -16,25 +16,30 @@ from scipy.optimize import linprog
 from quantedge.portfolio.returns import CASH
 
 
-def required_return(cpi: pd.Series, spending_rate: float, cost_drag: float, years: int = 10,
-                    as_of: pd.Timestamp | None = None) -> dict[str, float]:
-    """Required nominal return = spending rate + expected inflation + costs.
+def required_return(cpi: pd.Series, spending_rate: float, real_growth: float, breakeven: pd.Series,
+                    years: int = 10, as_of: pd.Timestamp | None = None) -> dict[str, float | str]:
+    """Required nominal return for the objective CPI + spending + real growth (D1, compounded):
 
-    Expected inflation is the average year-on-year CPI change over the last `years` years of
-    monthly CPIAUCSL observations available at `as_of`.
+        required = (1 + spending)(1 + real growth)(1 + π) − 1
+
+    π is the 10-year breakeven inflation (T10YIE, a market forecast) on the last date ≤ `as_of`.
+    The average year-on-year CPI change over the last `years` years is reported as context.
+    Costs are not added here: the forward expected return is already net of costs.
     """
     s = cpi.dropna()
+    be = breakeven.dropna()
     if as_of is not None:
-        s = s.loc[:as_of]
+        s, be = s.loc[:as_of], be.loc[:as_of]
     monthly = s.resample("ME").last().dropna()
-    yoy = monthly.pct_change(12).dropna()
-    window = yoy.iloc[-12 * years:]
-    inflation = float(window.mean())
+    window = monthly.pct_change(12).dropna().iloc[-12 * years:]
+    inflation = float(be.iloc[-1]) / 100
     return {
         "spending_rate": spending_rate,
+        "real_growth": real_growth,
         "inflation": inflation,
-        "cost_drag": cost_drag,
-        "required_return": spending_rate + inflation + cost_drag,
+        "inflation_source": f"10-year breakeven (T10YIE) on {be.index[-1].date()}",
+        "cpi_avg_10y": float(window.mean()),
+        "required_return": (1 + spending_rate) * (1 + real_growth) * (1 + inflation) - 1,
         "cpi_window_start": str(window.index.min().date()),
         "cpi_window_end": str(window.index.max().date()),
     }

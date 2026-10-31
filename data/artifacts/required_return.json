@@ -1,8 +1,10 @@
 {
-  "spending_rate": 0.04,
-  "inflation": 0.02478631695415438,
-  "cost_drag": 0.002,
-  "required_return": 0.06678631695415438,
+  "spending_rate": 0.03,
+  "real_growth": 0.005,
+  "inflation": 0.023,
+  "inflation_source": "10-year breakeven (T10YIE) on 2022-12-30",
+  "cpi_avg_10y": 0.02478631695415438,
+  "required_return": 0.058958449999999996,
   "cpi_window_start": "2013-01-31",
   "cpi_window_end": "2022-12-31"
 }

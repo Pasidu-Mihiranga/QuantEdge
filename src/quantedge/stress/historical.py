@@ -31,7 +31,9 @@ class ScenarioResult:
 def replay(returns: pd.DataFrame, weights: pd.Series, start: str, end: str, nav: float,
            name: str = "") -> ScenarioResult:
     w = weights.reindex(returns.columns, fill_value=0.0)
-    seg = returns.loc[start:end]
+    # The window runs from the peak close (`start`) to the trough close (`end`); the return dated
+    # `start` happened before the peak, so the path begins with the next day's return.
+    seg = returns.loc[(returns.index > pd.Timestamp(start)) & (returns.index <= pd.Timestamp(end))]
     growth = (1 + seg).cumprod()
     path = (growth * w).sum(axis=1)
     total = float(path.iloc[-1] - 1)

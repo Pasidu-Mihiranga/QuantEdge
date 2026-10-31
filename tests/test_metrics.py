@@ -26,7 +26,7 @@ def test_sortino_matches_hand_calculation():
 
 def test_max_drawdown_cagr_calmar_by_hand():
     v = np.cumprod(1 + np.array(TOY))
-    peak = np.maximum.accumulate(v)
+    peak = np.maximum.accumulate(np.r_[1.0, v])[1:]   # drawdown is measured from the initial $1
     mdd = (v / peak - 1).min()
     assert m.max_drawdown(TOY) == pytest.approx(mdd, abs=1e-12)
     cagr = v[-1] ** (252 / 10) - 1
@@ -38,12 +38,17 @@ def test_omega_ulcer_information_ratio_by_hand():
     r = np.array(TOY)
     assert m.omega(TOY) == pytest.approx(r[r > 0].sum() / -r[r < 0].sum(), abs=1e-12)
     v = np.cumprod(1 + r)
-    dd = v / np.maximum.accumulate(v) - 1
+    dd = v / np.maximum.accumulate(np.r_[1.0, v])[1:] - 1
     assert m.ulcer_index(TOY) == pytest.approx(math.sqrt(np.mean(dd**2)), abs=1e-12)
     bench = TOY * 0.5
     active = r - r * 0.5
     ir = active.mean() / active.std(ddof=1) * math.sqrt(252)
     assert m.information_ratio(TOY, bench) == pytest.approx(ir, abs=1e-10)
+
+
+def test_max_drawdown_counts_a_first_day_loss():
+    r = pd.Series([-0.10, 0.0, 0.05], index=pd.bdate_range("2020-01-01", periods=3))
+    assert m.max_drawdown(r) == pytest.approx(-0.10)
 
 
 def test_drawdown_info_dates():

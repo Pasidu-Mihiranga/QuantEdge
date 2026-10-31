@@ -2,7 +2,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from quantedge.stress.factor import FACTORS, estimate_factor_betas
+from quantedge.stress.factor import (
+    FACTORS,
+    episode_plausibility,
+    estimate_factor_betas,
+    scenario_contributions,
+    scenario_loss,
+)
 from quantedge.stress.historical import replay, stress_matrix
 from quantedge.stress.hypothetical import apply_shock, duration_check
 from quantedge.stress.reverse import most_likely_breach, parametric_var_es, stressed_sigma
@@ -26,8 +32,15 @@ def test_replay_contributions_sum_to_total(market):
 def test_single_asset_replay_equals_its_own_return(market):
     w = pd.Series({"A": 1.0, "B": 0.0, "C": 0.0})
     res = replay(market, w, "2019-06-03", "2019-12-31", 1e7)
-    expected = (1 + market.loc["2019-06-03":"2019-12-31", "A"]).prod() - 1
+    expected = (1 + market.loc["2019-06-04":"2019-12-31", "A"]).prod() - 1   # starts after the peak close
     assert res.total_return == pytest.approx(expected, abs=1e-12)
+
+
+def test_replay_excludes_the_return_dated_on_the_window_start():
+    idx = pd.bdate_range("2020-01-01", periods=4)
+    r = pd.DataFrame({"A": [-0.50, -0.10, 0.0, 0.0]}, index=idx)   # the -50% day is before the peak close
+    res = replay(r, pd.Series({"A": 1.0}), idx[0], idx[2], 1.0)
+    assert res.total_return == pytest.approx(-0.10)
 
 
 def test_recovery_days():
@@ -50,6 +63,28 @@ def test_factor_betas_recovered_within_standard_errors():
     res = estimate_factor_betas(etf, f)
     se = np.sqrt(np.diag(res.cov["X"]))
     assert np.all(np.abs(res.betas.loc["X"].to_numpy() - true) < 3 * se)
+
+
+@pytest.mark.parametrize("shock", [{"d_yield10_bp": 250, "dln_oil": np.log(1.4), "d_vix": 25},
+                                   {"d_yield10_bp": -150, "d_vix": -10}, {}])
+def test_scenario_contributions_add_up_to_the_scenario_loss(shock):
+    betas = pd.DataFrame([[-4e-4, 0.02, -2e-3, -0.1, -1e-4], [-1e-3, 0.3, 1e-3, 0.05, 2e-4], [0, 0, 0, 0, 0]],
+                         index=["AGG", "XLE", "GLD"], columns=FACTORS)
+    w = pd.Series({"AGG": 0.6, "XLE": 0.4, "GLD": 0.0})
+    liq = {"AGG": -0.05}
+    parts = scenario_contributions(betas, shock, w, liq)
+    assert parts.sum() == pytest.approx(-scenario_loss(betas, shock, w, liq), abs=1e-12)
+    assert "GLD" not in parts.index and parts["AGG panic day"] == pytest.approx(-0.03)
+
+
+def test_episode_plausibility_ranks_a_typical_and_an_extreme_shock():
+    rng = np.random.default_rng(3)
+    idx = pd.date_range("2006-01-06", periods=900, freq="W-FRI")
+    f = pd.DataFrame(rng.normal(0, 1, (900, 5)), index=idx, columns=FACTORS)
+    calm = episode_plausibility(f, {}, weeks=4)                      # zero shock: close to the centre
+    wild = episode_plausibility(f, {"d_yield10_bp": 40.0}, weeks=4)  # 20 sd of a 4-week sum: never seen
+    assert calm.share_more_extreme > 0.9 and wild.share_more_extreme == 0.0
+    assert wild.per_factor["d_yield10_bp"] == 0.0 and calm.n_episodes == 897
 
 
 def test_apply_shock_is_linear_in_betas():

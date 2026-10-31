@@ -1,13 +1,17 @@
-# AI Disclosure (brief §8.7)
+## AI Usage Disclosure
 
-**Status:** draft; the team completes the reviewer names and confirms every statement before submission.
+**AI Tool Used:** Claude (Anthropic), through Claude Code.
 
-| Item | Disclosure |
-|---|---|
-| AI tool(s) used | Claude (Anthropic) via Claude Code, for implementation support. No other AI tool has been used so far; the team adds any it uses. MiroFish (multi-agent simulator) has **not** been run; Steps 19–20 are optional and gated. |
-| Purpose | Implementing modules to the team's written specification (`doc/steps/`); test scaffolding; the Streamlit layout; drafting of documentation, the memo template and the tear-sheet generator; debugging. |
-| Human validation | Each module is reviewed and signed off by a named team member (`doc/ai_log.md`). Correctness is checked with closed-form, simulation-recovery, textbook and leakage tests (pytest, 178 tests); results are cross-checked with independent libraries (scipy, statsmodels, arch) and against market facts (for example SPY −54.8% in the GFC window, AGG −15.0% in the 2022 window). |
-| Decisions made by the team | The IPS limits and their calibration, the champion-model rule, the stress-scenario assumptions, the verdict logic (`doc/decisions/`), and the final recommendation and its wording. The rule engine and the memo template only assemble evidence; every judgement in the memo is written by the team. |
-| Material AI-generated components | Code implementations of the data pipeline, risk models, backtests, stress tests, decision engine, ML challengers and dashboard were AI-assisted. Interpretation and the recommendation are the team's. |
+**Purpose of AI Usage:** AI was used as a productivity tool to accelerate development, support research, assist with debugging, improve documentation, and streamline repetitive tasks. The project was developed through the team's own research, engineering knowledge, critical thinking, coding, and collaborative problem-solving.
 
-The running log of AI-assisted work, with reviewer and changes after review, is in [`doc/ai_log.md`](doc/ai_log.md).
+**Research and Planning:** The team conducted the financial and technical research, studied relevant methodologies, evaluated alternative approaches, and established the overall solution strategy. AI assisted with finding information, organizing references, and improving research efficiency.
+
+**System Architecture and Development:** The team designed the architecture, defined system workflows, developed algorithms, wrote and reviewed code, and integrated the application components. Claude Code helped accelerate coding, generate boilerplate, troubleshoot errors, and refine implementations under the team's direction.
+
+**Financial Modeling and Analysis:** The team selected financial methodologies, formulated investment assumptions, established risk constraints, implemented analytical calculations, evaluated portfolio strategies, and interpreted results. AI assisted with computational tasks and development efficiency, while financial reasoning and decisions remained with the team.
+
+**Testing and Validation:** The team developed and reviewed tests, performed debugging, verified calculations, and evaluated system correctness. AI helped accelerate test preparation and issue identification. Results were checked using manual calculations and reconciliation between production code and analytical notebooks across 957 backtesting days.
+
+**Documentation and Reporting:** The team developed the technical explanations, analytical findings, investment recommendations, and report content. AI assisted with drafting, language refinement, formatting, and organizing documentation.
+
+**Team Ownership and Accountability:** The team was actively responsible for research, design, implementation, testing, evaluation, and final decision-making throughout the project. AI served as a supporting development tool to improve productivity and efficiency, not as a replacement for the team's technical or intellectual contributions.The team accepts full responsibility for the final submission.

@@ -65,15 +65,16 @@ def test_correct_model_is_calibrated_on_iid_normal(iid):
     assert table.loc["Normal", "kupiec_p"] > 0.01
 
 
-def test_garch_update_matches_fixed_parameter_filter():
+@pytest.mark.parametrize("o", [0, 1])
+def test_garch_update_matches_fixed_parameter_filter(o):
     rng = np.random.default_rng(1)
     r = pd.Series(rng.standard_t(6, 1500) * 0.01)
-    m = GarchFHSModel().fit(r.iloc[:1400])
+    m = GarchFHSModel(o=o).fit(r.iloc[:1400])
     for k in range(1400, 1410):
         m.update(float(r.iloc[k]))
-    fixed = arch_model(100 * r.iloc[:1410], mean="Constant", vol="GARCH", p=1, q=1, dist="t",
+    fixed = arch_model(m.scale * r.iloc[:1410], mean="Constant", vol="GARCH", p=1, o=o, q=1, dist="t",
                        rescale=False).fix(m.params.to_numpy())
-    expected = float(np.sqrt(fixed.forecast(horizon=1, reindex=False).variance.iloc[-1, 0])) / 100
+    expected = float(np.sqrt(fixed.forecast(horizon=1, reindex=False).variance.iloc[-1, 0])) / m.scale
     assert m.sigma_next == pytest.approx(expected, rel=1e-6)
 
 

@@ -5,10 +5,13 @@ order,step,detail,n_affected
 4,align_macro,BAMLH0A0HYM2: carried forward 0 days (limit 3 business days); 4768 days remain missing,0
 5,align_macro,CPIAUCSL: monthly series carried forward for display only (never used in daily risk models),5518
 6,align_macro,DCOILWTICO: carried forward 147 days (limit 3 business days); 6 days remain missing,147
-7,align_macro,DGS10: carried forward 41 days (limit 3 business days); 0 days remain missing,41
-8,align_macro,DTB3: carried forward 41 days (limit 3 business days); 0 days remain missing,41
-9,align_macro,DTWEXBGS: carried forward 64 days (limit 3 business days); 283 days remain missing,64
-10,align_macro,VIXCLS: carried forward 0 days (limit 3 business days); 0 days remain missing,0
-11,quality_flag,jump: 24 points flagged and kept (no deletion),24
-12,quality_flag,large_negative: 1 points flagged and kept (no deletion),1
-13,analysis_window,Stationarity and stylised facts use data up to 2022-12-30 (test period locked until the methodology freeze),4561
+7,align_macro,DFII10: carried forward 40 days (limit 3 business days); 0 days remain missing,40
+8,align_macro,DGS10: carried forward 41 days (limit 3 business days); 0 days remain missing,41
+9,align_macro,DGS2: carried forward 40 days (limit 3 business days); 0 days remain missing,40
+10,align_macro,DTB3: carried forward 41 days (limit 3 business days); 0 days remain missing,41
+11,align_macro,DTWEXBGS: carried forward 64 days (limit 3 business days); 283 days remain missing,64
+12,align_macro,T10YIE: carried forward 40 days (limit 3 business days); 0 days remain missing,40
+13,align_macro,VIXCLS: carried forward 0 days (limit 3 business days); 0 days remain missing,0
+14,quality_flag,jump: 24 points flagged and kept (no deletion),24
+15,quality_flag,large_negative: 1 points flagged and kept (no deletion),1
+16,analysis_window,Stationarity and stylised facts use data up to 2026-10-26 (test period locked until the methodology freeze),5518

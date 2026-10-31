@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import streamlit as st
 
-from components.data import BACKTEST_FILES, candidate_weights, candidates, config, jsonfile, status
+from components.data import BACKTEST_FILES, config, jsonfile, status
 from quantedge.paths import ARTIFACTS
 
 PAGE_STYLE = """
@@ -27,15 +27,6 @@ class Controls:
     horizon: int
     start: str
     end: str
-    portfolio: str = ""                      # candidate name, or CUSTOM
-    weights: dict | None = None              # weights of the selected portfolio (normalised later)
-
-    @property
-    def is_recommended(self) -> bool:
-        return self.portfolio == status().get("focus_portfolio")
-
-
-CUSTOM = "Custom weights"
 
 
 def sidebar() -> Controls:
@@ -57,27 +48,9 @@ def sidebar() -> Controls:
         horizon = st.radio("Horizon", [1, 10], format_func=lambda h: f"{h} day{'s' if h > 1 else ''}",
                            horizontal=True, help="10-day figures: simulated GARCH paths and overlapping history.")
         s = status()
-        focus = s.get("focus_portfolio", "")
-        names = [focus, *[c for c in candidates() if c != focus], CUSTOM] if focus else [CUSTOM]
-        portfolio = st.selectbox("Portfolio", names, format_func=lambda n: f"{n} (recommended)" if n == focus else n,
-                                 help="Precomputed results are for the recommended portfolio; other choices are "
-                                      "checked live on the Risk dashboard.")
-        if portfolio != focus:
-            st.caption("Checked live on the **Risk dashboard**; the other pages show the recommended portfolio.")
-        base = candidate_weights(focus) if focus else None
-        if portfolio == CUSTOM:
-            with st.expander("Custom weights (%)", expanded=True):
-                weights = {t: st.number_input(t, 0.0, 100.0, round(float(base.get(t, 0.0)) * 100 if base is not None
-                                                                    else 100 / len(cfg.universe), 1), 0.5, key=f"w_{t}")
-                           for t in cfg.universe}
-                st.caption(f"Total {sum(weights.values()):.1f}% (rescaled to 100%).")
-        else:
-            w = candidate_weights(portfolio)
-            weights = None if w is None else {k: float(v) for k, v in w.items()}
         st.caption(f"Data to {s.get('data_end', '?')} · analysis to {s.get('analysis_end', '?')}")
-        st.caption("Final-test period (2023+) locked until the methodology freeze.")
-    return Controls(alpha, model, window, float(nav), horizon, f"{dates[0]}-01-01", f"{dates[1]}-12-31",
-                    portfolio, weights)
+        st.caption("This page shows the pre-freeze periods (2008–2022).")
+    return Controls(alpha, model, window, float(nav), horizon, f"{dates[0]}-01-01", f"{dates[1]}-12-31")
 
 
 def provisional_banner() -> None:

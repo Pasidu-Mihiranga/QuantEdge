@@ -21,16 +21,18 @@ from quantedge.risk.garch import GarchFHSModel
 
 def fhs_paths(model: GarchFHSModel, h: int, n_paths: int, rng: np.random.Generator) -> np.ndarray:
     """Simulated h-day losses from a fitted GarchFHSModel (parameters fixed, residuals resampled)."""
-    p = model.params
+    p, s = model.params, model.scale
     mu, omega, a, b = float(p["mu"]), float(p["omega"]), float(p["alpha[1]"]), float(p["beta[1]"])
+    g = float(p.get("gamma[1]", 0.0))
     z = -model.neg_z                                   # standardised residuals (return sign)
-    s2 = np.full(n_paths, (100.0 * model.sigma_next) ** 2)
+    s2 = np.full(n_paths, (s * model.sigma_next) ** 2)
     growth = np.ones(n_paths)
     for _ in range(h):
         draw = z[rng.integers(0, len(z), n_paths)]
-        r = mu + np.sqrt(s2) * draw                    # in percent
-        growth *= 1.0 + r / 100.0
-        s2 = omega + a * (r - mu) ** 2 + b * s2
+        r = mu + np.sqrt(s2) * draw                    # in units of 1/s
+        growth *= 1.0 + r / s
+        e = r - mu
+        s2 = omega + (a + g * (e < 0)) * e**2 + b * s2
     return -(growth - 1.0)
 
 
