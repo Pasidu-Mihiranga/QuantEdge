@@ -37,7 +37,7 @@ if require(prices, "Clean prices") and flags is not None:
 stat = parquet("stationarity.parquet")
 facts = parquet("stylised_facts.parquet")
 if stat is not None:
-    st.subheader("Stationarity (ADF + KPSS), data to 2022")
+    st.subheader("Stationarity (ADF + KPSS), full sample")
     st.dataframe(stat.round(4), width="stretch")
 if facts is not None:
     st.subheader("Stylised facts of log returns")

@@ -23,13 +23,14 @@ class RiskControls:
     end: int
 
 
-def risk_controls(dates: bool = True) -> RiskControls:
+def risk_controls(dates: bool = True, models: bool = True) -> RiskControls:
     champion = jsonfile("champion.json").get("champion", "GJR conditional EVT")
     with st.sidebar:
         st.subheader("Risk controls")
         alpha = st.select_slider("Confidence level", options=[0.90, 0.95, 0.99], value=0.99, key="alpha",
                                  format_func=lambda a: f"{a:.0%}")
-        model = st.selectbox("VaR methodology", MODELS, index=MODELS.index(champion), key="model",
-                             help=f"Default: {champion}, chosen on 2019–2022 by the locked rule and confirmed on 2023–2026.")
+        model = (st.selectbox("VaR methodology", MODELS, index=MODELS.index(champion), key="model",
+                              help=f"Default: {champion}, chosen on 2019–2022 by the locked rule and confirmed on 2023–2026.")
+                 if models else st.session_state.get("model", champion))
         start, end = (st.slider("Backtest date range", 2008, 2026, (2008, 2026), key="dates") if dates else (2008, 2026))
     return RiskControls(alpha, model, start, end)

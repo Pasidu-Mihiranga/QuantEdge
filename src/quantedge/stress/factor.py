@@ -71,6 +71,50 @@ def scenario_loss(betas: pd.DataFrame, shock: dict[str, float], weights: pd.Seri
     return -ret
 
 
+def scenario_contributions(betas: pd.DataFrame, shock: dict[str, float], weights: pd.Series,
+                           liquidity_day: dict[str, float] | None = None, min_weight: float = 1e-4) -> pd.Series:
+    """Each holding's share of the `scenario_loss` return, so the parts add up exactly to the total.
+
+    The factor part expm1(Σ w_i x_i), with x_i = (B s)_i, is split in proportion to w_i x_i; the
+    liquidity day adds one row per ETF ("<ticker> panic day"). Sum = −scenario_loss, up to the dropped holdings
+    below `min_weight` (solver dust).
+    """
+    f = pd.Series(shock, dtype=float).reindex(FACTORS).fillna(0.0)
+    w = weights.reindex(betas.index, fill_value=0.0)
+    x = betas[FACTORS] @ f
+    wx = w * x
+    total = float(np.expm1(wx.sum()))
+    parts = wx * (total / wx.sum()) if abs(wx.sum()) > 1e-12 else w * np.expm1(x)
+    parts = parts[w > min_weight]
+    for t, v in (liquidity_day or {}).items():
+        if w.get(t, 0.0) > min_weight:
+            parts[f"{t} panic day"] = v * float(w[t])
+    return parts
+
+
+@dataclass(frozen=True)
+class Plausibility:
+    share_more_extreme: float      # share of historical episodes with a larger Mahalanobis distance
+    per_factor: pd.Series          # per factor: share of episodes at least as large in the shock's direction
+    n_episodes: int
+    start: pd.Timestamp
+
+
+def episode_plausibility(factors_weekly: pd.DataFrame, shock: dict[str, float], weeks: int = 39) -> Plausibility:
+    """How unusual a shock is against every overlapping `weeks`-long change in history (D5: a 3-quarter episode).
+
+    Joint: d²(x) = (x − μ)' Σ⁻¹ (x − μ) over the five factor changes; the result is the empirical share of episodes
+    with d² ≥ d²(shock), which needs no normality assumption. Overlapping episodes, so it is a frequency, not a p-value.
+    """
+    h = factors_weekly[FACTORS].rolling(weeks).sum().dropna()
+    x = pd.Series(shock, dtype=float).reindex(FACTORS).fillna(0.0)
+    mu, inv = h.mean(), np.linalg.inv(np.cov(h.to_numpy().T))
+    d2 = np.einsum("ij,jk,ik->i", h - mu, inv, h - mu)
+    d2x = float((x - mu) @ inv @ (x - mu))
+    per = pd.Series({f: float((h[f] >= x[f]).mean() if x[f] >= mu[f] else (h[f] <= x[f]).mean()) for f in FACTORS})
+    return Plausibility(float((d2 >= d2x).mean()), per, len(h), h.index[0])
+
+
 def estimate_factor_betas(etf_weekly: pd.DataFrame, factors_weekly: pd.DataFrame,
                           windows: dict[str, tuple[str, str]] | None = None, hac_lags: int = 4,
                           sample: str = "full", mask: pd.Series | None = None) -> BetaResult:

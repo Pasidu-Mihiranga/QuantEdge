@@ -8,6 +8,7 @@ word); every headline number comes from data/artifacts/decision_numbers.json.
 from __future__ import annotations
 
 import json
+import re
 from functools import lru_cache
 
 import pandas as pd
@@ -153,12 +154,20 @@ def full(df) -> None:
 TEXT_WIDTH = "stretch"    # full width; paragraphs are kept to one or two sentences
 
 
+def points(text: str) -> str:
+    """Three or more sentences read better as bullets; shorter text and ready-made lists stay as they are."""
+    if "\n" in text:
+        return text
+    parts = re.split(r"(?<=[.?!])\s+(?=[A-Z*])", text.strip())
+    return "\n".join(f"- {p}" for p in parts) if len(parts) >= 3 else text
+
+
 def say(text: str) -> None:
-    """A short paragraph at a readable width (dollar signs escaped)."""
-    st.markdown(esc(text), width=TEXT_WIDTH)
+    """Short text at a readable width (dollar signs escaped), as bullets when it runs to three sentences or more."""
+    st.markdown(esc(points(text)), width=TEXT_WIDTH)
 
 
 def explain(text: str, label: str = "How to read this") -> None:
     """The 'why' behind a chart or number, one click away."""
     with st.popover(label, icon=":material/help:", type="tertiary"):
-        st.markdown(esc(text))
+        st.markdown(esc(points(text)))

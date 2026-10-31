@@ -6,6 +6,11 @@ import pandas as pd
 import streamlit as st
 
 from components.ui import artifact, explain, money, need_numbers, pct, say
+from quantedge.config import load_config
+from quantedge.data.partition import load_returns
+from quantedge.decision.objective import crisis_loss
+from quantedge.portfolio.capm import capm_regression
+from quantedge.portfolio.metrics import kpi_table
 
 n = need_numbers()
 nav, eq, req = n["nav_usd"], n["advised_equity"], n["objective"]["required_return"]
@@ -24,7 +29,7 @@ ok_lim, ok_obj = bool(r.within_limits), bool(r.meets_objective)
 with st.container(horizontal=True):
     st.metric("Expected return a year", pct(r.forward_return, 2), f"{money((r.forward_return - req) * nav, signed=True)} vs objective",
               delta_color="off", delta_arrow="off", border=True, help="Forward-looking: today's yields plus a 4.5% equity premium, after fees and taxes.")
-    st.metric("Worst crisis", f"−{money(r.d2_loss * nav)}", f"{pct(r.d2_loss)} · budget 25%", delta_color="off", delta_arrow="off",
+    st.metric("Worst crisis", f"−{money(r.d2_loss * nav)}", f"{pct(r.d2_loss)} · budget {pct(n['limits']['crisis_budget'], 0)}", delta_color="off", delta_arrow="off",
               border=True, help="The worse of the historical crisis replays and our stagflation scenario, with these weights.")
     st.metric("Income a year", money(r.income_yield * nav), f"{pct(r.income_yield, 2)} of the fund", delta_color="off",
               delta_arrow="off", border=True, help="Dividends and interest after withholding tax; the fund spends 3% a year.")
@@ -64,12 +69,56 @@ st.altair_chart(alt.Chart(h).mark_line(strokeWidth=1.6).encode(
                     legend=alt.Legend(title=None, orient="bottom", labelLimit=400)),
     tooltip=[alt.Tooltip("date:T"), "portfolio:N", alt.Tooltip("value:Q", format="$,.0f" if fmt == "$~s" else ".1%")]).properties(height=300),
     alt="History of the recommended strategy and the 60/40 benchmark")
-r_ = perf.dropna()
-stats = {LABEL[c]: {"Return a year": pct(float((1 + r_[c]).prod() ** (252 / len(r_)) - 1)),
-                    "Volatility": pct(float(r_[c].std() * np.sqrt(252))),
-                    "Worst fall": pct(float(((1 + r_[c]).cumprod() / (1 + r_[c]).cumprod().cummax() - 1).min()))} for c in perf.columns}
-st.dataframe(pd.DataFrame(stats), alt="Return, volatility and worst fall since 2008")
+cfg = load_config()
+past = load_returns("all", cfg).loc[lambda r: r.index < pd.Timestamp(n["decision_date"])]
+bench_crisis = crisis_loss(pd.Series({"SPY": 0.6, "AGG": 0.4}), past, cfg.stress["historical"]).max()
 explain("Every quarter the mix was rebuilt using only the prices known at the time, and trading costs were paid, so "
         "this is what the strategy could really have done. "
         "The 60/40 mix earned more because it held 60% in US stocks during an exceptional decade for them, but it breaks the "
-        "committee's limits (a 33% crisis loss) and is shown only as a reference. History is not a forecast.")
+        f"committee's limits (a {pct(bench_crisis)} crisis loss against the {pct(n['limits']['crisis_budget'], 0)} budget) "
+        "and is shown only as a reference. History is not a forecast.")
+
+st.subheader("The scorecard", divider=False)
+say("The standard performance measures for both strategies. Pick a period: the whole history, or only 2023–2026, the "
+    "years no choice was made on.")
+period = st.segmented_control("Period", ["Since 2008", "2023 onwards (unseen test years)"], default="Since 2008",
+                              required=True, label_visibility="collapsed", key="pf_kpi_period")
+
+
+@st.cache_data
+def scorecard(start: str) -> pd.DataFrame:
+    """Booklet Layer 1 KPIs (Sharpe, Sortino, Treynor, Jensen's alpha, IR, drawdown, Calmar); CAPM against SPY with the
+    T-bill rate lagged one day, as in Step 06."""
+    r = perf.dropna().loc[start:]
+    rf = artifact("returns_rf.parquet")["rf"]
+    spy = load_returns("all", load_config())["SPY"].reindex(r.index)
+    capm = {c: capm_regression(r[c] - rf.reindex(r.index), spy - rf.reindex(r.index)) for c in r.columns}
+    return kpi_table({c: r[c] for c in r.columns}, rf, r["60/40 benchmark"],
+                     betas={c: v.beta for c, v in capm.items()}, alphas={c: (v.alpha_ann, v.alpha_t) for c, v in capm.items()})
+
+
+k = scorecard("2008-01-01" if period == "Since 2008" else "2023-01-01")
+ROWS = [  # (KPI, column, format, what it means)
+    ("Return a year", "cagr", pct, "Compounded growth a year, after trading costs."),
+    ("Volatility", "volatility", pct, "How much the value swings in a typical year."),
+    ("Sharpe ratio", "sharpe", "{:.2f}".format, "Return above T-bills per unit of total risk. Higher is better."),
+    ("Sortino ratio", "sortino", "{:.2f}".format, "Like Sharpe, but counts only the falls."),
+    ("Beta to US stocks", "beta", "{:.2f}".format, "How much the strategy moves when US stocks move 1%."),
+    ("Treynor ratio", "treynor", pct, "Return above T-bills per unit of stock-market risk (beta)."),
+    ("Jensen's alpha", "jensen_alpha", lambda v: pct(v, 2, signed=True), "Return beyond what its stock exposure explains."),
+    ("Information ratio vs 60/40", "information_ratio", "{:.2f}".format, "Extra return over 60/40 per unit of deviation."),
+    ("Worst fall", "max_drawdown", lambda v: pct(-abs(v)), "The deepest drop from a previous high."),
+    ("Calmar ratio", "calmar", "{:.2f}".format, "Return a year per unit of the worst fall. Higher is better."),
+]
+fmt_ = lambda f, v: "—" if not np.isfinite(v) else f(v)  # noqa: E731
+table = pd.DataFrame({"Measure": [r[0] for r in ROWS],
+                      **{LABEL[c]: [fmt_(f, float(k.loc[c, col])) for _, col, f, _ in ROWS] for c in k.index},
+                      "What it means": [r[3] for r in ROWS]}).set_index("Measure")
+table.loc["Information ratio vs 60/40", LABEL["60/40 benchmark"]] = "—"
+st.table(table)
+t_alpha = float(k.loc["Frontier 35% equity", "jensen_alpha_t"])
+explain(f"Sharpe, Sortino, Treynor and Calmar use the 3-month T-bill rate known the day before. Beta and Jensen's alpha "
+        f"come from a regression on US stocks (SPY) with Newey-West errors. The recommended strategy's alpha has a t-statistic "
+        f"of {t_alpha:.1f}: " + ("no evidence of skill beyond its stock exposure, as expected for a diversified mix. "
+                                  if abs(t_alpha) < 2 else "statistically different from zero. ")
+        + "The 60/40 is the benchmark, so it has no information ratio.")

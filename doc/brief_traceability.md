@@ -9,12 +9,12 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 | # | Requirement | Where it is met | Status |
 |---|---|---|---|
 | 1 | Construct and recommend a portfolio from the universe using quantitative techniques | `portfolio/optimize.py`, `walkforward.py`; notebook 02 (minimum-variance frontier) | 🟡 recommendation computed in notebook 06 Part B after the lock |
-| 2 | Measure and compare risk with VaR, ES and EVT | `risk/`; notebook 03; app pages 4–5 | ✅ |
-| 3 | Validate the risk models with out-of-sample backtesting | `backtest/`; app 'Can we trust the risk model?'; notebook 04 §9 (production and notebook agree on the test) | ✅ final test run once 2026-10-29: champion passes (9 vs 9.6 breaches, Kupiec p 0.86, CC p 0.19) |
-| 4 | Evaluate behaviour under historical and hypothetical stress | `stress/`; app 'What can go wrong?'; notebook 05 (replays, "Hormuz stagflation 2027" with severity calibration, reverse stress) | ✅ (D5 sizes agreed) |
+| 2 | Measure and compare risk with VaR, ES and EVT | `risk/`; notebook 03; app 'Risk and confidence' (A bad day, Compare every model, Why the models disagree) | ✅ |
+| 3 | Validate the risk models with out-of-sample backtesting | `backtest/`; app 'Risk and confidence' → 'Is the model right?'; notebook 04 §9 (production and notebook agree on the test) | ✅ final test run once 2026-10-29: champion passes (9 vs 9.6 breaches, Kupiec p 0.86, CC p 0.19) |
+| 4 | Evaluate behaviour under historical and hypothetical stress | `stress/`; app 'What can go wrong' (replays, scenario builder with plausibility, reverse stress); notebook 05 (replays, "Hormuz stagflation 2027" with severity calibration, reverse stress) | ✅ (D5 sizes agreed) |
 | 5 | Clear recommendation in an investment committee memorandum | `decision/`; memo draft; D10 | ⬜ memo written by the team after Part B |
 | 6 | Justify the approach, risk metrics, lookback and construction method | `inputs_lock.md`; notebook 02 §5 (lookback); spec §3 | 🟡 report section to write |
-| — | Define a suitable portfolio, justify assumptions, communicate limitations | App 'Assumptions & Limitations' and 'What did we promise?'; `reports/limitations.py`; inputs_lock | ✅ rewritten with D1–D10 (2026-10-29) |
+| — | Define a suitable portfolio, justify assumptions, communicate limitations | App 'Assumptions & Limitations' (every limit with room left and its source, first draft → agreed, 24 limitations with mitigations); `reports/limitations.py`; inputs_lock | ✅ rewritten with D1–D10 (2026-10-29) |
 
 ## 2. Manager's responsibilities (p. 4)
 
@@ -34,7 +34,7 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 
 | # | Requirement | Where it is met | Status |
 |---|---|---|---|
-| 1 | **Diversification benefits** | Notebook 03 §8: ES saving in dollars, diversification ratio, crisis comparison (G27) | 🟡 added 2026-10-28; to be re-derived by the owner |
+| 1 | **Diversification benefits** | Notebook 03 §8 (G27); app 'Risk and confidence' → 'Diversification' (bad-day saving in dollars, each crisis fund by fund vs together, correlations by crisis) | 🟡 app done 2026-10-29; notebook to be re-derived by the owner |
 | 2 | Robust risk measurement | Notebook 03; notebook 04 (champion GJR conditional EVT; H3 partly supported) | ✅ |
 | 3 | Tail-risk awareness | Notebook 03 §3 (EVT, once-in-a-decade range) | ✅ |
 | 4 | Practical stress testing | Notebook 05 (validated factor mapping, liquidity day, reverse stress) | ✅ |
@@ -52,11 +52,11 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 | # | Requirement | Where it is met | Status |
 |---|---|---|---|
 | — | Python for all analysis; Streamlit interface; free-tier toolkit | Repo; MiroFish (paid LLM) removed | ✅ |
-| 1 | Sidebar: confidence 90/95/99%, VaR methodology, backtest date range | `app/components/sidebar.py` | 🟡 date range stops at 2022 until the freeze (G10) |
-| 2 | Portfolio panel: weights, cumulative return, drawdown chart | App 'How is the money invested?' (drawdown chart fixed: lines, not stacked areas) | ✅ |
-| 3 | Risk dashboard: VaR, ES and EVT side by side at the same confidence | App pages 4–5 | ✅ |
-| 4 | Backtesting panel: Kupiec/Christoffersen and a traffic light | App 'Can we trust the risk model?' (2008–2026, one-shot test marked) | ✅ |
-| 5 | Stress-test panel: impact under each crisis scenario | App 'What can go wrong?' (every crisis in dollars, scenario builder, reverse stress) | ✅ |
+| 1 | Sidebar: confidence 90/95/99%, VaR methodology, backtest date range | `app/components/controls.py` (shown on 'Risk and confidence', only where each control changes the view) | ✅ 2008–2026 |
+| 2 | Portfolio panel: weights, cumulative return, drawdown chart | App 'Our recommendation' (weights) and 'Compare portfolios' (growth and falls from the peak, against 60/40) | ✅ |
+| 3 | Risk dashboard: VaR, ES and EVT side by side at the same confidence | App 'Risk and confidence' → 'A bad day' | ✅ |
+| 4 | Backtesting panel: Kupiec/Christoffersen and a traffic light | App 'Risk and confidence' → 'Is the model right?' (2008–2026, one-shot test marked, pass/fail per test) | ✅ |
+| 5 | Stress-test panel: impact under each crisis scenario | App 'What can go wrong' (every crisis in dollars, scenario builder whose parts add up to the total, plausibility, reverse stress) | ✅ |
 | 6 | "Assumptions & Limitations" page, plain language (graded) | App 'Assumptions & Limitations' | ✅ |
 
 ## 6. Deliverables (p. 6)
@@ -73,8 +73,8 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 
 | Layer | Requirement | Where it is met | Status |
 |---|---|---|---|
-| 1 | Markowitz mean-variance and CAPM; KPIs: Sharpe, Sortino, Treynor, Jensen's alpha, Information Ratio, max drawdown, Calmar, with interpretation | `portfolio/metrics.py`, `capm.py`; notebook 02 §1, §4 | ✅ |
-| 2 | Historical, parametric and Monte Carlo VaR at 95% and 99% on the same portfolio; discuss where and why they disagree; evaluate assumptions | `risk/var.py`, `montecarlo.py`; notebook 03 §1 | ✅ |
+| 1 | Markowitz mean-variance and CAPM; KPIs: Sharpe, Sortino, Treynor, Jensen's alpha, Information Ratio, max drawdown, Calmar, with interpretation | `portfolio/metrics.py`, `capm.py`; notebook 02 §1, §4; app 'Compare portfolios' → 'The scorecard' (since 2008 or 2023 onwards) | ✅ |
+| 2 | Historical, parametric and Monte Carlo VaR at 95% and 99% on the same portfolio; discuss where and why they disagree; evaluate assumptions | `risk/var.py`, `montecarlo.py`; notebook 03 §1; app 'Why the models disagree' | ✅ |
 | 3 | ES with a rationale for using it alongside VaR | Notebook 03 §2 (tail severity, subadditivity) | ✅ |
 | 4 | EVT; **how different approaches perform under stressed conditions**; limitations of conventional measures; justified threshold | `risk/evt.py`; notebook 03 §3 (threshold justified); notebook 04 §5 (six models in the GFC, COVID and 2022 windows, G28) | ✅ |
 | 5 | Out-of-sample backtest with Kupiec, Christoffersen and Basel traffic light | `backtest/coverage.py`, `engine.py`; notebook 04 (six models on the recommended portfolio; champion GJR conditional EVT) | 🟡 validation done; final test once after the freeze |
@@ -83,7 +83,7 @@ Gap ids (G..) refer to the team's gap register; D.. to `doc/decisions/inputs_loc
 
 | Requirement | Where it is met | Status |
 |---|---|---|
-| Risk budgeting and position sizing with each position's marginal VaR/ES contribution | `risk/contributions.py`; notebook 03 §6; D8 (40% cap) | 🟡 the sizing action itself in notebook 06 Part B |
+| Risk budgeting and position sizing with each position's marginal VaR/ES contribution | `risk/contributions.py`; notebook 03 §6; D8 (40% cap); app 'Our recommendation' → 'Where the risk comes from' (money, bad-day ES and scenario shares) | ✅ D8 applied at the decision date |
 | Historical crisis paths (2008, March 2020, 2022) plus one team-designed hypothetical | `stress/historical.py` (window start fixed, G14), `hypothetical.py`; notebook 05 | ✅ (D5 sizes agreed) |
 | One-page plain-English memo: accept / adjust the risk limit / reject | `decision/memo.py`; D10 | ⬜ team-written memo |
 

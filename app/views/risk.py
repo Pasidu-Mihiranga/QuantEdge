@@ -6,10 +6,13 @@ import streamlit as st
 
 from components.content import EXCEPTION_CAUSES
 from components.controls import FILES, risk_controls
-from components.ui import artifact, explain, money, need_numbers, per_year, say
+from components.ui import artifact, explain, money, need_numbers, pct, per_year, say
 from quantedge.backtest import coverage as cv
+from quantedge.config import load_config
+from quantedge.data.partition import load_returns
+from quantedge.decision.objective import crisis_loss
+from quantedge.risk.es import sample_es
 
-ctl = risk_controls()
 n = need_numbers()
 nav, rd, mv = n["nav_usd"], n["risk_day"], n["model_validity"]
 ACCENT, GREY, CRIT, GOOD, WARN = "#1F5FAE", "#A3ABB5", "#B42318", "#0D7A2F", "#A15C00"
@@ -18,11 +21,11 @@ TAIL = ["#9EC1EA", "#4F86C6", "#1F3F73"]
 st.title("Risk, and how sure we are")
 say("How much can the fund lose on a bad day, and can we trust that number? Use the Risk controls in the sidebar to "
     "change how cautious the estimate is, which model makes it, and which years you look at.")
-view = st.segmented_control("View", ["A bad day", "Is the model right?"], default="A bad day", required=True,
-                            label_visibility="collapsed", key="risk_view",
-                            format_func=lambda v: {"A bad day": ":material/trending_down: A bad day",
-                                                   "Is the model right?": ":material/fact_check: Is the model right?"}[v])
+VIEWS = {"A bad day": ":material/trending_down:", "Diversification": ":material/hub:", "Is the model right?": ":material/fact_check:"}
+view = st.segmented_control("View", list(VIEWS), default="A bad day", required=True, label_visibility="collapsed",
+                            key="risk_view", format_func=lambda v: f"{VIEWS[v]} {v}")
 st.space("small")
+ctl = risk_controls(dates=view == "Is the model right?", models=view != "Diversification")  # only controls that change the view
 
 if view == "A bad day":
     snap = artifact("decision_risk_snapshot.parquet").set_index(["model", "alpha"])
@@ -36,9 +39,13 @@ if view == "A bad day":
         st.metric("Expected Shortfall (ES)", f"−{money(es_ * nav)}", "average loss on those days", delta_color="off",
                   delta_arrow="off", border=True, help="How much the fund loses on average on those bad days. The committee's "
                   "bad-day limit uses this measure.")
-        st.metric("Extreme Value Theory (EVT)", f"−{money(evt * nav)}", "the most cautious estimate", delta_color="off",
-                  delta_arrow="off", border=True, help="Built only from the worst days in history, so it gives the most "
-                  "cautious view of rare, extreme losses.")
+        st.metric("Extreme Value Theory (EVT)", f"−{money(evt * nav)}", "built from the worst days only", delta_color="off",
+                  delta_arrow="off", border=True, help="Built only from the worst days in history, so it describes rare, "
+                  "extreme losses better than a model fitted to every day.")
+    if ctl.model == "Cornish-Fisher":
+        st.warning("Cornish-Fisher is unreliable for this fund: its correction for skew and fat tails only works when they "
+                   "are mild, and these returns are too fat-tailed. It understates VaR at 90% and overstates both VaR and ES "
+                   "at 99%. It is shown for comparison only; the limits use the tested model.", icon=":material/warning:")
     df = pd.DataFrame({"measure": ["VaR", "ES", "EVT"], "loss": [var_ * nav, es_ * nav, evt * nav],
                        "label": [money(var_ * nav), f"{money(es_ * nav)} ({es_ / var_ - 1:+.0%})", f"{money(evt * nav)} ({evt / var_ - 1:+.0%})"]})
     bars = alt.Chart(df).mark_bar(cornerRadiusEnd=4, size=70).encode(
@@ -71,8 +78,102 @@ if view == "A bad day":
         st.caption("For each model, the left dot is VaR and the right dot is ES; the model you selected is blue. The tab "
                    "'Is the model right?' shows which model passed the test.")
 
+    with st.expander("Why the models disagree", icon=":material/psychology_alt:"):
+        # Facts about the portfolio's own returns that drive the gaps (booklet: "discuss where and why they disagree").
+        past = load_returns("all", load_config()).loc[lambda r: r.index < pd.Timestamp(n["decision_date"])]
+        port = past @ pd.Series(n["weights"]).reindex(past.columns, fill_value=0.0)
+        recent = port.loc[rd["window_start"]:rd["window_end"]]
+        vol_now, vol_all = float(port.iloc[-21:].std() * 252 ** 0.5), float(port.std() * 252 ** 0.5)
+        hs = snap.xs(ctl.alpha, level="alpha")
+        WHY = {"Historical": "Replays the last two years as they happened; assumes nothing about their shape.",
+               "Normal": "Assumes a bell curve, so it misses fat tails: too low far out in the tail.",
+               "Student-t": "A bell curve with fat tails: higher far out in the tail, lower near the middle.",
+               "Cornish-Fisher": "Bends the bell curve for skew and fat tails; breaks down when the tails are this fat.",
+               "EVT": "Fits only the worst days, so it describes the far tail best.",
+               "Monte Carlo": "Simulates 20,000 days from fat-tailed returns with fixed correlations.",
+               "GARCH-FHS": "Rescales history to today's volatility: higher when markets are nervous.",
+               "GJR-FHS": "As GARCH-FHS, but falls raise volatility more than rises do.",
+               "Conditional EVT": "Today's volatility plus an EVT tail.",
+               "GJR conditional EVT": "Today's volatility (falls weigh more) plus an EVT tail: the tested model."}
+        tbl = pd.DataFrame({"VaR": (hs["var"] * nav).map(money), "ES": (hs["es"] * nav).map(money),
+                            "VaR vs historical": (hs["var"] / hs.loc["Historical", "var"] - 1).map(lambda v: f"{v:+.0%}"),
+                            "Why it differs": [WHY.get(m, "") for m in hs.index]})
+        st.table(tbl)
+        say(f"Three facts about this portfolio explain the gaps:\n- **Fat tails:** its daily returns have an excess kurtosis of "
+            f"{port.kurt():.1f} since 2004 ({recent.kurt():.1f} in the last two years; a bell curve has 0), so models that "
+            f"assume a bell curve understate rare losses.\n- **Skew:** {port.skew():+.2f}, "
+            + ("big falls are more common than big rises." if port.skew() < -0.2 else "close to symmetric, so skew matters "
+               "little here; the fat tails do the damage.")
+            + f"\n- **Volatility now vs on average:** {pct(vol_now)} over the last month against {pct(vol_all)} since "
+            "2004, so models that react to today's volatility give "
+            + ("lower" if vol_now < vol_all else "higher") + " numbers than models built on all of history.\n- At "
+            f"{ctl.alpha:.0%} these effects " + ("are small: most models agree." if ctl.alpha < 0.99 else
+                                                 "are largest: this is where the models disagree most."))
+
+elif view == "Diversification":
+    # Booklet p. 4: what holding several funds saves, on a bad day and in each crisis, and why less in 2022.
+    cfg = load_config()
+    w = pd.Series(n["weights"]).loc[lambda s: s > 1e-4]
+    dev = load_returns("dev", cfg)[w.index]                     # 2004-2018, as the bad-day limit (through the cycle)
+    port_es = sample_es(-(dev @ w).to_numpy(), ctl.alpha)
+    alone_es = sum(w[t] * sample_es(-dev[t].to_numpy(), ctl.alpha) for t in w.index)
+    past = load_returns("all", cfg).loc[lambda r: r.index < pd.Timestamp(n["decision_date"])][w.index]
+    crises = cfg.stress["historical"]
+    together = crisis_loss(w, past, crises)
+    alone = sum(w[t] * crisis_loss(pd.Series({t: 1.0}), past, crises) for t in w.index)
+    with st.container(horizontal=True):
+        st.metric("A very bad day, fund by fund", f"−{money(alone_es * nav)}", "if every fund fell at once",
+                  delta_color="off", delta_arrow="off", border=True,
+                  help=f"Each holding's own average loss on its worst {1 - ctl.alpha:.0%} of days, added up (2004–2018).")
+        st.metric("The same day, for the portfolio", f"−{money(port_es * nav)}", "they rarely fall together",
+                  delta_color="off", delta_arrow="off", border=True)
+        st.metric("Diversification saves", money((alone_es - port_es) * nav), f"{(alone_es - port_es) / alone_es:.0%} of the bad-day loss",
+                  delta_color="off", delta_arrow="off", border=True)
+    cd = pd.DataFrame({"crisis": list(crises) * 2, "how": ["each fund on its own"] * len(crises) + ["the portfolio"] * len(crises),
+                       "loss": [*(alone[c] * nav for c in crises), *(together[c] * nav for c in crises)]})
+    cd["label"] = cd["loss"].map(money)
+    order_h = ["each fund on its own", "the portfolio"]
+    base_d = alt.Chart(cd).encode(y=alt.Y("crisis:N", sort=list(crises), title=None, axis=alt.Axis(labelFontSize=13, labelLimit=300)),
+                                  yOffset=alt.YOffset("how:N", sort=order_h))
+    st.altair_chart((base_d.mark_bar(height=14, cornerRadiusEnd=3).encode(
+        x=alt.X("loss:Q", title="Loss in the crisis (USD)", axis=alt.Axis(format="$~s")),
+        color=alt.Color("how:N", sort=order_h, scale=alt.Scale(domain=order_h, range=[GREY, ACCENT]),
+                        legend=alt.Legend(title=None, orient="bottom")),
+        tooltip=["crisis:N", "how:N", alt.Tooltip("loss:Q", format="$,.0f")])
+        + base_d.mark_text(align="left", dx=5, fontSize=11).encode(x="loss:Q", text="label:N")).properties(height=alt.Step(16)),
+        alt="Crisis loss with and without diversification")
+    saved = "; ".join(f"{money((alone[c] - together[c]) * nav)} in {c}" for c in crises)
+    win = lambda c: past.loc[(past.index > pd.Timestamp(crises[c][0])) & (past.index <= pd.Timestamp(crises[c][1]))]  # noqa: E731
+    moves = "; ".join(f"in {c} bonds {pct(float((1 + win(c)['AGG']).prod() - 1), signed=True)} while US stocks "
+                      f"{pct(float((1 + win(c)['SPY']).prod() - 1), signed=True)}" for c in crises) if {"AGG", "SPY"} <= set(past.columns) else ""
+    say(f"In every crisis the portfolio lost less than its funds would have lost one by one, because their worst days did "
+        f"not all coincide. Diversification saved {saved}. What differs is the bond cushion: {moves}. When bonds fall with "
+        "stocks, as in 2022, the cushion is gone, which is the case our stagflation scenario is built on.")
+    st.markdown("##### How the funds move together")
+    period = st.segmented_control("Period", ["All days since 2004", *crises], default="All days since 2004", required=True,
+                                  label_visibility="collapsed", key="div_period")
+    r = past if period == "All days since 2004" else past.loc[
+        (past.index > pd.Timestamp(crises[period][0])) & (past.index <= pd.Timestamp(crises[period][1]))]
+    cm = r.corr().stack().rename("corr").rename_axis(["a", "b"]).reset_index()
+    funds = list(w.index)
+    heat = alt.Chart(cm).encode(x=alt.X("a:N", sort=funds, title=None), y=alt.Y("b:N", sort=funds, title=None))
+    st.altair_chart((heat.mark_rect().encode(color=alt.Color("corr:Q", scale=alt.Scale(domain=[-1, 0, 1], range=[ACCENT, "#F4F6F8", CRIT]),
+                                                             legend=alt.Legend(title="correlation")),
+                                             tooltip=["a:N", "b:N", alt.Tooltip("corr:Q", format=".2f")])
+                     + heat.mark_text(fontSize=13).encode(text=alt.Text("corr:Q", format=".2f")))
+                    .properties(height=260, width=360), alt=f"Correlations, {period}")
+    if "AGG" in funds and "SPY" in funds:
+        say(f"US stocks and bonds (SPY and AGG) had a correlation of **{r['SPY'].corr(r['AGG']):+.2f}** in this period "
+            f"(against {past['SPY'].corr(past['AGG']):+.2f} over all days): below zero, bonds cushion a fall in stocks; "
+            "above zero, they fall together.")
+
 else:
     passed = mv.get("passes")
+    # Independence p of the champion on the days every model forecast (the scored days), as in final_test_scores
+    tests = [artifact(f"final_test_{f}.parquet") for f in [*FILES.values(), "linear_qr"]]
+    common = sorted(set.intersection(*(set(t.index) for t in tests if t is not None)))
+    champ_hits = artifact(f"final_test_{FILES[mv.get('champion', 'GJR conditional EVT')]}.parquet").loc[common, "hit_0.99"]
+    ind_p = cv.christoffersen(champ_hits.astype(int).to_numpy(), 0.99).p_ind
     with st.container(horizontal=True, vertical_alignment="center"):
         st.badge("Passed the one-shot test" if passed else "Failed the one-shot test",
                  icon=":material/verified:" if passed else ":material/error:", color="green" if passed else "red")
@@ -85,10 +186,15 @@ else:
         st.metric("Is the count right?", "Yes" if mv.get("kupiec_p", 0) >= 0.05 else "No", f"Kupiec p = {mv.get('kupiec_p', 0):.2f}",
                   delta_color="off", delta_arrow="off", border=True,
                   help="A standard test (Kupiec) of whether the number of misses is what a correct model would give.")
-        st.metric("Do bad days cluster?", "No" if mv.get("cc_p", 0) >= 0.05 else "Yes", f"Christoffersen p = {mv.get('cc_p', 0):.2f}",
+        st.metric("Do bad days cluster?", "No" if ind_p >= 0.05 else "Yes", f"independence p = {ind_p:.2f}",
                   delta_color="off", delta_arrow="off", border=True,
-                  help="A standard test (Christoffersen) of whether misses come in bunches, which would mean the model reacts "
-                       "too slowly to a crisis.")
+                  help=f"Christoffersen's independence test: do misses come in bunches, which would mean the model reacts too "
+                       f"slowly to a crisis? p = {ind_p:.3f}: "
+                       + ("the misses do cluster. " if ind_p < 0.05 else "no clustering at 5%, but close: worth watching. "
+                          if ind_p < 0.10 else "no sign of clustering. ")
+                       + f"The combined count-and-cluster "
+                       f"test gives p = {mv.get('cc_p', 0):.2f}. Scored on the {len(common)} days on which every model made a "
+                       "forecast.")
     explain("We chose this model using 2019–2022 data, then tested it once on 2023–2026, which it had never seen, without "
             "changing anything. Of the eleven models we compared, only three passed; the others missed several bad days in a "
             "row. A machine-learning model was also tested and passed, but it was less accurate than ours.")
@@ -107,9 +213,13 @@ else:
         zone = roll["zone"].iloc[-1]
         st.badge({"green": "Traffic light: green", "yellow": "Traffic light: yellow", "red": "Traffic light: red"}[zone],
                  icon=":material/traffic:", color={"green": "green", "yellow": "orange", "red": "red"}[zone])
-    st.caption(f"Over the years you chose: {k.x} days worse than forecast against about {k.expected:.0f} expected "
-               f"(Kupiec p = {k.pvalue:.2f}, Christoffersen p = {ch.p_cc:.2f}). Years before 2019 include 2008, when every "
-               "model struggled.")
+    verdict = lambda p: "passes" if p >= 0.05 else "fails at 5%"  # noqa: E731
+    st.caption(f"Over the years you chose: {k.x} days worse than forecast against about {k.expected:.0f} expected. Count "
+               f"(Kupiec) p = {k.pvalue:.3f}, {verdict(k.pvalue)}; clustering (independence) p = {ch.p_ind:.3f}, "
+               f"{verdict(ch.p_ind)}; both together p = {ch.p_cc:.3f}, {verdict(ch.p_cc)}."
+               + (" These years include 2008, when every model struggled." if ctl.start <= 2009 else ""))
+    if alpha == 0.99 and (roll is None or not len(roll)):
+        st.caption("The traffic light needs at least 250 trading days: choose a range of a full year or more.")
     d = bt.reset_index().rename(columns={"index": "date"})
     d = d.rename(columns={d.columns[0]: "date"})
     d["loss_usd"], d["var_usd"] = d["loss"] * nav, d[f"var_{alpha}"] * nav

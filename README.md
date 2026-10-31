@@ -57,4 +57,4 @@ The raw data snapshot in `data/raw/` is frozen and SHA-256 hashed (`data/raw/man
 
 ## Status
 
-Steps 01–13, the ML challengers and the Streamlit app are implemented and tested. Results are provisional until the methodology freeze: the data split is development 2004–2018, validation 2019–2022 (all selection decisions) and a locked final test from 2023, which is evaluated once after the freeze. See [TODO.md](TODO.md) and [the freeze checklist](doc/decisions/freeze_checklist.md).
+Steps 01–13, the ML challengers and the Streamlit app are implemented and tested. The methodology is frozen (git tag `methodology-freeze-v1`): the data split is development 2004–2018, validation 2019–2022 (all selection decisions) and a final test from 2023, which was run once after the freeze and is recorded in `data/artifacts/final_test_result.json`. See [TODO.md](TODO.md) and [the freeze checklist](doc/decisions/freeze_checklist.md).

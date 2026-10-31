@@ -8,7 +8,7 @@ from quantedge.backtest.report import selection_table
 
 ctl = sidebar()
 st.title("All risk models")
-st.caption("Every model, every window and the machine-learning challenger on the pre-freeze periods (2008–2022). The one-shot 2023–2026 test is on 'Can we trust the risk model?'.")
+st.caption("Every model, every window and the machine-learning challenger on the pre-freeze periods (2008–2022). The one-shot 2023–2026 test is on 'Risk and confidence', under 'Is the model right?'.")
 st.markdown("<div class='qe-banner qe-locked'>Dev 2004–2018 · Validation 2019–2022 (model selection) · "
             "Final test 2023–2026 run once after the freeze (see 'Can we trust the risk model?')</div>", unsafe_allow_html=True)
 
@@ -73,7 +73,7 @@ with tab_arena:
         best = arena.sort_values("pinball").index[0]
         ok = bool(arena.loc[best, "passes"]) and arena.loc[best, "fz0_vs_champion"] <= 0.02
         st.info(f"Validation leader: **{best}**. Conditions 1–2 {'met' if ok else 'not met'}; condition 3 (final test) "
-                "pending the methodology freeze.")
+                "is on 'Risk and confidence', under 'Is the model right?'.")
         name = st.selectbox("Challenger forecasts", list(ML_FILES))
         f = ml_forecast(name)
         if f is not None:

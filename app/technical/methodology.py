@@ -1,9 +1,8 @@
 import streamlit as st
 
-from quantedge.paths import ROOT
 from quantedge.risk.examples import subadditivity_demo
 
-st.title("Methodology and AI disclosure")
+st.title("Methodology")
 
 st.subheader("Conventions")
 st.markdown(r"""
@@ -25,14 +24,3 @@ bond's 4% default is invisible to VaR: its 95% VaR is **{d['var_single']:.0f}** 
 VaRs add up to {d['var_sum_of_singles']:.0f}. But the chance that at least one of the two defaults is 7.8%, above 5%, so
 the pair's 95% VaR is **{d['var_portfolio']:.0f}**: diversifying "increased" VaR. ES has no such flaw:
 {d['es_portfolio']:.1f} ≤ {d['es_sum_of_singles']:.1f}.""")
-
-st.subheader("AI disclosure")
-log = ROOT / "doc" / "ai_log.md"
-st.markdown("AI assistance (Claude) was used for code, tests, analysis drafts and documents; every result was checked "
-            "against independently written notebooks and reviewed by the team. The full log, one row per module, is below "
-            "and in `doc/ai_log.md`; the disclosure is in `AI_DISCLOSURE.md`.")
-if log.exists():
-    with st.expander("The full AI assistance log"):
-        st.markdown(log.read_text(encoding="utf-8"))
-st.caption("Portfolio choice, IPS limits, threshold choice, scenario design, interpretation and the final "
-           "recommendation are the team's own judgement.")

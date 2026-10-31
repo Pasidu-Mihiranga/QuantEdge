@@ -21,3 +21,9 @@ build/
 *.key
 secrets/
 .secrets/
+
+# Local files
+.DS_Store
+
+# Private working notes (internal reviews and audit); the two specs the repo cites are in doc/specs/
+My reserch/

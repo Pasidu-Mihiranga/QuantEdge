@@ -5,7 +5,12 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+from components.pack import crises_table, summary_html, weights_table
 from components.ui import artifact, esc, money, need_numbers, pct, say
+from quantedge.config import load_config
+from quantedge.data.partition import load_returns
+from quantedge.decision.decision_date import es_shares
+from quantedge.stress.factor import scenario_contributions
 
 n = need_numbers()
 obj, lim, risk, alt_ = n["objective"], n["limits"], n["risk"], n["alternatives"]
@@ -36,6 +41,14 @@ with st.container(border=True):
     if key == "ACCEPT" and n["robustness"].get("ACCEPT", 0) < sum(n["robustness"].values()) / 2 + 1:
         st.markdown(esc(f":orange-badge[:material/warning: Narrow margin] {money(n['return_margin_usd'])} a year above the "
                         "target. Try **What would change it** below."))
+    with st.container(horizontal=True, gap="small"):
+        st.download_button("Committee summary", summary_html(n), "committee_summary.html", "text/html",
+                           icon=":material/download:", help="One printable page with the verdict, the allocation, every "
+                           "limit, the crises and how sure we are. Built from the same numbers as this app.")
+        st.download_button("Weights (CSV)", weights_table(n).to_csv(index=False), "weights.csv", "text/csv",
+                           icon=":material/table:", type="tertiary")
+        st.download_button("Crises (CSV)", crises_table(n).to_csv(index=False), "crises.csv", "text/csv",
+                           icon=":material/table:", type="tertiary")
 
 mv = n["model_validity"]
 with st.container(horizontal=True):
@@ -81,6 +94,36 @@ if view == "The mix":
             f"- **No fund dominates the tail risk:** the largest share is {n['largest_es_share_etf']} at "
             f"{n['largest_es_share']:.0%}, below the 40% cap."))
         st.page_link("views/portfolio.py", label="Compare other equity shares and the history since 2008", icon=":material/compare_arrows:")
+
+    # Risk budget (booklet p. 8): the same Euler ES shares as the D8 rule, plus each fund's share of the scenario loss.
+    st.subheader("Where the risk comes from", divider=False)
+    cfg = load_config()
+    past = load_returns("all", cfg).loc[lambda r: r.index < pd.Timestamp(n["decision_date"])]
+    wf = pd.Series(n["weights"]).reindex(past.columns, fill_value=0.0)
+    es_sh = es_shares(wf, past)
+    hyp = cfg.stress["hypothetical"]
+    parts = scenario_contributions(artifact("decision_scenario_betas.parquet"), hyp["shock"], wf, hyp.get("liquidity_day"))
+    parts.index = [i.split(" ")[0] for i in parts.index]                 # the AGG panic day counts as AGG
+    scen = parts.groupby(level=0).sum() / parts.sum()
+    rb = pd.DataFrame({"Share of the money": wf, "Share of a very bad day (99% ES)": es_sh,
+                       "Share of the stagflation loss": scen}).loc[w.index].fillna(0.0)
+    long = rb.rename(index=lambda t: f"{NAMES[t]} ({t})").reset_index(names="fund").melt(
+        "fund", var_name="measure", value_name="share")
+    order = list(rb.columns)
+    bars = alt.Chart(long).mark_bar(cornerRadiusEnd=3, height=12).encode(
+        y=alt.Y("fund:N", sort=None, title=None, axis=alt.Axis(labelLimit=320, labelFontSize=13)),
+        yOffset=alt.YOffset("measure:N", sort=order),
+        x=alt.X("share:Q", title=None, axis=alt.Axis(format=".0%"), scale=alt.Scale(domain=[min(0.0, long.share.min()), min(1.0, long.share.max() * 1.1)])),
+        color=alt.Color("measure:N", sort=order, scale=alt.Scale(domain=order, range=[GREY, ACCENT, "#1F3F73"]),
+                        legend=alt.Legend(title=None, orient="bottom", labelLimit=400)),
+        tooltip=["fund:N", "measure:N", alt.Tooltip("share:Q", format=".1%")])
+    st.altair_chart(bars.properties(height=alt.Step(14)), alt="Share of money, of bad-day risk and of the scenario loss")
+    top = scen.idxmax()
+    say(f"No fund carries more than {pct(es_sh.max(), 0)} of the bad-day risk (the cap is "
+        f"{pct(cfg.decision['es_share_cap'], 0)}). The two risk measures disagree about {NAMES[top]} ({top}): the bad-day "
+        f"measure, built from history, gives it only {pct(es_sh[top], 0)} of the risk, but in our stagflation scenario it "
+        f"carries **{pct(scen.max(), 0)}** of the loss, because there bonds fall with stocks. That is why the crisis budget is "
+        "checked separately from the daily risk.")
 
 elif view == "What would change it":
     wi = artifact("decision_whatif.parquet")
