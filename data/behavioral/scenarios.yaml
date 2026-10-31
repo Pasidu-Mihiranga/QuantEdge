@@ -2,7 +2,7 @@
 version: 2
 mirofish_commit: 7657031ac01184afe2cb220f5ee3545573b5e843   # 666ghj/MiroFish, run unmodified outside this repository
 scale:
-  max_rounds: 20
+  max_rounds: 40
   replicates: 3
 archetypes:
   - id: institutional

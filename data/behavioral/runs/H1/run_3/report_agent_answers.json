@@ -17,12 +17,12 @@
     },
     "usd": {
       "direction": "+",
-      "intensity": "high",
+      "intensity": "medium",
       "confidence": "high"
     },
     "credit_spread": {
       "direction": "+",
-      "intensity": "high",
+      "intensity": "medium",
       "confidence": "high"
     }
   },
@@ -33,9 +33,9 @@
       "AGG",
       "cash"
     ],
-    "contagion_breadth": 3,
+    "contagion_breadth": 2,
     "herding": 3,
-    "investor_disagreement": 0,
+    "investor_disagreement": 1,
     "duration": "months"
   },
   "asset_directions": {
@@ -44,20 +44,23 @@
     "EEM": "-",
     "AGG": "+",
     "GLD": "+",
-    "XLE": "+",
+    "XLE": "-",
     "XLK": "-"
   },
-  "narrative_summary": "The simulation forecasts a market dominated by risk aversion, characterized by widespread panic selling from retail investors and forced de-leveraging by institutions. Capital flows significantly towards safe-haven assets like gold and high-quality bonds, exacerbated by an oil supply shock, renewed inflation, and central bank tightening, leading to prolonged market fragility.",
+  "narrative_summary": "Individual investors exhibit panic selling and herd behavior, leading to capital outflows from risk assets. Institutional investors maintain strategic rebalancing with a long-term view, while central banks intervene to stabilize inflation through rate hikes, causing a shift towards safer assets and increased de-leveraging pressures.",
   "key_mechanisms": [
-    "Retail investor panic selling and herding behavior.",
-    "Hedge fund and leveraged trader de-leveraging due to rising volatility and margin calls.",
-    "Mechanical rebalancing by pension funds and endowments when risk limits are breached.",
-    "Capital flight to traditional safe havens (gold, high-quality bonds, cash).",
-    "Strengthening of the US dollar as a global safe haven.",
-    "Oil supply shock causing re-accelerated inflation.",
-    "Central bank resuming monetary tightening, leading to rising long-term yields.",
-    "Deteriorating growth forecasts and widening corporate credit spreads.",
-    "Protracted risk aversion leading to slow re-entry into risk assets."
+    "Emotion-driven behavior and loss aversion among individual investors",
+    "Strategic rebalancing and strict risk management frameworks of institutional investors",
+    "Central bank monetary policy adjustments (rate hikes) to control inflation and influence market expectations",
+    "Strengthening USD and widening credit spreads as market signals for de-risking"
   ],
-  "stated_limitations": []
+  "stated_limitations": [
+    "Simulation cannot fully capture all individual investors' heterogeneity (e.g., contrarian investors)",
+    "Limited quantification of social media's amplification of herd effects",
+    "Simulation may not fully capture all institutional investors' behavioral heterogeneity under extreme stress (e.g., forced deleveraging of some hedge funds)",
+    "Limited ability to capture potential impact of regulatory changes or black swan events on institutional investor behavior",
+    "Simulation does not capture other direct liquidity support or market sentiment guidance tools from central banks (e.g., unconventional measures during extreme market stress)",
+    "Simulation may not fully capture all market participants' heterogeneity (e.g., some contrarian individual investors or institutions forced to liquidate under extreme pressure)",
+    "Global geopolitical events or sudden technological breakthroughs (black swan events) are not included in the current simulation's detailed considerations."
+  ]
 }

@@ -100,7 +100,7 @@ class MiroFishClient:
             "/api/simulation/prepare/status", "simulation prepare",
             json={"task_id": prep.get("task_id"), "simulation_id": sim_id}))
         mark("prepare")
-        self.post("/api/simulation/start", "simulation start", json={"simulation_id": sim_id, "max_rounds": max_rounds})
+        self.post("/api/simulation/start", "simulation start", json={"simulation_id": sim_id, "max_rounds": max_rounds, "enable_graph_memory_update": True})
         mark("simulate")
         return self.finish(run_dir, sim_id, {"project_id": project_id, "max_rounds": max_rounds}, timings)
 
@@ -125,8 +125,20 @@ class MiroFishClient:
         def mark(stage):
             timings[stage] = round(time.monotonic() - self.t0, 1)
 
+        if not (run_dir / "raw_report.md").exists():
+            self._report(run_dir, sim_id, mark)
+        return self._questionnaire(run_dir, sim_id, info, timings, mark)
+
+    def _report(self, run_dir: Path, sim_id: str, mark) -> None:
         self.close(sim_id)
-        rep = self.post("/api/report/generate", "report", json={"simulation_id": sim_id})
+        while True:                                 # MiroFish refuses until its graph writes have drained
+            try:
+                rep = self.post("/api/report/generate", "report", json={"simulation_id": sim_id})
+                break
+            except MiroFishError as e:
+                if "still active" not in str(e):
+                    raise
+                time.sleep(self.poll_s)
         self.wait("report", lambda: self.post("/api/report/generate/status", "report",
                                               json={"task_id": rep.get("task_id"), "simulation_id": sim_id}))
         report = self.get(f"/api/report/by-simulation/{sim_id}", "report")
@@ -134,6 +146,7 @@ class MiroFishClient:
         (run_dir / "report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
         mark("report")
 
+    def _questionnaire(self, run_dir: Path, sim_id: str, info: dict | None, timings: dict, mark) -> dict:
         attempts = []
         answer_text = ""
         for _ in range(5):                              # gate: >= 4 of 5 schema-valid answers

@@ -50,6 +50,8 @@ def validate(answer: dict) -> dict:
     if not isinstance(f, dict) or set(f) != set(FACTORS):
         raise SchemaError(f"factors must contain exactly {FACTORS}")
     for k, v in f.items():
+        if not isinstance(v, dict):
+            raise SchemaError(f"factors.{k} must be an object")
         if v.get("direction") not in DIRECTIONS:
             raise SchemaError(f"factors.{k}.direction must be one of {DIRECTIONS}")
         if v.get("intensity") not in INTENSITIES:

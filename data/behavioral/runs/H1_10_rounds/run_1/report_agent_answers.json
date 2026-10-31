@@ -1,0 +1,64 @@
+{
+  "factors": {
+    "rates_10y": {
+      "direction": "+",
+      "intensity": "high",
+      "confidence": "high"
+    },
+    "oil": {
+      "direction": "0",
+      "intensity": "low",
+      "confidence": "low"
+    },
+    "vix": {
+      "direction": "+",
+      "intensity": "extreme",
+      "confidence": "high"
+    },
+    "usd": {
+      "direction": "0",
+      "intensity": "low",
+      "confidence": "low"
+    },
+    "credit_spread": {
+      "direction": "+",
+      "intensity": "high",
+      "confidence": "medium"
+    }
+  },
+  "behaviour": {
+    "panic_selling": 3,
+    "flight_to_safety": [
+      "AGG",
+      "GLD",
+      "cash"
+    ],
+    "contagion_breadth": 3,
+    "herding": 3,
+    "investor_disagreement": 1,
+    "duration": "months"
+  },
+  "asset_directions": {
+    "SPY": "-",
+    "EFA": "-",
+    "EEM": "-",
+    "AGG": "+",
+    "GLD": "+",
+    "XLE": "-",
+    "XLK": "-"
+  },
+  "narrative_summary": "In a market dominated by inflationary pressures and rising risks, retail investors engage in panic selling, while conservative investors seek safety in gold, high-quality bonds, and cash. This capital reallocation is amplified by significant herding effects, leading to increased market volatility and a widespread flight from risk assets.",
+  "key_mechanisms": [
+    "Self-reinforcing feedback loop between persistent inflation, escalating risk perception, and subsequent investor behavior.",
+    "Widespread increase in risk aversion, coupled with differing perceptions of risk and reward among various investor groups.",
+    "Herding effects significantly amplify market volatility through collective, often irrational, actions.",
+    "Forced de-leveraging by hedge funds and leveraged traders when volatility and margins rise."
+  ],
+  "stated_limitations": [
+    "Inability of the simulation to fully capture all subtle psychological nuances of individual investors.",
+    "Possibility that unforeseen external events could alter the predicted path.",
+    "Does not account for unforeseen 'black swan' events.",
+    "Model is specifically designed to focus on reactions to existing and projected economic conditions rather than predicting entirely new events.",
+    "Some investors may engage in contrarian trading, but their scale is insufficient to change the overall trend."
+  ]
+}

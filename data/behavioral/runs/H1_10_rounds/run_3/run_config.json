@@ -1,0 +1,21 @@
+{
+  "scenario": "H1",
+  "k": 3,
+  "scenarios_sha256": "2d9a88d066f5a79d47e9004679fa4f783aed43527f6da651c0024576b89dc0b8",
+  "mirofish_commit": "7657031ac01184afe2cb220f5ee3545573b5e843",
+  "project_id": "proj_ffa09b764d57",
+  "max_rounds": 10,
+  "simulation_id": "sim_57519add4c88",
+  "timings_s": {
+    "ontology": 58.5,
+    "graph": 98.6,
+    "prepare": 209.5,
+    "simulate": 209.5,
+    "report": 450.7,
+    "questionnaire": 461.5
+  },
+  "questionnaire_attempts": [
+    true
+  ],
+  "finished_utc": "2026-10-31T16:18:05Z"
+}

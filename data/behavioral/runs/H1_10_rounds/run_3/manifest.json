@@ -1,0 +1,12 @@
+{
+  "written_utc": "2026-10-31T16:18:05Z",
+  "scenarios_sha256": "2d9a88d066f5a79d47e9004679fa4f783aed43527f6da651c0024576b89dc0b8",
+  "files": {
+    "prompt.txt": "e25aaa983cf7d0a637ddaf878a5ad477cab0e9c37563502f4611c9b8e5943365",
+    "raw_report.md": "590bf592379ffaea4756f87062999a32897d2441d772ab9478312795fb3750f0",
+    "report.json": "86b0aa5b80f4942970bf72259965334f99d9c7cef0b03215b67e65f3d5fdb7e2",
+    "report_agent_answers.json": "e2f0b58462a1fab311ad76372e651ed3b714884389875eabc76297dac778a739",
+    "run_config.json": "d58c3796e2ba87cae311d5d9ae4089572d44adeaab9344ff3ff696e63691af3c",
+    "seed.md": "3f48ff7c48febf9b65397f70ee7523baf944764eaa230bab4859c118aff158ea"
+  }
+}
