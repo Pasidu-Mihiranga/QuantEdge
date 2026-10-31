@@ -1,29 +1,36 @@
 # Committee app theme: calm and friendly; Google Sans for text and headings, IBM Plex Mono for code.
 # Colours: one accent blue for the recommendation; status colours only for ACCEPT / ADJUST / REJECT.
+# Light and dark are both defined, so the viewer's system setting (or the Settings menu) picks one.
+# Chart colours used in the page code live in app/components/palette.py and follow the same two modes.
 
 [theme]
-base = "light"
-primaryColor = "#1F5FAE"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F4F6F9"
-textColor = "#1D2733"
-linkColor = "#1F5FAE"
-borderColor = "#DDE1E7"
 showWidgetBorder = true
 showSidebarBorder = true
-baseRadius = "8px"
+baseRadius = "10px"
 buttonRadius = "8px"
+paddingTop = "1.5rem"
+paddingBottom = "3rem"
 
 font = "'Google Sans':https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&display=swap"
 headingFont = "'Google Sans':https://fonts.googleapis.com/css2?family=Google+Sans:wght@500;600;700&display=swap"
 codeFont = "'IBM Plex Mono':https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
 baseFontSize = 15
 baseFontWeight = 400
-headingFontSizes = ["30px", "21px", "17px", "15px", "14px", "13px"]
-headingFontWeights = [600, 600, 600, 600, 500, 500]
+headingFontSizes = ["32px", "22px", "17px", "15px", "14px", "13px"]
+headingFontWeights = [650, 600, 600, 600, 500, 500]
 metricValueFontSize = "30px"
 metricValueFontWeight = 600
 linkUnderline = false
+
+[theme.light]
+primaryColor = "#1F5FAE"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F6F9"
+textColor = "#1D2733"
+linkColor = "#1F5FAE"
+borderColor = "#DDE1E7"
+codeBackgroundColor = "#F4F6F9"
+dataframeHeaderBackgroundColor = "#F4F6F9"
 
 greenColor = "#0D7A2F"
 redColor = "#B42318"
@@ -35,11 +42,33 @@ grayColor = "#5B6573"
 chartCategoricalColors = ["#1F5FAE", "#A3ABB5", "#0D7A2F", "#B42318", "#A15C00", "#6B4FA3", "#2E8B8B"]
 chartSequentialColors = ["#E8EFF9", "#C9DAF0", "#9EC1EA", "#6FA0DB", "#4F86C6", "#2F6BB0", "#1F5FAE", "#1A4E91", "#163F75", "#112F58"]
 
-dataframeHeaderBackgroundColor = "#F4F6F9"
+[theme.dark]
+primaryColor = "#2F74D6"
+backgroundColor = "#0F141B"
+secondaryBackgroundColor = "#18202A"
+textColor = "#E6EAF0"
+linkColor = "#7FB0F5"
+borderColor = "#2A3441"
+codeBackgroundColor = "#18202A"
+dataframeHeaderBackgroundColor = "#18202A"
 
-[theme.sidebar]
+greenColor = "#3FB46A"
+redColor = "#F0705F"
+orangeColor = "#E59A3A"
+yellowColor = "#E2B341"
+blueColor = "#5B9BF0"
+grayColor = "#9AA4B2"
+
+chartCategoricalColors = ["#5B9BF0", "#5E6976", "#3FB46A", "#F0705F", "#E59A3A", "#A58BDB", "#4FB3B3"]
+chartSequentialColors = ["#16253A", "#1C3352", "#22426B", "#2B5486", "#3567A3", "#4279C0", "#5B9BF0", "#7FB0F5", "#A6C8F8", "#CFE1FB"]
+
+[theme.light.sidebar]
 backgroundColor = "#F4F6F9"
 secondaryBackgroundColor = "#FFFFFF"
+
+[theme.dark.sidebar]
+backgroundColor = "#131A22"
+secondaryBackgroundColor = "#0F141B"
 
 [server]
 headless = true

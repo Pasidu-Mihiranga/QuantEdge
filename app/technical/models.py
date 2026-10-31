@@ -9,8 +9,8 @@ from quantedge.backtest.report import selection_table
 ctl = sidebar()
 st.title("All risk models")
 st.caption("Every model, every window and the machine-learning challenger on the pre-freeze periods (2008–2022). The one-shot 2023–2026 test is on 'Risk and confidence', under 'Is the model right?'.")
-st.markdown("<div class='qe-banner qe-locked'>Dev 2004–2018 · Validation 2019–2022 (model selection) · "
-            "Final test 2023–2026 run once after the freeze (see 'Can we trust the risk model?')</div>", unsafe_allow_html=True)
+st.markdown(":gray-badge[Development 2004–2018] :blue-badge[Validation 2019–2022 · model selection] "
+            ":green-badge[Final test 2023–2026 · run once after the freeze]")
 
 tab_bt, tab_arena = st.tabs(["Backtest", "Model Arena (champion vs challengers)"])
 

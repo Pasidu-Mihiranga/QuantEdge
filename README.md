@@ -53,17 +53,17 @@ If `streamlit run` reports `No module named 'quantedge'`, a global Python was us
 
 ## What the app shows
 
-Five pages are written for the investment committee, in plain language. Five more hold the technical detail, and two Explore pages let you try your own portfolio and compare our scenario with a crowd simulation.
+Five pages are written for the investment committee, in plain language, and sit in the top bar in reading order: each one says which step of the story it is and ends with a link to the next. The **Technical detail** menu holds five more pages, and the **Explore** menu lets you try your own portfolio and compare our scenario with a crowd simulation. The app follows your system's light or dark mode.
 
 ### Our recommendation
 
-The decision, the four numbers that matter, and what would change the answer. Move the equity premium, real yield and tax assumptions and watch the verdict respond.
+The decision beside the allocation, the four numbers that matter, and a one-page committee summary to download. Four views explore it: the mix and where its risk comes from, what would change the answer, the two alternatives as side-by-side cards, and why this mix. In **What would change it**, move the equity premium, real yield and tax assumptions and watch the verdict respond.
 
 ![What would change the verdict](doc/screenshots/02_what_would_change_it.png)
 
 ### What can go wrong
 
-Every crisis against one budget, then a scenario builder: set your own shocks to yields, oil, VIX, the dollar and credit, and see the loss by fund and how often history has gone that far.
+Every crisis against one budget, then a scenario builder: set your own shocks to yields, oil, VIX, the dollar and credit, and see the loss by fund and how often history has gone that far. **Back to our scenario** resets the sliders.
 
 ![Crises and the scenario builder](doc/screenshots/03_crises.png)
 
@@ -91,13 +91,13 @@ Every limit with the room left, every assumption, and 24 limitations with what w
 
 ### Technical detail
 
-Data quality flags, all risk models on 2008–2022, EVT threshold diagnostics, and the regime, overlay, copula and FX studies.
+In the **Technical detail** menu: data quality flags, all risk models on 2008–2022, EVT threshold diagnostics, and the regime, overlay, copula and FX studies.
 
 ![EVT threshold diagnostics](doc/screenshots/08_evt.png)
 
 ### Try your own portfolio
 
-Set any mix of the seven funds and see it measured exactly as the recommendation was: expected return, worst crisis, a very bad day and volatility, each against its limit. With the sliders untouched, the page gives the recommendation's own numbers.
+Set any mix of the seven funds and see it measured exactly as the recommendation was: expected return, worst crisis, a very bad day and volatility, each against its limit, with a pass or fail for every test. **Start from** loads the recommendation, either alternative, a 60/40 mix or equal weights. With the sliders untouched, the page gives the recommendation's own numbers.
 
 ![Try your own portfolio](doc/screenshots/10_custom.png)
 

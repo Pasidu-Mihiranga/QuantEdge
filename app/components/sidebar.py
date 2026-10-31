@@ -9,14 +9,6 @@ import streamlit as st
 from components.data import BACKTEST_FILES, config, jsonfile, status
 from quantedge.paths import ARTIFACTS
 
-PAGE_STYLE = """
-<style>
-.qe-banner {padding: 0.6rem 0.9rem; border-radius: 6px; margin-bottom: 0.8rem; font-weight: 600;}
-.qe-provisional {background: #fff4e5; color: #8a4b00; border: 1px solid #f5c27a;}
-.qe-locked {background: #eef1f5; color: #39424e; border: 1px solid #c9d1db;}
-</style>
-"""
-
 
 @dataclass(frozen=True)
 class Controls:
@@ -31,7 +23,6 @@ class Controls:
 
 def sidebar() -> Controls:
     cfg = config()
-    st.markdown(PAGE_STYLE, unsafe_allow_html=True)
     with st.sidebar:
         st.header("Controls")
         alpha = st.select_slider("Confidence level", options=[0.90, 0.95, 0.99], value=0.99,
@@ -51,15 +42,6 @@ def sidebar() -> Controls:
         st.caption(f"Data to {s.get('data_end', '?')} · analysis to {s.get('analysis_end', '?')}")
         st.caption("This page shows the pre-freeze periods (2008–2022).")
     return Controls(alpha, model, window, float(nav), horizon, f"{dates[0]}-01-01", f"{dates[1]}-12-31")
-
-
-def provisional_banner() -> None:
-    s = status()
-    if s.get("provisional", True):
-        st.markdown(
-            f"<div class='qe-banner qe-provisional'>Provisional: results use the top-ranked candidate "
-            f"({s.get('focus_portfolio', 'n/a')}). {s.get('provisional_reason', '')}.</div>",
-            unsafe_allow_html=True)
 
 
 def usd(x: float) -> str:

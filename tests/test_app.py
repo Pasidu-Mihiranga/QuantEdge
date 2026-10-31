@@ -144,3 +144,29 @@ def test_custom_page_reproduces_the_recommendation_and_flags_a_breach():
     assert not at.exception
     risky = {m.label: m.value for m in at.metric}
     assert float(risky["Worst crisis"].rstrip("%")) > n["limits"]["crisis_budget"] * 100        # a stock-heavy mix breaks the budget
+
+
+def test_every_committee_page_is_one_step_of_the_story():
+    # Each committee page says which step it is and links on to the next one (components/ui.py STORY).
+    import sys
+
+    sys.path.insert(0, str(APP))
+    from components.ui import STORY
+
+    assert sorted(p for p, _ in STORY) == sorted(f"views/{v.name}" for v in VIEWS)
+    for path, _ in STORY:
+        text = (APP / path).read_text(encoding="utf-8")
+        assert f'page="{path}"' in text and f'step_footer("{path}")' in text, path
+
+
+def test_app_uses_the_theme_not_raw_html_or_hard_coded_chart_colours():
+    import re
+    import tomllib
+
+    theme = tomllib.loads((ROOT / ".streamlit" / "config.toml").read_text(encoding="utf-8"))["theme"]
+    assert {"light", "dark"} <= set(theme)                       # both appearances are styled
+    for f in APP.rglob("*.py"):
+        text = f.read_text(encoding="utf-8")
+        assert "unsafe_allow_html" not in text, f
+        if f.parent.name in ("views", "side"):                   # chart colours come from components/palette.py
+            assert not re.search(r'"#[0-9A-Fa-f]{6}"', text), f
